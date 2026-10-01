@@ -246,17 +246,21 @@
     </div>
 
     <div id="letterFilters">
-      <div class="section-label">Letters</div>
+      <div class="section-label">Letters &amp; length</div>
       <div class="grid">
         <div><label for="first">Starts with letter</label><select id="first"></select></div>
         <div><label for="first2">First 2 letters</label><input id="first2" maxlength="2" placeholder="e.g. Ar"></div>
         <div><label for="ends">Ends with</label><input id="ends" maxlength="5" placeholder="e.g. a, el, ya"></div>
-        <div><label for="kind">Name type</label>
-          <select id="kind">
-            <option value="">All names</option>
-            <option value="real">Real names (with stories)</option>
-            <option value="root">Built from real roots</option>
-            <option value="invented">Invented originals</option>
+        <div><label for="len">Length</label>
+          <select id="len">
+            <option value="">Any length</option>
+            <option value="3-4">Short (3–4 letters)</option>
+            <option value="5-6">Medium (5–6 letters)</option>
+            <option value="7-8">Long (7–8 letters)</option>
+            <option value="9-99">Extra long (9+ letters)</option>
+            <option value="1-5">Up to 5 letters</option>
+            <option value="1-6">Up to 6 letters</option>
+            <option value="1-7">Up to 7 letters</option>
           </select></div>
       </div>
     </div>
@@ -338,10 +342,15 @@ fillThemes();
 
 function filters() {
   return { theme: $("#theme").value, religion: $("#religion").value, culture: $("#culture").value, lang: $("#lang").value,
-    first: $("#first").value.toLowerCase(), first2: fold($("#first2").value), ends: fold($("#ends").value), kind: $("#kind").value };
+    first: $("#first").value.toLowerCase(), first2: fold($("#first2").value), ends: fold($("#ends").value), len: $("#len").value };
 }
 const genderOk = x => gender === "either" ? x.g === "either" : x.g === gender || x.g === "either";
 
+function lenOk(name, len) {
+  if (!len) return true;
+  const [lo, hi] = len.split("-").map(Number), n = fold(name).length;
+  return n >= lo && n <= hi;
+}
 function matches(x, f, letters = true) {
   if (!genderOk(x)) return false;
   if (f.theme && !themesOf(x).includes(f.theme)) return false;
@@ -354,6 +363,7 @@ function matches(x, f, letters = true) {
     if (f.first2 && !n.startsWith(f.first2)) return false;
     if (f.ends && !n.endsWith(f.ends)) return false;
   }
+  if (!lenOk(x.n, f.len)) return false;
   return true;
 }
 
@@ -362,7 +372,7 @@ const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.r
 function buildPools() {
   const f = filters();
   const needsMeaning = f.theme || f.religion || f.culture || f.lang; // invented names have no meaning/background
-  const want = k => !f.kind || f.kind === k;
+  const want = () => true;
   pools = {
     real: want("real") ? shuffle(REAL.filter(x => matches(x, f))) : [],
     root: want("root") ? shuffle(ROOT_NAMES.filter(x => matches(x, f))) : [],
@@ -374,7 +384,6 @@ function buildPools() {
   $("#count").innerHTML = total
     ? `<b>${fmt(total)}</b> matching names · ${fmt(pools.real.length)} real · ${fmt(pools.root.length)} from roots · ${fmt(pools.invented.length)} invented`
     : "";
-  if (needsMeaning && f.kind === "invented") $("#count").textContent = "Invented names don't have meanings or a religion/culture yet. Clear those filters to see them.";
 }
 
 // Mix real names, root names and invented names; real ones show up most.
@@ -492,7 +501,7 @@ function blend() {
   const f = filters();
   // best-sounding blend first: medium length, ending that suits the gender
   const score = n => -Math.abs(n.length - 6) + (gender === "girl" && /[aiey]$/.test(n) ? 2 : 0) + (gender === "boy" && /[^aeiy]$/.test(n) ? 2 : 0) + Math.random() * 1.5;
-  const blends = blendNames(a, b).map(n => [n, score(n)]).sort((p, q) => q[1] - p[1]).slice(0, 9)
+  const blends = blendNames(a, b).filter(n => lenOk(n, f.len)).map(n => [n, score(n)]).sort((p, q) => q[1] - p[1]).slice(0, 9)
     .map(([n]) => ({ n, g: gender, o: "", l: "", r: [], m: `a blend of ${a} + ${b}`, src: "", type: "invented" }));
   if (blends[0]) blends[0].featured = true;
   // real & root names that carry both parents' initials
@@ -712,7 +721,7 @@ $$(".tab").forEach(btn => btn.onclick = () => {
   if (tab !== "popular") $("#popList").innerHTML = "";
   $("#spellPanel").classList.toggle("hidden", tab !== "spell");
   $("#blendInputs").classList.toggle("hidden", tab !== "blend");
-  $("#letterFilters").classList.toggle("hidden", tab === "blend");
+  ["#first", "#first2", "#ends"].forEach(sel => $(sel).parentElement.classList.toggle("hidden", tab === "blend"));
   run();
 });
 $("#results").onclick = e => {
@@ -730,13 +739,13 @@ $("#results").onclick = e => {
 // keep "starts with letter" and "first 2 letters" in sync
 $("#first2").oninput = () => { const c = $("#first2").value.trim()[0]; if (c) $("#first").value = c.toUpperCase(); };
 $("#first").onchange = () => { const v = $("#first2").value.trim(); if (v && v[0].toUpperCase() !== $("#first").value) $("#first2").value = ""; find(); };
-["#theme", "#religion", "#culture", "#lang", "#kind"].forEach(s => $(s).onchange = run);
+["#theme", "#religion", "#culture", "#lang", "#len"].forEach(s => $(s).onchange = run);
 ["#first2", "#ends", "#mom", "#dad", "#spellIn"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
 $("#go").onclick = e => { powder(e.clientX, e.clientY); window.throwPaint && throwPaint(); run(); };
 $("#more").onclick = more;
 $("#spellGo").onclick = spell;
 $("#reset").onclick = () => {
-  ["#theme", "#religion", "#culture", "#lang", "#first", "#first2", "#ends", "#kind"].forEach(s => $(s).value = "");
+  ["#theme", "#religion", "#culture", "#lang", "#first", "#first2", "#ends", "#len"].forEach(s => $(s).value = "");
   run();
 };
 

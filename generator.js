@@ -147,7 +147,7 @@ const isV = c => "aeiouy".includes(c);
 function sayable(name) {
   const w = name.toLowerCase();
   if (w.length < 3 || w.length > 10) return false;
-  if (/(.)\1\1/.test(w) || /[aeiou]{3}/.test(w) || /[^aeiouy]{3}/.test(w)) return false;
+  if (/(.)\1\1/.test(w) || /[aeiou]{3}/.test(w) || /[^aeiouy]{3}/.test(w) || /iy|yi|uy|yu(?!n)/.test(w)) return false;
   for (let i = 1; i < w.length; i++) {
     const a = w[i - 1], b = w[i], pair = a + b;
     if (!isV(a) && !isV(b) && !OK_PAIRS.has(pair)) return false;
