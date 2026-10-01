@@ -289,7 +289,11 @@
   .actions-row button { border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px; padding: 4px 12px; font: 700 .74rem Nunito, sans-serif; cursor: pointer; }
   .actions-row button:hover { border-color: var(--a1); }
   .fullname { margin-top: 10px; padding: 8px 12px; border-radius: 14px; background: color-mix(in srgb, var(--a1) 10%, transparent); font-size: .85rem; display: grid; gap: 2px; }
-  .fullname b { font-family: var(--disp); font-size: 1rem; }
+  .fullname b { font-family: var(--disp); font-size: 1.15rem; }
+  .fullname code { font: .68rem var(--mono); letter-spacing: .08em; color: var(--muted); }
+  .fv-label { font: 700 .6rem var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-top: 6px; }
+  .fv-label em { font-style: normal; color: var(--a1); }
+  .fullname .vibe { margin-top: 4px; } .fullname .meters { margin-top: 6px; } .fullname .actions-row { margin-top: 6px; }
   .flow-ok { color: #6f9a5c; font-weight: 700; font-size: .78rem; }
   .flow-warn { color: #c0763a; font-weight: 700; font-size: .78rem; }
   .flow-good { color: var(--muted); font: .68rem var(--mono); }
@@ -389,7 +393,7 @@
     </div>
 
     <div class="section-label">Vibe &amp; full name</div>
-    <div class="grid" style="grid-template-columns: 1fr 1fr">
+    <div class="grid" style="grid-template-columns: 1fr 1fr 1fr">
       <div><label for="vibeSel">Vibe</label>
         <select id="vibeSel">
           <option value="">Any vibe</option>
@@ -404,7 +408,9 @@
           <option value="spiritual">Spiritual</option>
           <option value="regal">Regal</option>
         </select></div>
-      <div><label for="lastName">Last name (to test the full name)</label><input id="lastName" placeholder="e.g. Tiwari"></div>
+      <div><label for="lastName">Last name</label><input id="lastName" placeholder="e.g. Tiwari"></div>
+      <div><label for="showAs">Show names as</label>
+        <select id="showAs"><option value="first">First name only</option><option value="full">Full name (first + last)</option></select></div>
     </div>
 
     <div class="actions">
@@ -574,7 +580,7 @@ function card(x, i, featured = false) {
     <div class="aura"></div>
     <div class="wm">${iconFor(x)}</div>
     <div class="head">${featured ? `<div class="kicker">Your baby's name could be</div>` : `<div class="icon">${iconFor(x)}</div>`}<div>
-      <div class="name">${esc(x.n)}</div>
+      <div class="name">${esc(displayName(x))}</div>
       <div class="meta"><span class="dot" style="background:var(--${x.g})"></span>${esc(where)}</div>
     </div></div>
     ${x.m ? `<div class="mean">“${esc(x.m)}”</div>` : ""}
@@ -635,14 +641,43 @@ function flowCheck(first, last) {
   if (BAD_INITIALS.has(ini)) notes.push(`initials spell ${ini}`);
   return { ok: !notes.length, notes, good };
 }
+const lastName = () => { const l = ($("#lastName") && $("#lastName").value.trim()) || ""; return l && l.charAt(0).toUpperCase() + l.slice(1); };
+const displayName = x => $("#showAs") && $("#showAs").value === "full" && lastName() ? `${x.n} ${lastName()}` : x.n;
+
+// Rough syllable split for display: Daniya Sharma → DA·NI·YA SHAR·MA
+const ONSETS = new Set("bl br ch cl cr dr fl fr gl gr kh kl kr ph pl pr sc sh sk sl sm sn sp st sw th tr tw wh bh dh gh jh".split(" "));
+function syllabify(word) {
+  const w = fold(word).replace(/y(?=[aeiou])/g, "Y");
+  const parts = w.match(/[^aeiouy]*[aeiouy]+/g);
+  if (!parts) return word.toUpperCase();
+  const tail = w.slice(parts.join("").length);
+  for (let i = 1; i < parts.length; i++) {
+    const lead = parts[i].match(/^[^aeiouy]*/)[0];
+    if (lead.length >= 2 && !ONSETS.has(lead.toLowerCase().slice(0, 2))) { parts[i - 1] += lead[0]; parts[i] = parts[i].slice(1); }
+    else if (lead.length >= 3) { parts[i - 1] += lead.slice(0, lead.length - 2); parts[i] = parts[i].slice(lead.length - 2); }
+  }
+  parts[parts.length - 1] += tail;
+  return parts.join("·").toUpperCase();
+}
+
+// Full-name view: the full name's own vibe (sound of first + last, meaning of the first name) and how it flows.
 function fullName(x) {
-  const last = $("#lastName") && $("#lastName").value.trim();
+  const last = lastName();
   if (!last) return "";
-  const pretty = last.charAt(0).toUpperCase() + last.slice(1);
   const c = flowCheck(x.n, last);
-  return `<div class="fullname"><b>${esc(x.n)} ${esc(pretty)}</b>
+  const fv = vibeOf({ n: x.n + last, g: x.g, o: x.o, l: x.l, r: x.r, m: x.m, src: x.src, type: x.type });
+  const first = vibeOf(x);
+  const changed = fv.words.filter(w => !first.words.includes(w));
+  return `<div class="fullname">
+    <b>${esc(x.n)} ${esc(last)}</b>
+    <code>${esc(x.n.split(/[\s-]+/).map(syllabify).join(" "))}&nbsp;&nbsp;${esc(syllabify(last))}</code>
     <span class="${c.ok ? "flow-ok" : "flow-warn"}">${c.ok ? "✓ flows well" : "⚠ " + esc(c.notes.join(" · "))}</span>
-    ${c.good.length ? `<span class="flow-good">${esc(c.good.join(" · "))}</span>` : ""}</div>`;
+    ${c.good.length ? `<span class="flow-good">${esc(c.good.join(" · "))}</span>` : ""}
+    <div class="fv-label">full name vibe${changed.length ? ` · the last name adds <em>${esc(changed.join(", "))}</em>` : ""}</div>
+    <div class="vibe">${fv.words.map(w => `<span>${w}</span>`).join("")}</div>
+    <div class="meters">${meter("Soft", "Strong", 1 - fv.soft)}${meter("Classic", "Modern", fv.modern)}${meter("Playful", "Elegant", fv.elegant)}</div>
+    <div class="actions-row"><button data-say="${esc(x.n + " " + last)}" data-lang="${esc(x.o)}">🔊 Hear full name</button></div>
+  </div>`;
 }
 
 // 🔊 Pronounce with the browser's built-in voice; use a native voice for Latin-script languages.
@@ -951,6 +986,7 @@ $("#results").onclick = e => {
 $("#first2").oninput = () => { const c = $("#first2").value.trim()[0]; if (c) $("#first").value = c.toUpperCase(); };
 $("#first").onchange = () => { const v = $("#first2").value.trim(); if (v && v[0].toUpperCase() !== $("#first").value) $("#first2").value = ""; find(); };
 ["#theme", "#religion", "#culture", "#lang", "#len", "#vibeSel"].forEach(s => $(s).onchange = run);
+$("#showAs").addEventListener("change", () => shown.length && render(shown));
 $("#lastName").addEventListener("input", () => { clearTimeout(window._ln); window._ln = setTimeout(() => shown.length && render(shown), 250); });
 ["#first2", "#ends", "#mom", "#dad", "#spellIn", "#lastName", "#loveIn", "#hateIn"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
 $("#go").onclick = e => { powder(e.clientX, e.clientY); window.throwPaint && throwPaint(); run(); };
