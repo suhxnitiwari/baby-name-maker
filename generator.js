@@ -228,3 +228,71 @@ function themesOf(x) {
 }
 
 if (typeof module !== "undefined") module.exports = { buildRootNames, buildInvented, themesOf, sayable };
+
+// ─────────────────────────────────────────────────────────────
+// 4. SPELLING VARIATIONS: swap letter groups that sound the same.
+//    Jayden ↔ Jaiden ↔ Jaydon, Myra ↔ Maira, Suhani ↔ Suhaani ↔ Suhanee
+// ─────────────────────────────────────────────────────────────
+const isCons = c => !!c && /[a-z]/.test(c) && !"aeiouy".includes(c);
+// Each rule looks at position i of word w and returns [length matched, alternative spellings] or null.
+const SPELL_RULES = [
+  (w, i) => w.startsWith("aa", i) ? [2, ["aa", "a"]] : null,
+  (w, i) => { // ai / ay before a consonant: Jaiden ↔ Jayden ↔ Jaeden, Maira ↔ Myra
+    const g = w.slice(i, i + 2), next = w[i + 2];
+    if ((g !== "ai" && g !== "ay") || !(isCons(next) || next === undefined)) return null;
+    const opts = ["ai", "ay"];
+    if (next && i > 0) opts.push("ae");
+    if (isCons(w[i - 1]) && "rl".includes(next || "-")) opts.push("y");
+    return [2, opts];
+  },
+  (w, i) => { // y between consonants: Myra ↔ Maira ↔ Mayra
+    if (w[i] !== "y" || !isCons(w[i - 1]) || !isCons(w[i + 1])) return null;
+    return [1, "rl".includes(w[i + 1]) ? ["y", "ai", "ay", "i"] : ["y", "i"]];
+  },
+  (w, i) => w.startsWith("ee", i) && i + 2 < w.length ? [2, ["ee", "i", "ea"]] : null,
+  (w, i) => w.startsWith("oo", i) ? [2, ["oo", "u"]] : null,
+  (w, i) => w.slice(i) === "iya" ? [3, ["iya", "ia", "iyah"]] : null, // Priya ↔ Pria
+  (w, i) => w.startsWith("ah", i) && i + 2 === w.length ? [2, ["ah", "a"]] : null,
+  (w, i) => (w.startsWith("ia", i) || w.startsWith("ya", i)) && i > 0 && isCons(w[i - 1]) ? [2, ["ia", "ya"]] : null,
+  (w, i) => { // final -en/-an/-on/-yn: Jayden ↔ Jaydon ↔ Jaydyn
+    const g = w.slice(i);
+    if (w.length < 5 || !/^[aeoy]n$/.test(g) || !isCons(w[i - 1])) return null;
+    return [2, ["en", "an", "on", "yn"]];
+  },
+  (w, i) => { // final -i/-ee/-y/-ie: Suhani ↔ Suhanee, Avery ↔ Averie
+    const g = w.slice(i);
+    if (w.length < 4 || !["i", "ee", "y", "ie"].includes(g) || !isCons(w[i - 1])) return null;
+    return [g.length, g === "i" ? ["i", "ee", "ie"] : ["y", "ie", "ee", "i"]];
+  },
+  (w, i) => w[i] === "a" && i === w.length - 1 && w.length > 3 && isCons(w[i - 1]) ? [1, ["a", "ah"]] : null,
+  (w, i) => w.startsWith("ck", i) ? [2, ["ck", "k"]] : null,
+  (w, i) => w.startsWith("ph", i) ? [2, ["ph", "f"]] : null,
+  (w, i) => (w[i] === "c" || w[i] === "k") && "aou".includes(w[i + 1] || "-") ? [1, ["c", "k"]] : null,
+  (w, i) => /^(ll|nn|mm|tt|ss|rr)/.test(w.slice(i)) && i > 0 ? [2, [w.slice(i, i + 2), w[i]]] : null,
+  (w, i) => "ln".includes(w[i]) && i > 0 && "aeiou".includes(w[i - 1]) && i + 2 === w.length && w[i + 1] === "a" ? [1, [w[i], w[i] + w[i]]] : null, // Ana ↔ Anna
+  (w, i) => w[i] === "a" && isCons(w[i - 1]) && isCons(w[i + 1]) && /^(i|ee|ika|ita|ini|ya)$/.test(w.slice(i + 2)) ? [1, ["a", "aa"]] : null, // Suhani ↔ Suhaani
+  (w, i) => w[i] === "u" && isCons(w[i - 1]) && isCons(w[i + 1]) ? [1, ["u", "oo"]] : null,          // Suraj ↔ Sooraj
+];
+
+function spellings(name, max = 12) {
+  const w = name.toLowerCase();
+  // split the word into fixed letters and swappable slots
+  const slots = [];
+  for (let i = 0; i < w.length;) {
+    const hit = SPELL_RULES.map(r => r(w, i)).find(Boolean);
+    if (hit) { slots.push({ orig: w.slice(i, i + hit[0]), opts: hit[1] }); i += hit[0]; }
+    else { slots.push({ orig: w[i], opts: [w[i]] }); i++; }
+  }
+  const out = new Map(); // spelling → number of changes
+  const walk = (k, acc, changes) => {
+    if (changes > 2) return;
+    if (k === slots.length) { if (!out.has(acc) || out.get(acc) > changes) out.set(acc, changes); return; }
+    for (const o of slots[k].opts) walk(k + 1, acc + o, changes + (o === slots[k].orig ? 0 : 1));
+  };
+  walk(0, "", 0);
+  const fmt = s => s.replace(/(^|[\s-])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+  return [...out].filter(([s]) => s !== w && !/(.)\1\1|ii|yy|aaa|yi|iy|y[^aeiou]y$/.test(s))
+    .sort((a, b) => a[1] - b[1] || a[0].length - b[0].length)
+    .slice(0, max).map(([s]) => fmt(s));
+}
+if (typeof module !== "undefined") module.exports.spellings = spellings;

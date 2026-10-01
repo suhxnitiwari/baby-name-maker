@@ -10,7 +10,8 @@ Find the perfect name for your baby boy or girl. There are **240,000+ names**, i
 | **Invented originals** | 230,000+ | Brand-new names made from syllables and checked to make sure they're easy to say. |
 
 ## Features
-- **Girl / Boy / Either**
+- **Feminine / Masculine / Gender neutral**
+- **Spelling variations:** every name shows other spellings (Jayden → Jaiden, Myra → Maira, Suhani → Suhaani), and the Spellings tab lets you check any name
 - **Meaning groups:** Beautiful, Feminine & graceful, Kind & gentle, Strong, Brave & fierce, Wise, Divine & faith, Royal & noble, Light & sun, Moon & stars, Nature, Love & joy, and more. Girl themes are listed first for girls, boy themes first for boys.
 - **Religion filter:** Christian, Islamic, Jewish, Hindu, Sikh, Buddhist, Jain, Zoroastrian, Greek, Norse and Celtic myth
 - **Culture / ethnicity** and **language** filters

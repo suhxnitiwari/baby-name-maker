@@ -67,6 +67,49 @@
   .heart.on { color: var(--girl); }
   .empty { color: var(--muted); text-align: center; padding: 24px; grid-column: 1 / -1; }
   .hint { font-size: .88rem; color: var(--muted); margin: 0 0 12px; }
+  .also { font-size: .82rem; color: var(--muted); margin-top: 8px; }
+  .also button { border: 0; background: none; padding: 0; font: inherit; color: var(--accent); font-weight: 700; cursor: pointer; }
+  .also button:hover { text-decoration: underline; }
+  .spell-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+  .spell-list:empty { display: none; }
+  .spell { font-family: Fraunces, serif; font-size: 1.15rem; font-weight: 700; padding: 6px 14px; border-radius: 999px; border: 2px solid var(--line); background: var(--bg); }
+  .spell.known { border-color: var(--accent); background: var(--accent-soft); }
+  .spell.orig { background: var(--accent); border-color: var(--accent); color: #fff; }
+  /* hero scene */
+  .hero { display: block; width: 100%; max-width: 560px; height: auto; margin: -8px auto 0; overflow: visible; }
+  .hero .cloud { fill: var(--card); stroke: var(--line); stroke-width: 2; }
+  .hero .drift1 { animation: drift 14s ease-in-out infinite alternate; }
+  .hero .drift2 { animation: drift 18s ease-in-out infinite alternate-reverse; }
+  .hero .tw { fill: var(--gold); transform-box: fill-box; transform-origin: center; animation: twinkle 2.6s ease-in-out infinite; }
+  .hero .moon { fill: var(--gold); }
+  .hero .string { stroke: var(--muted); stroke-width: 1.5; opacity: .6; }
+  .hero .mobile { transform-origin: 300px 0; animation: sway 5s ease-in-out infinite alternate; }
+  .hero .dangle { transform-box: fill-box; transform-origin: top center; animation: sway 3.4s ease-in-out infinite alternate-reverse; }
+  .hero .a { fill: var(--accent); transition: fill .4s; }
+  .hero .as { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2; transition: all .4s; }
+  @keyframes drift { to { transform: translateX(40px); } }
+  @keyframes twinkle { 50% { transform: scale(.4); opacity: .35; } }
+  @keyframes sway { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+
+  /* floating background shapes */
+  .floaters { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .floaters svg { position: absolute; bottom: -40px; fill: var(--accent); opacity: .13; animation: rise linear infinite; transition: fill .4s; }
+  @keyframes rise { to { transform: translateY(-115vh) rotate(160deg); } }
+  main { position: relative; z-index: 1; }
+
+  /* card art */
+  .card { overflow: hidden; }
+  .card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--accent); opacity: .8; }
+  .card .head { display: flex; gap: 12px; align-items: center; }
+  .icon { flex: none; width: 46px; height: 46px; border-radius: 14px; background: var(--accent-soft); display: grid; place-items: center; }
+  .icon svg, .wm svg { width: 26px; height: 26px; fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .wm { position: absolute; right: -18px; bottom: -18px; opacity: .07; pointer-events: none; }
+  .wm svg { width: 120px; height: 120px; stroke-width: 1.4; }
+  .card > *:not(.wm):not(.heart) { position: relative; }
+  .heart { z-index: 2; }
+  .burst { position: fixed; pointer-events: none; z-index: 10; color: var(--girl); font-size: 16px; animation: burst .9s ease-out forwards; }
+  @keyframes burst { to { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .hero *, .floaters svg { animation: none !important; } }
   .hidden { display: none !important; }
   @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.97); } }
   @media (max-width: 720px) { .grid { grid-template-columns: 1fr 1fr; } }
@@ -74,21 +117,44 @@
 </style>
 </head>
 <body data-g="girl">
+<div class="floaters" id="floaters" aria-hidden="true"></div>
 <main>
+  <svg class="hero" viewBox="0 0 600 190" role="img" aria-label="A baby mobile with a moon, stars and clouds">
+    <g class="drift1"><path class="cloud" d="M60 120a22 22 0 0 1 30-26 30 30 0 0 1 56 6 20 20 0 0 1 4 40H66a20 20 0 0 1-6-20z"/></g>
+    <g class="drift2"><path class="cloud" d="M440 92a18 18 0 0 1 25-21 25 25 0 0 1 46 5 17 17 0 0 1 3 33h-69a17 17 0 0 1-5-17z"/></g>
+    <path class="moon" d="M520 22a26 26 0 1 0 30 34 21 21 0 1 1-30-34z"/>
+    <path class="tw" style="animation-delay:0s" d="M40 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/>
+    <path class="tw" style="animation-delay:.8s" d="M170 20l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>
+    <path class="tw" style="animation-delay:1.6s" d="M420 30l2.5 6 6 2.5-6 2.5-2.5 6-2.5-6-6-2.5 6-2.5z"/>
+    <path class="tw" style="animation-delay:.4s" d="M575 110l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>
+    <path class="tw" style="animation-delay:1.2s" d="M20 150l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>
+    <g class="mobile">
+      <line class="string" x1="300" y1="0" x2="300" y2="34"/>
+      <path class="a" d="M210 36q90-14 180 0" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round"/>
+      <circle class="a" cx="300" cy="34" r="6"/>
+      <g class="dangle"><line class="string" x1="222" y1="34" x2="222" y2="92"/>
+        <path class="as" d="M222 92l7 15 16 2-12 11 3 16-14-8-14 8 3-16-12-11 16-2z"/></g>
+      <g class="dangle" style="animation-delay:-1.2s"><line class="string" x1="300" y1="40" x2="300" y2="118"/>
+        <path class="as" d="M290 118a20 20 0 1 0 26 26 16 16 0 1 1-26-26z"/></g>
+      <g class="dangle" style="animation-delay:-2.1s"><line class="string" x1="378" y1="34" x2="378" y2="84"/>
+        <path class="as" d="M378 126s-22-13-22-30a12 12 0 0 1 22-7 12 12 0 0 1 22 7c0 17-22 30-22 30z"/></g>
+    </g>
+  </svg>
   <h1>Baby Name Maker</h1>
   <p class="sub">Over <b id="total">200,000</b> names for your little one 👶</p>
 
   <div class="tabs">
     <button class="tab on" data-tab="find">Find names</button>
     <button class="tab" data-tab="blend">Mom + Dad</button>
+    <button class="tab" data-tab="spell">Spellings</button>
     <button class="tab" data-tab="favs">Favorites <span id="favCount"></span></button>
   </div>
 
   <div class="panel" id="panel">
     <div class="gender">
-      <button class="gbtn on" data-v="girl">👧 Girl</button>
-      <button class="gbtn" data-v="boy">👦 Boy</button>
-      <button class="gbtn" data-v="either">🌈 Either</button>
+      <button class="gbtn on" data-v="girl">Feminine</button>
+      <button class="gbtn" data-v="boy">Masculine</button>
+      <button class="gbtn" data-v="either">Gender neutral</button>
     </div>
 
     <div id="blendInputs" class="hidden">
@@ -127,6 +193,15 @@
       <button class="go" id="go">✨ Make names</button>
       <button class="ghost" id="reset" title="Clear filters">Reset</button>
     </div>
+  </div>
+
+  <div class="panel hidden" id="spellPanel">
+    <p class="hint">Type any name to see other ways to spell it, like Jayden → Jaiden, Myra → Maira, or Suhani → Suhaani.</p>
+    <div class="actions">
+      <input id="spellIn" placeholder="Type a name, e.g. Amaira">
+      <button class="go" id="spellGo" style="flex:0 0 auto;padding:12px 22px">See spellings</button>
+    </div>
+    <div class="spell-list" id="spellList"></div>
   </div>
 
   <p class="count" id="count"></p>
@@ -236,15 +311,48 @@ function card(x, i) {
   const themes = themesOf(x).slice(0, 3);
   return `<div class="card" style="animation-delay:${(i % BATCH) * 35}ms">
     <button class="heart ${on ? "on" : ""}" data-i="${i}" aria-label="Save ${esc(x.n)}">${on ? "♥" : "♡"}</button>
-    <div class="name">${esc(x.n)}</div>
-    <div class="meta"><span class="dot" style="background:var(--${x.g})"></span>${esc(where)}</div>
+    <div class="wm">${iconFor(x)}</div>
+    <div class="head"><div class="icon">${iconFor(x)}</div><div>
+      <div class="name">${esc(x.n)}</div>
+      <div class="meta"><span class="dot" style="background:var(--${x.g})"></span>${esc(where)}</div>
+    </div></div>
     ${x.m ? `<div class="mean">“${esc(x.m)}”</div>` : ""}
     ${x.src ? `<div class="src">${esc(x.src)}</div>` : ""}
+    ${alsoSpelled(x)}
     <div class="chips">
       ${x.r.map(r => `<span class="chip rel">${esc(r)}</span>`).join("")}
       ${themes.map(t => `<span class="chip">${esc(t)}</span>`).join("")}
       <span class="chip kind">${KIND_LABEL[x.type]}</span>
     </div></div>`;
+}
+// Line icons for each meaning theme (24×24, stroke only)
+const ICONS = {
+  "Beautiful": '<path d="M6 3h12l4 6-10 12L2 9z"/><path d="M2 9h20M9 3l3 6 3-6M12 9v12"/>',
+  "Feminine & graceful": '<circle cx="12" cy="12" r="2.5"/><circle cx="12" cy="6" r="3"/><circle cx="18" cy="12" r="3"/><circle cx="12" cy="18" r="3"/><circle cx="6" cy="12" r="3"/>',
+  "Kind & gentle": '<path d="M20 4C12 4 6 10 6 18v2"/><path d="M6 18c6 0 12-4 14-14M10 14h5M13 10h4"/>',
+  "Strong": '<path d="M2 20l7-12 4 6 3-4 6 10z"/><path d="M7.5 10.5l1.5 1 1.5-1"/>',
+  "Brave & fierce": '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M13 7l-3 6h4l-3 5"/>',
+  "Wise": '<path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/>',
+  "Divine & faith": '<path d="M12 3c3 4 4 6 4 9a4 4 0 0 1-8 0c0-3 1-5 4-9z"/><path d="M5 20h14M8 17h8"/>',
+  "Light & sun": '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  "Moon & stars": '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M17 3l.6 1.6 1.6.6-1.6.6L17 7.4l-.6-1.6-1.6-.6 1.6-.6z"/>',
+  "Nature": '<path d="M5 19c0-8 6-14 15-14 0 9-6 15-14 15"/><path d="M5 19l7-7"/>',
+  "Royal & noble": '<path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z"/><path d="M5 16h14"/>',
+  "Peace & calm": '<path d="M3 10c3-3 6 3 9 0s6 3 9 0M3 15c3-3 6 3 9 0s6 3 9 0"/>',
+  "Love & joy": '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+  "Victory & glory": '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 20h8M10 17h4"/>',
+  "Life & hope": '<path d="M12 21v-8"/><path d="M12 13c0-4-3-6-7-6 0 4 3 6 7 6zM12 11c0-4 3-6 7-6 0 4-3 6-7 6z"/>',
+  "_": '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>',
+};
+function iconFor(x) {
+  const t = themesOf(x), order = THEME_ORDER[gender];
+  const best = [...t].sort((a, b) => order.indexOf(a) - order.indexOf(b))[0];
+  return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[best] || ICONS._}</svg>`;
+}
+
+function alsoSpelled(x) {
+  const v = spellings(x.n, 4);
+  return v.length ? `<div class="also">Also spelled: ${v.map(n => `<button data-spell="${esc(n)}">${esc(n)}</button>`).join(", ")}</div>` : "";
 }
 // items: array of names, or of {heading} markers
 function render(items, emptyMsg) {
@@ -297,8 +405,47 @@ function blend() {
   ], "Couldn't blend those. Try different spellings!");
 }
 
+// ── Spellings ──
+const BY_NAME = new Map();
+[...REAL, ...ROOT_NAMES].forEach(x => { const k = fold(x.n); BY_NAME.has(k) ? BY_NAME.get(k).push(x) : BY_NAME.set(k, [x]); });
+function spell() {
+  const name = $("#spellIn").value.trim();
+  $("#more").classList.add("hidden");
+  if (!name) { $("#spellList").innerHTML = ""; $("#count").textContent = ""; return render([], "Type a name to see its spellings ✏️"); }
+  const pretty = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+  const all = [pretty, ...spellings(name, 16)];
+  const known = all.flatMap(n => BY_NAME.get(fold(n)) || []);
+  $("#spellList").innerHTML = all.map((n, i) =>
+    `<span class="spell ${i === 0 ? "orig" : BY_NAME.has(fold(n)) ? "known" : ""}">${esc(n)}</span>`).join("");
+  $("#count").innerHTML = all.length > 1
+    ? `<b>${all.length - 1}</b> other spellings of ${esc(pretty)}${known.length ? " · highlighted ones are in our name list" : ""}`
+    : `No common spelling swaps found for ${esc(pretty)}.`;
+  render(known, "None of these spellings are in our list of names with meanings yet. They're still valid names!");
+}
+
 function showFavs() { $("#count").textContent = ""; $("#more").classList.add("hidden"); render(favs, "No favorites yet. Tap ♡ on a name to save it."); }
-const run = () => tab === "find" ? find() : tab === "blend" ? blend() : showFavs();
+const run = () => tab === "find" ? find() : tab === "blend" ? blend() : tab === "spell" ? spell() : showFavs();
+
+function burst(el) {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const r = el.getBoundingClientRect();
+  for (let i = 0; i < 7; i++) {
+    const b = document.createElement("span"), a = (i / 7) * Math.PI * 2;
+    b.className = "burst"; b.textContent = "♥";
+    b.style.left = r.left + r.width / 2 - 6 + "px"; b.style.top = r.top + r.height / 2 - 8 + "px";
+    b.style.setProperty("--dx", Math.cos(a) * 40 + "px"); b.style.setProperty("--dy", Math.sin(a) * 40 - 20 + "px");
+    document.body.appendChild(b); setTimeout(() => b.remove(), 950);
+  }
+}
+
+// floating stars, hearts and moons drifting up the page
+(function floaters() {
+  const shapes = [ICONS._.match(/d="([^"]+)"/)[1], "M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z", "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"];
+  $("#floaters").innerHTML = Array.from({ length: 16 }, (_, i) => {
+    const size = 14 + Math.random() * 22, dur = 22 + Math.random() * 26;
+    return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" style="left:${Math.random() * 100}%;animation-duration:${dur}s;animation-delay:${-Math.random() * dur}s"><path d="${shapes[i % 3]}"/></svg>`;
+  }).join("");
+})();
 
 // ── events ──
 $$(".gbtn").forEach(btn => btn.onclick = () => {
@@ -309,16 +456,20 @@ $$(".gbtn").forEach(btn => btn.onclick = () => {
 $$(".tab").forEach(btn => btn.onclick = () => {
   tab = btn.dataset.tab;
   $$(".tab").forEach(b => b.classList.toggle("on", b === btn));
-  $("#panel").classList.toggle("hidden", tab === "favs");
+  $("#panel").classList.toggle("hidden", tab === "favs" || tab === "spell");
+  $("#spellPanel").classList.toggle("hidden", tab !== "spell");
   $("#blendInputs").classList.toggle("hidden", tab !== "blend");
   $("#letterFilters").classList.toggle("hidden", tab === "blend");
   run();
 });
 $("#results").onclick = e => {
+  const sp = e.target.closest("[data-spell]");
+  if (sp) { $("#spellIn").value = sp.dataset.spell; $('.tab[data-tab="spell"]').click(); return window.scrollTo({ top: 0, behavior: "smooth" }); }
   const h = e.target.closest(".heart"); if (!h) return;
   const x = shown[h.dataset.i];
   favs = favs.some(f => favKey(f) === favKey(x)) ? favs.filter(f => favKey(f) !== favKey(x)) : [...favs, x];
   saveFavs();
+  if (favs.some(f => favKey(f) === favKey(x))) burst(h);
   if (tab === "favs") return showFavs();
   h.classList.toggle("on"); h.textContent = h.classList.contains("on") ? "♥" : "♡";
   $("#favCount").textContent = favs.length ? `(${favs.length})` : "";
@@ -327,9 +478,10 @@ $("#results").onclick = e => {
 $("#first2").oninput = () => { const c = $("#first2").value.trim()[0]; if (c) $("#first").value = c.toUpperCase(); };
 $("#first").onchange = () => { const v = $("#first2").value.trim(); if (v && v[0].toUpperCase() !== $("#first").value) $("#first2").value = ""; find(); };
 ["#theme", "#religion", "#culture", "#lang", "#kind"].forEach(s => $(s).onchange = run);
-["#first2", "#ends", "#mom", "#dad"].forEach(s => $(s).onkeydown = e => e.key === "Enter" && run());
+["#first2", "#ends", "#mom", "#dad", "#spellIn"].forEach(s => $(s).onkeydown = e => e.key === "Enter" && run());
 $("#go").onclick = run;
 $("#more").onclick = more;
+$("#spellGo").onclick = spell;
 $("#reset").onclick = () => {
   ["#theme", "#religion", "#culture", "#lang", "#first", "#first2", "#ends", "#kind"].forEach(s => $(s).value = "");
   run();
