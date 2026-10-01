@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Baby Name Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fdf8f3; --card: #ffffff; --ink: #2d2a32; --muted: #7a7380; --line: #ece4dc;
+    --girl: #e66b8f; --girl-soft: #fde6ec; --boy: #4a8fd4; --boy-soft: #e3effb;
+    --either: #8a6fc9; --either-soft: #eee8f8; --accent: var(--girl); --accent-soft: var(--girl-soft);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1c1a20; --card: #26232b; --ink: #f3eef6; --muted: #a59eab; --line: #3a3540;
+      --girl: #f28aa8; --girl-soft: #4a2a35; --boy: #7ab3ec; --boy-soft: #223650;
+      --either: #b39ae8; --either-soft: #362c4d;
+    }
+  }
+  body[data-g="boy"] { --accent: var(--boy); --accent-soft: var(--boy-soft); }
+  body[data-g="either"] { --accent: var(--either); --accent-soft: var(--either-soft); }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 Nunito, system-ui, sans-serif; transition: background .3s; }
+  main { max-width: 720px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-family: Fraunces, serif; font-size: clamp(2rem, 6vw, 2.8rem); margin: 0; text-align: center; }
+  .sub { text-align: center; color: var(--muted); margin: 4px 0 28px; }
+
+  .tabs { display: flex; gap: 8px; justify-content: center; margin-bottom: 20px; }
+  .tab { border: 2px solid var(--line); background: var(--card); color: var(--ink); padding: 8px 18px; border-radius: 999px; font: inherit; font-weight: 700; cursor: pointer; }
+  .tab.on { border-color: var(--accent); background: var(--accent-soft); }
+
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 20px; margin-bottom: 20px; }
+  .gender { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+  .gbtn { border: 2px solid var(--line); background: transparent; color: var(--ink); border-radius: 14px; padding: 12px 4px; font: inherit; font-weight: 700; cursor: pointer; }
+  .gbtn[data-v="girl"].on { border-color: var(--girl); background: var(--girl-soft); }
+  .gbtn[data-v="boy"].on { border-color: var(--boy); background: var(--boy-soft); }
+  .gbtn[data-v="either"].on { border-color: var(--either); background: var(--either-soft); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  label { font-size: .85rem; font-weight: 700; color: var(--muted); display: block; margin-bottom: 4px; }
+  select, input { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; }
+  .go { width: 100%; border: 0; border-radius: 14px; padding: 14px; background: var(--accent); color: #fff; font: inherit; font-weight: 700; font-size: 1.1rem; cursor: pointer; }
+  .go:active { transform: scale(.98); }
+
+  .results { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; position: relative; animation: pop .35s ease both; }
+  .card .name { font-family: Fraunces, serif; font-size: 1.6rem; font-weight: 700; }
+  .card .meta { font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .card .mean { margin-top: 6px; }
+  .card .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .heart { position: absolute; top: 10px; right: 10px; border: 0; background: none; font-size: 1.3rem; cursor: pointer; color: var(--muted); }
+  .heart.on { color: var(--girl); }
+  .empty { color: var(--muted); text-align: center; padding: 24px; grid-column: 1 / -1; }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.97); } }
+  .hidden { display: none; }
+  .hint { font-size: .85rem; color: var(--muted); margin: -4px 0 14px; }
+  @media (max-width: 480px) { .row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body data-g="girl">
+<main>
+  <h1>Baby Name Maker</h1>
+  <p class="sub">Find a name for your little one 👶</p>
+
+  <div class="tabs">
+    <button class="tab on" data-tab="find">Find names</button>
+    <button class="tab" data-tab="blend">Blend parents</button>
+    <button class="tab" data-tab="favs">Favorites <span id="favCount"></span></button>
+  </div>
+
+  <div class="panel">
+    <div class="gender">
+      <button class="gbtn on" data-v="girl">Girl</button>
+      <button class="gbtn" data-v="boy">Boy</button>
+      <button class="gbtn" data-v="either">Either</button>
+    </div>
+
+    <div id="find">
+      <div class="row">
+        <div><label for="style">Style</label>
+          <select id="style">
+            <option value="">Any style</option><option value="classic">Classic</option>
+            <option value="modern">Modern</option><option value="nature">Nature</option>
+            <option value="vintage">Vintage</option><option value="mythic">Mythic</option>
+          </select></div>
+        <div><label for="letter">Starts with</label>
+          <input id="letter" maxlength="1" placeholder="Any letter"></div>
+      </div>
+      <button class="go" id="goFind">✨ Make names</button>
+    </div>
+
+    <div id="blend" class="hidden">
+      <p class="hint">Mix two names into new ones (e.g., Mom + Dad).</p>
+      <div class="row">
+        <div><label for="p1">First name</label><input id="p1" placeholder="Jessica"></div>
+        <div><label for="p2">Second name</label><input id="p2" placeholder="Michael"></div>
+      </div>
+      <button class="go" id="goBlend">💞 Blend</button>
+    </div>
+  </div>
+
+  <div class="results" id="results"></div>
+</main>
+
+<script src="names.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+let gender = "girl", tab = "find", lastResults = [];
+
+function loadFavs() { try { return JSON.parse(localStorage.getItem("bnm-favs")) || []; } catch { return []; } }
+function saveFavs(f) { try { localStorage.setItem("bnm-favs", JSON.stringify(f)); } catch {} }
+let favs = loadFavs();
+
+const shuffle = a => a.map(v => [Math.random(), v]).sort((x, y) => x[0] - y[0]).map(p => p[1]);
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+const dotColor = g => `var(--${g})`;
+
+function render(list, emptyMsg) {
+  lastResults = list;
+  $("#favCount").textContent = favs.length ? `(${favs.length})` : "";
+  if (!list.length) { $("#results").innerHTML = `<div class="empty">${emptyMsg}</div>`; return; }
+  $("#results").innerHTML = list.map((x, i) => {
+    const on = favs.some(f => f.n === x.n);
+    return `<div class="card" style="animation-delay:${i * 40}ms">
+      <button class="heart ${on ? "on" : ""}" data-i="${i}" aria-label="Favorite ${x.n}">${on ? "♥" : "♡"}</button>
+      <div class="name">${x.n}</div>
+      <div class="meta"><span class="dot" style="background:${dotColor(x.g)}"></span>${x.o}${x.s ? " · " + x.s : ""}</div>
+      <div class="mean">${x.m}</div></div>`;
+  }).join("");
+}
+
+function find() {
+  const style = $("#style").value, letter = $("#letter").value.trim().toUpperCase();
+  const pool = NAMES.filter(x =>
+    (gender === "either" ? x.g === "either" : x.g === gender || x.g === "either") &&
+    (!style || x.s === style) && (!letter || x.n.startsWith(letter)));
+  render(shuffle(pool).slice(0, 8), "No matches. Try another letter or style!");
+}
+
+// Blend: first part of one name + last part of the other, both ways.
+function blend() {
+  const a = $("#p1").value.trim(), b = $("#p2").value.trim();
+  if (!a || !b) return render([], "Type two names to blend 💞");
+  const vowels = /[aeiouy]/i, out = new Set();
+  const cuts = w => { const c = []; for (let i = 2; i < w.length - 1; i++) if (vowels.test(w[i - 1]) || vowels.test(w[i])) c.push(i); return c.length ? c : [Math.ceil(w.length / 2)]; };
+  for (const [x, y] of [[a, b], [b, a]])
+    for (const i of cuts(x)) for (const j of cuts(y)) {
+      if (x[i - 1].toLowerCase() === y[j].toLowerCase()) continue; // skip "Suhhul"-style doubles
+      const n = cap(x.slice(0, i) + y.slice(j));
+      if (n.length >= 3 && n.length <= 9 && n.toLowerCase() !== a.toLowerCase() && n.toLowerCase() !== b.toLowerCase() && !/(.)\1\1/.test(n)) out.add(n);
+    }
+  const endings = { girl: ["a", "ie", "elle", "ina"], boy: ["o", "an", "er", "us"], either: ["i", "en", "y", "is"] };
+  const list = shuffle([...out]).slice(0, 6).map(n => ({ n, g: gender, o: `${cap(a)} + ${cap(b)}`, m: "a one-of-a-kind blend", s: "" }));
+  const root = a.slice(0, 3);
+  endings[gender].forEach(e => list.length < 8 && list.push({ n: cap(root + e), g: gender, o: cap(a) + " remix", m: "inspired by " + cap(a), s: "" }));
+  render(list, "Couldn't blend those. Try other names!");
+}
+
+function showFavs() { render(favs, "No favorites yet. Tap ♡ on a name to save it."); }
+
+document.querySelectorAll(".gbtn").forEach(btn => btn.onclick = () => {
+  gender = btn.dataset.v; document.body.dataset.g = gender;
+  document.querySelectorAll(".gbtn").forEach(b => b.classList.toggle("on", b === btn));
+  if (tab === "find") find(); else if (tab === "blend" && $("#p1").value && $("#p2").value) blend();
+});
+document.querySelectorAll(".tab").forEach(btn => btn.onclick = () => {
+  tab = btn.dataset.tab;
+  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("on", b === btn));
+  $("#find").classList.toggle("hidden", tab !== "find");
+  $("#blend").classList.toggle("hidden", tab !== "blend");
+  document.querySelector(".gender").classList.toggle("hidden", tab === "favs");
+  document.querySelector(".panel").classList.toggle("hidden", tab === "favs");
+  tab === "find" ? find() : tab === "blend" ? render([], "Type two names to blend 💞") : showFavs();
+});
+$("#results").onclick = e => {
+  const h = e.target.closest(".heart"); if (!h) return;
+  const x = lastResults[h.dataset.i];
+  favs = favs.some(f => f.n === x.n) ? favs.filter(f => f.n !== x.n) : [...favs, x];
+  saveFavs(favs);
+  tab === "favs" ? showFavs() : render(lastResults);
+};
+$("#goFind").onclick = find;
+$("#goBlend").onclick = blend;
+$("#letter").onkeydown = e => e.key === "Enter" && find();
+$("#p2").onkeydown = e => e.key === "Enter" && blend();
+find();
+</script>
+</body>
+</html>
