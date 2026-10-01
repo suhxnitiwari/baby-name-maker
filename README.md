@@ -10,11 +10,11 @@ Find the perfect name for your baby boy or girl. There are **240,000+ names**, i
 | **Invented originals** | 230,000+ | Brand-new names made from syllables and checked to make sure they're easy to say. |
 
 ## Features
+- **Mom + Dad compiler:** parents' names plus optional family names to honor. It splices names and scans thousands of real names for both parents' sounds, then removes hard-to-say results, tests them with your surname and ranks them. A visible pipeline shows real counts at every step. Every name shows its provenance (which letters came from whom, contribution %, how it was built), a badge (Real name / Rare real name / Built from roots / New blend), and top picks by category (best overall, most equal blend, best real name, rarest, easiest to say, best with surname, wildcard). 🔒 Lock a start or ending and it rebuilds around it.
 - **Your taste (taste model):** type names you love and don't; it learns your profile (softness, syllables, endings, cultures, rarity) and ranks ~28,000 names with a match score and a "why this name?" breakdown. Telling it why you reject a name updates the model.
 - **Feminine / Masculine / Gender neutral**
 - **Spelling variations:** common real-world spellings and forms (Mohammed → Muhammad, Mohamed, Mehmet; Leila → Layla, Laila), names that sound alike, and possible letter-swap spellings (Jayden → Jaiden, Suhani → Suhaani)
 - **Vibes:** every card has a color aura, vibe words (dreamy, regal, fierce, timeless…) and Soft↔Strong, Classic↔Modern, Playful↔Elegant meters
-- **Mom + Dad reveal:** the top blend decodes from random characters into the name
 - **Meaning groups:** Beautiful, Feminine & graceful, Kind & gentle, Strong, Brave & fierce, Wise, Divine & faith, Royal & noble, Light & sun, Moon & stars, Nature, Love & joy, and more. Girl themes are listed first for girls, boy themes first for boys.
 - **Religion filter:** Christian, Islamic, Jewish, Hindu, Sikh, Buddhist, Jain, Zoroastrian, Greek, Norse and Celtic myth
 - **Culture / ethnicity** and **language** filters

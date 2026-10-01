@@ -297,6 +297,30 @@
   .flow-ok { color: #6f9a5c; font-weight: 700; font-size: .78rem; }
   .flow-warn { color: #c0763a; font-weight: 700; font-size: .78rem; }
   .flow-good { color: var(--muted); font: .68rem var(--mono); }
+  /* Mom + Dad compiler */
+  .lock-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; }
+  .lock-row button { border: 1px solid var(--accent); background: var(--accent-soft); color: var(--ink); border-radius: 999px; padding: 5px 12px; font: 700 .76rem Nunito, sans-serif; cursor: pointer; }
+  .pipeline { grid-column: 1 / -1; padding: 16px 18px; border-radius: 18px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); font: .74rem/1.9 var(--mono); }
+  .pipe-head { font-weight: 800; letter-spacing: .14em; text-transform: uppercase; font-size: .64rem; color: var(--accent); margin-bottom: 4px; }
+  .pipe-line { display: flex; gap: 6px; white-space: nowrap; overflow: hidden; animation: pipeIn .35s ease both; }
+  .pipe-line span { color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
+  .pipe-line i { color: var(--line); font-style: normal; flex: 1; overflow: hidden; }
+  .pipe-line b { color: var(--accent); }
+  .pipe-note { margin-top: 6px; font-size: .64rem; color: var(--muted); white-space: normal; }
+  @keyframes pipeIn { from { opacity: 0; transform: translateX(-6px); } }
+  .pick { display: inline-block; font: 800 .6rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: #fff; background: var(--a1); padding: 3px 9px; border-radius: 999px; margin-bottom: 8px; }
+  .prov { margin-top: 10px; padding: 10px 12px; border-radius: 14px; background: var(--chip); font: .74rem var(--mono); display: grid; gap: 3px; }
+  .prow { display: grid; grid-template-columns: 54px 1fr 38px; gap: 8px; align-items: baseline; }
+  .prow .pl { font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .prow .pw { color: var(--muted); font-size: .85rem; }
+  .prow mark { background: color-mix(in srgb, var(--a1) 30%, transparent); color: var(--ink); border-radius: 4px; padding: 0 2px; font-weight: 800; }
+  .prow b { text-align: right; color: var(--a1); }
+  .pmethod { font-size: .64rem; color: var(--muted); margin-top: 3px; }
+  .locks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .locks button { border: 1px dashed var(--a1); background: transparent; color: var(--ink); border-radius: 999px; padding: 3px 10px; font: 700 .68rem Nunito, sans-serif; cursor: pointer; }
+  .chip.synth { border-style: dashed; }
+  .featured .prov { max-width: 420px; margin: 12px auto 0; text-align: left; }
+
   /* taste model */
   .genome { margin-top: 18px; padding: 18px; border-radius: 18px; background: color-mix(in srgb, var(--accent) 7%, var(--card)); border: 1px solid var(--line); font-family: var(--mono); }
   .genome-head { display: flex; justify-content: space-between; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
@@ -357,11 +381,18 @@
     </div>
 
     <div id="blendInputs" class="hidden">
-      <p class="hint">Type both parents' names. You'll get blends of the two, plus real names that use both your initials.</p>
+      <div class="section-label">Family inputs</div>
       <div class="grid" style="grid-template-columns: 1fr 1fr">
-        <div><label for="mom">Mom's name</label><input id="mom" placeholder="e.g. Priya"></div>
-        <div><label for="dad">Dad's name</label><input id="dad" placeholder="e.g. Daniel"></div>
+        <div><label for="mom">Mom's name</label><input id="mom" placeholder="e.g. Suhani"></div>
+        <div><label for="dad">Dad's name</label><input id="dad" placeholder="e.g. Alexander"></div>
       </div>
+      <div class="grid" style="grid-template-columns: 2fr 1fr 1fr">
+        <div><label for="familyIn">Other family names to honor (optional)</label><input id="familyIn" placeholder="e.g. grandma Kamala, sibling Arjun"></div>
+        <div><label for="honor">Honor them</label><select id="honor"><option value="0.5">A little</option><option value="1">A lot</option></select></div>
+        <div><label for="synthMode">Names to include</label>
+          <select id="synthMode"><option value="both">Real names + new blends</option><option value="real">Real names only</option><option value="new">New blends only</option></select></div>
+      </div>
+      <div class="lock-row hidden" id="lockRow"></div>
     </div>
 
     <div class="section-label">Meaning &amp; background</div>
@@ -579,6 +610,7 @@ function card(x, i, featured = false) {
   return `<div class="card${featured ? " featured" : ""}" style="animation-delay:${(i % BATCH) * 35}ms;--a1:${v.aura[0]};--a2:${v.aura[1]}">
     <div class="aura"></div>
     <div class="wm">${iconFor(x)}</div>
+    ${x.pick && !featured ? `<div class="pick">${esc(x.pick)}</div>` : ""}
     <div class="head">${featured ? `<div class="kicker">Your baby's name could be</div>` : `<div class="icon">${iconFor(x)}</div>`}<div>
       <div class="name">${esc(displayName(x))}</div>
       <div class="meta"><span class="dot" style="background:var(--${x.g})"></span>${esc(where)}</div>
@@ -590,13 +622,14 @@ function card(x, i, featured = false) {
     ${popBadges(x)}
     <div class="vibe">${v.words.map(w => `<span>${w}</span>`).join("")}</div>
     <div class="meters">${meter("Soft", "Strong", 1 - v.soft)}${meter("Classic", "Modern", v.modern)}${meter("Playful", "Elegant", v.elegant)}</div>
+    ${x.prov ? provHTML(x) : ""}
     ${fullName(x)}
     ${alsoSpelled(x)}
     <div class="actions-row"><button data-say="${esc(x.n)}" data-lang="${esc(x.o)}">🔊 Hear it</button><button data-copy="${esc(x.n)}">⧉ Copy</button></div>
     <div class="chips">
       ${x.r.map(r => `<span class="chip rel">${esc(r)}</span>`).join("")}
       ${themes.map(t => `<span class="chip">${esc(t)}</span>`).join("")}
-      <span class="chip kind">${KIND_LABEL[x.type]}</span>
+      <span class="chip kind ${x.badge === "New blend" ? "synth" : ""}">${esc(x.badge || KIND_LABEL[x.type])}</span>
     </div></div>`;
 }
 // Line icons for each meaning theme (24×24, stroke only)
@@ -699,9 +732,10 @@ function alsoSpelled(x) {
 // items: array of names, or of {heading} markers
 function render(items, emptyMsg) {
   shown = items;
-  if (!items.some(x => !x.heading && !x.formula && !x.share)) { $("#results").innerHTML = `<div class="empty">${emptyMsg}</div>`; return; }
+  if (!items.some(x => !x.heading && !x.formula && !x.share && !x.pipeline)) { $("#results").innerHTML = `<div class="empty">${emptyMsg}</div>`; return; }
   $("#results").innerHTML = items.map((x, i) =>
     x.heading ? `<h3>${esc(x.heading)}</h3>` :
+    x.pipeline ? pipelineHTML(x.pipeline) :
     x.share ? `<div class="share-row"><button class="ghost" data-share>⧉ Copy link to these results</button></div>` :
     x.formula ? `<div class="formula"><span class="pill">${esc(x.formula[0])}</span><span>+</span><span class="pill">${esc(x.formula[1])}</span><span>=</span><span class="pill q">?</span></div>` :
     card(x, i, x.featured)).join("");
@@ -718,52 +752,15 @@ function more() {
   $("#more").classList.toggle("hidden", !left());
 }
 
-// ── Mom + Dad ──
-function blendNames(a, b) {
-  const vowels = /[aeiouy]/i, out = new Set(), A = a.toLowerCase(), B = b.toLowerCase();
-  const cuts = w => { const c = []; for (let i = 2; i < w.length - 1; i++) if (vowels.test(w[i - 1]) || vowels.test(w[i])) c.push(i); return c.length ? c : [Math.ceil(w.length / 2)]; };
-  for (const [x, y] of [[a, b], [b, a]])
-    for (const i of cuts(x)) for (const j of cuts(y)) {
-      if (x[i - 1].toLowerCase() === y[j].toLowerCase()) continue;
-      const n = x.slice(0, i) + y.slice(j);
-      const low = n.toLowerCase();
-      if (low !== A && low !== B && sayable(n)) out.add(n.charAt(0).toUpperCase() + low.slice(1));
-    }
-  return [...out];
-}
-function blend() {
-  const a = $("#mom").value.trim(), b = $("#dad").value.trim();
-  $("#more").classList.add("hidden");
-  if (!a || !b) { $("#count").textContent = ""; return render([], "Type Mom's and Dad's names, then tap Make names 💞"); }
-  const f = filters();
-  // best-sounding blend first: medium length, ending that suits the gender
-  const score = n => -Math.abs(n.length - 6) + (gender === "girl" && /[aiey]$/.test(n) ? 2 : 0) + (gender === "boy" && /[^aeiy]$/.test(n) ? 2 : 0) + Math.random() * 1.5;
-  const blends = blendNames(a, b).filter(n => lenOk(n, f.len)).map(n => [n, score(n)]).sort((p, q) => q[1] - p[1])
-    .map(([n]) => ({ n, g: gender, o: "", l: "", r: [], m: `a blend of ${a} + ${b}`, src: "", type: "invented" }))
-    .filter(x => !f.vibe || vibeMatch(x, f.vibe)).slice(0, 25);
-  if (blends[0]) blends[0].featured = true;
-  // real & root names that carry both parents' initials
-  const ia = fold(a)[0], ib = fold(b)[0];
-  const named = [...REAL, ...ROOT_NAMES].filter(x => matches(x, f, false));
-  const both = named.filter(x => { const n = fold(x.n); return (n[0] === ia && n.slice(1).includes(ib)) || (n[0] === ib && n.slice(1).includes(ia)); });
-  const either = named.filter(x => [ia, ib].includes(fold(x.n)[0]) && !both.includes(x));
-  const initials = [...shuffle(both.filter(x => x.type === "real")), ...shuffle(both.filter(x => x.type !== "real")), ...shuffle(either)].slice(0, 8);
-  $("#count").innerHTML = `<b>${blends.length}</b> blends · <b>${both.length + either.length}</b> names with Mom's or Dad's initial`;
-  render([
-    { formula: [a, b] }, ...blends.slice(0, 1),
-    { share: true },
-    { heading: `More ${a} + ${b} blends` }, ...blends.slice(1),
-    { heading: `Names with ${ia.toUpperCase()} & ${ib.toUpperCase()}` }, ...initials,
-  ], "Couldn't blend those. Try different spellings!");
-  revealAll();
-}
+// ── Mom + Dad: see compiler.js ──
 
 // ── Popularity (official government data) ──
 let POP = null;
 const SHORT = { us: "US", ca: "Canada", au: "NSW", ew: "Eng & Wales", fr: "France" };
 fetch("data/popularity.json?v=6").then(r => r.json()).then(d => {
   POP = d; buildPopControls();
-  if (tab === "popular") showPopular(); else if (shown.length) render(shown);
+  // re-run views that use the official records once they've loaded
+  if (tab === "popular") showPopular(); else if (tab === "blend") blend(); else if (tab === "taste") showTaste(); else if (shown.length) render(shown);
 }).catch(() => {});
 // best ranks for a name across countries, e.g. [["US", 3, 14718, 2024], ...]
 function popRanks(name, g) {
@@ -1049,14 +1046,15 @@ $("#reset").onclick = () => {
   requestAnimationFrame(step);
 })();
 // Shared link: ?mom=Priya&dad=Daniel&g=girl opens straight into the Mom + Dad reveal.
-(function openShared() {
+addEventListener("DOMContentLoaded", function openShared() {
   const q = new URLSearchParams(location.search);
   if (!q.get("mom") || !q.get("dad")) return find();
   $("#mom").value = q.get("mom"); $("#dad").value = q.get("dad");
   const g = $(`.gbtn[data-v="${q.get("g")}"]`); if (g) g.click();
   $('.tab[data-tab="blend"]').click();
-})();
+});
 </script>
-<script src="taste.js"></script>
+<script src="taste.js?v=2"></script>
+<script src="compiler.js?v=2"></script>
 </body>
 </html>
