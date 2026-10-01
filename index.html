@@ -293,6 +293,33 @@
   .flow-ok { color: #6f9a5c; font-weight: 700; font-size: .78rem; }
   .flow-warn { color: #c0763a; font-weight: 700; font-size: .78rem; }
   .flow-good { color: var(--muted); font: .68rem var(--mono); }
+  /* taste model */
+  .genome { margin-top: 18px; padding: 18px; border-radius: 18px; background: color-mix(in srgb, var(--accent) 7%, var(--card)); border: 1px solid var(--line); font-family: var(--mono); }
+  .genome-head { display: flex; justify-content: space-between; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .genome-head span:first-child { color: var(--accent); font-weight: 800; }
+  .g-row { display: grid; grid-template-columns: 90px 1fr 32px; gap: 10px; align-items: center; font-size: .78rem; }
+  .g-row code { color: var(--accent); letter-spacing: 1px; font-size: .82rem; }
+  .g-row b { text-align: right; }
+  .g-facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+  .g-facts div { background: var(--card); border-radius: 12px; padding: 8px 10px; display: grid; }
+  .g-facts span { font-size: .6rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .g-facts b { font: 700 .9rem var(--disp); }
+  .g-why { font: 600 .92rem Nunito, sans-serif; margin: 12px 0 0; }
+  .g-log { margin-top: 10px; font-size: .7rem; color: #6f9a5c; display: grid; gap: 2px; }
+  .match { margin-top: 10px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--a1) 9%, transparent); }
+  .match-score { display: flex; align-items: baseline; justify-content: space-between; }
+  .match-score span { font: 700 .62rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .match-score b { font: 700 1.5rem var(--disp); color: var(--a1); }
+  .match summary { cursor: pointer; font: 700 .74rem Nunito, sans-serif; color: var(--muted); margin: 4px 0; }
+  .m-row { display: grid; grid-template-columns: 80px 1fr 26px; gap: 8px; align-items: center; font: .66rem var(--mono); margin: 3px 0; }
+  .m-row i { height: 6px; border-radius: 999px; background: var(--chip); position: relative; overflow: hidden; }
+  .m-row i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--w); border-radius: 999px; background: linear-gradient(90deg, var(--a1), var(--a2)); }
+  .m-row b { text-align: right; }
+  .taste-btns, .nope-why { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .taste-btns button, .nope-why button { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 4px 11px; font: 700 .72rem Nunito, sans-serif; cursor: pointer; }
+  .taste-btns button:first-child:hover { border-color: #6f9a5c; color: #6f9a5c; }
+  .taste-btns button:last-child:hover, .nope-why button:hover { border-color: var(--a1); }
+  @media (max-width: 600px) { .g-facts { grid-template-columns: 1fr 1fr; } }
   .share-row { grid-column: 1 / -1; display: flex; justify-content: center; }
   .share-row .ghost { padding: 10px 18px; color: var(--accent); }
 </style>
@@ -311,6 +338,7 @@
   </div>
 
   <div class="tabs">
+    <button class="tab" data-tab="taste"><span class="pfx">./</span>Your taste ✦</button>
     <button class="tab on" data-tab="find"><span class="pfx">./</span>Find names</button>
     <button class="tab" data-tab="blend"><span class="pfx">./</span>Mom + Dad</button>
     <button class="tab" data-tab="spell"><span class="pfx">./</span>Spellings</button>
@@ -385,6 +413,19 @@
     </div>
   </div>
 
+  <div class="panel hidden" id="tastePanel">
+    <div class="section-label">01 · Seed your taste</div>
+    <div class="grid" style="grid-template-columns: 1fr 1fr">
+      <div><label for="loveIn">Names you love</label><input id="loveIn" placeholder="e.g. Mira, Leila, Inaya, Zoya"></div>
+      <div><label for="hateIn">Names you don't like</label><input id="hateIn" placeholder="e.g. Paisley, Braxton"></div>
+    </div>
+    <div class="actions">
+      <button class="go" id="learnBtn">✦ Learn my taste</button>
+      <button class="ghost" id="tasteReset" title="Start over">Start over</button>
+    </div>
+    <div id="tasteOut"></div>
+  </div>
+
   <div class="panel hidden" id="spellPanel">
     <div class="actions">
       <input id="spellIn" placeholder="Type a name, e.g. Amaira">
@@ -427,7 +468,7 @@ const TAKEN = new Set([...REAL, ...ROOT_NAMES].map(x => x.n.toLowerCase()));
 const INVENTED = {}; // built lazily per gender
 const invented = g => INVENTED[g] || (INVENTED[g] = buildInvented(g, TAKEN));
 const fold = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[\s-]/g, "");
-const KIND_LABEL = { real: "Real name", root: "Built from roots", invented: "✨ Invented" };
+const KIND_LABEL = { attested: "Real name",  real: "Real name", root: "Built from roots", invented: "✨ Invented" };
 
 let gender = "girl", tab = "find", pools = null, shown = [], seen = new Set();
 
@@ -527,7 +568,7 @@ const hexId = n => "0x" + ([...n].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>
 const syllables = n => (fold(n).replace(/y(?=[aeiou])/g, "Y").match(/[aeiouy]+/g) || []).length;
 function card(x, i, featured = false) {
   const v = vibeOf(x);
-  const where = [x.o, x.l && x.l !== x.o ? x.l : ""].filter(Boolean).join(" · ") || "Original";
+  const where = [x.o, x.l && x.l !== x.o ? x.l : ""].filter(Boolean).join(" · ") || (x.type === "attested" ? "Real name · official records" : "Original");
   const themes = themesOf(x).slice(0, 3);
   return `<div class="card${featured ? " featured" : ""}" style="animation-delay:${(i % BATCH) * 35}ms;--a1:${v.aura[0]};--a2:${v.aura[1]}">
     <div class="aura"></div>
@@ -539,6 +580,7 @@ function card(x, i, featured = false) {
     ${x.m ? `<div class="mean">“${esc(x.m)}”</div>` : ""}
     ${x.src ? `<div class="src">${esc(x.src)}</div>` : ""}
     <div class="readout">${hexId(x.n)} · syl ${syllables(x.n)} · len ${fold(x.n).length} · key ${esc(soundKey(x.n))}</div>
+    ${x.match ? matchHTML(x) : ""}
     ${popBadges(x)}
     <div class="vibe">${v.words.map(w => `<span>${w}</span>`).join("")}</div>
     <div class="meters">${meter("Soft", "Strong", 1 - v.soft)}${meter("Classic", "Modern", v.modern)}${meter("Playful", "Elegant", v.elegant)}</div>
@@ -759,7 +801,7 @@ function spell() {
   render(known, "None of these spellings are in our list of names with meanings yet. They're still valid names!");
 }
 
-const run = () => tab === "find" ? find() : tab === "blend" ? blend() : tab === "spell" ? spell() : showPopular();
+const run = () => tab === "find" ? find() : tab === "blend" ? blend() : tab === "spell" ? spell() : tab === "taste" ? showTaste() : showPopular();
 
 // Decoder-style reveal: random digits and letters lock in one by one.
 const GLYPHS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&@";
@@ -878,7 +920,8 @@ $$(".gbtn").forEach(btn => btn.onclick = () => {
 $$(".tab").forEach(btn => btn.onclick = () => {
   tab = btn.dataset.tab;
   $$(".tab").forEach(b => b.classList.toggle("on", b === btn));
-  $("#panel").classList.toggle("hidden", tab === "spell" || tab === "popular");
+  $("#panel").classList.toggle("hidden", tab === "spell" || tab === "popular" || tab === "taste");
+  $("#tastePanel").classList.toggle("hidden", tab !== "taste");
   $("#popPanel").classList.toggle("hidden", tab !== "popular");
   if (tab !== "popular") $("#popList").innerHTML = "";
   $("#spellPanel").classList.toggle("hidden", tab !== "spell");
@@ -909,7 +952,7 @@ $("#first2").oninput = () => { const c = $("#first2").value.trim()[0]; if (c) $(
 $("#first").onchange = () => { const v = $("#first2").value.trim(); if (v && v[0].toUpperCase() !== $("#first").value) $("#first2").value = ""; find(); };
 ["#theme", "#religion", "#culture", "#lang", "#len", "#vibeSel"].forEach(s => $(s).onchange = run);
 $("#lastName").addEventListener("input", () => { clearTimeout(window._ln); window._ln = setTimeout(() => shown.length && render(shown), 250); });
-["#first2", "#ends", "#mom", "#dad", "#spellIn", "#lastName"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
+["#first2", "#ends", "#mom", "#dad", "#spellIn", "#lastName", "#loveIn", "#hateIn"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
 $("#go").onclick = e => { powder(e.clientX, e.clientY); window.throwPaint && throwPaint(); run(); };
 $("#more").onclick = more;
 $("#spellGo").onclick = spell;
@@ -978,5 +1021,6 @@ $("#reset").onclick = () => {
   $('.tab[data-tab="blend"]').click();
 })();
 </script>
+<script src="taste.js"></script>
 </body>
 </html>

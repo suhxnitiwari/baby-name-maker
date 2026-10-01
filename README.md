@@ -10,6 +10,7 @@ Find the perfect name for your baby boy or girl. There are **240,000+ names**, i
 | **Invented originals** | 230,000+ | Brand-new names made from syllables and checked to make sure they're easy to say. |
 
 ## Features
+- **Your taste (taste model):** type names you love and don't; it learns your profile (softness, syllables, endings, cultures, rarity) and ranks ~28,000 names with a match score and a "why this name?" breakdown. Telling it why you reject a name updates the model.
 - **Feminine / Masculine / Gender neutral**
 - **Spelling variations:** common real-world spellings and forms (Mohammed → Muhammad, Mohamed, Mehmet; Leila → Layla, Laila), names that sound alike, and possible letter-swap spellings (Jayden → Jaiden, Suhani → Suhaani)
 - **Vibes:** every card has a color aura, vibe words (dreamy, regal, fierce, timeless…) and Soft↔Strong, Classic↔Modern, Playful↔Elegant meters
