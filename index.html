@@ -8,16 +8,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #fff6ea; --card: #fffdf8; --ink: #2a140c; --muted: #8a6a58; --line: #f0dcc6; --chip: #fbead6;
-    --girl: #d93a2f; --girl-soft: #fde1d6; --boy: #c88a0e; --boy-soft: #fbedc8;
-    --either: #ec6b1f; --either-soft: #fde4cf; --gold: #e0a526;
+    --bg: #f8f1e7; --card: #fffbf5; --ink: #3a2a22; --muted: #8a7262; --line: #e8d9c6; --chip: #f1e4d3;
+    --girl: #b5533c; --girl-soft: #f3ddd3; --boy: #a8843a; --boy-soft: #f1e5c8;
+    --either: #c26a3d; --either-soft: #f4dfcf; --gold: #c4a052;
     --accent: var(--girl); --accent-soft: var(--girl-soft);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #1a0d08; --card: #26150e; --ink: #fbefe2; --muted: #c09a82; --line: #43261a; --chip: #3a2116;
-      --girl: #ff6a55; --girl-soft: #4d1d16; --boy: #f2b632; --boy-soft: #4a3510;
-      --either: #ff8c3a; --either-soft: #4d2a12; --gold: #f2b632;
+      --bg: #1d1612; --card: #2a201a; --ink: #f1e6da; --muted: #b59c88; --line: #43342a; --chip: #362a22;
+      --girl: #d07a63; --girl-soft: #4a2a22; --boy: #cfae63; --boy-soft: #44361c;
+      --either: #d9905f; --either-soft: #4a3020; --gold: #cfae63;
     }
   }
   body[data-g="boy"] { --accent: var(--boy); --accent-soft: var(--boy-soft); }
@@ -80,8 +80,8 @@
   #paint { position: absolute; inset: 0; width: 100%; height: 100%; }
   .hero-wrap > :not(canvas) { position: relative; }
   .paint-hint { text-align: center; font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 6px 0 0; opacity: .8; }
-  h1 { background: linear-gradient(90deg, #d93a2f, #ec6b1f 45%, #e0a526); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .go { background: linear-gradient(100deg, #d93a2f, #ec6b1f 55%, #e0a526); box-shadow: 0 6px 18px -8px #d93a2f; }
+  h1 { background: linear-gradient(90deg, #b5533c, #c97a4a 50%, #b8933f); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .go { background: linear-gradient(100deg, #b5533c, #c97a4a 55%, #c4a052); box-shadow: 0 6px 18px -8px #8a3f2e; }
   .powder { position: fixed; pointer-events: none; z-index: 10; width: 14px; height: 14px; border-radius: 50%; filter: blur(2px); animation: burst 1s ease-out forwards; }
 
   /* hero scene */
@@ -533,13 +533,13 @@ function revealAll() {
 }
 
 // Holi powder palette: red, orange, mustard and friends
-const HOLI = ["217,58,47", "236,107,31", "224,165,38", "245,184,46", "196,83,47", "122,31,43", "242,118,46"];
+const HOLI = ["181,83,60", "201,122,74", "196,160,82", "185,132,102", "164,73,58", "214,180,140", "125,70,58"];
 function powder(x, y, n = 26) {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   for (let i = 0; i < n; i++) {
     const p = document.createElement("span"), a = Math.random() * Math.PI * 2, d = 30 + Math.random() * 90, sz = 6 + Math.random() * 14;
     p.className = "powder"; p.style.left = x - sz / 2 + "px"; p.style.top = y - sz / 2 + "px"; p.style.width = p.style.height = sz + "px";
-    p.style.background = `rgba(${HOLI[Math.random() * HOLI.length | 0]},.85)`;
+    p.style.background = `rgba(${HOLI[Math.random() * HOLI.length | 0]},.75)`;
     p.style.setProperty("--dx", Math.cos(a) * d + "px"); p.style.setProperty("--dy", Math.sin(a) * d + "px");
     document.body.appendChild(p); setTimeout(() => p.remove(), 1050);
   }
@@ -553,7 +553,7 @@ function powder(x, y, n = 26) {
   size(); addEventListener("resize", size);
   const color = () => { if (++spawned % 28 === 0) ci = (ci + 1) % HOLI.length; return HOLI[ci]; };
   const add = (x, y, v, c = color(), vx = 0, vy = 0) => blobs.push({ x: x + (Math.random() - .5) * 14, y: y + (Math.random() - .5) * 14, vx, vy,
-    r: 8 + Math.min(v, 40) * .5 + Math.random() * 12, a: .45, c, g: .5 + Math.random() * .7 });
+    r: 8 + Math.min(v, 40) * .5 + Math.random() * 12, a: .38, c, g: .5 + Math.random() * .7 });
   const move = (x, y) => {
     idle = false;
     const v = last ? Math.hypot(x - last.x, y - last.y) : 0, n = Math.max(1, Math.min(6, v / 12 | 0));
