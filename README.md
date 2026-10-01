@@ -21,7 +21,6 @@ Find the perfect name for your baby boy or girl. There are **240,000+ names**, i
 - **Mom + Dad:** blends both parents' names, and suggests names that use both their initials
 - **Popular:** top names this year and over the last 5, 50 and 100 years, by country
 - **Popularity badges:** each card and spelling shows its real rank, like #3 US 2024
-- **Favorites:** tap ♡ to save names (stored in your browser)
 
 ## Popularity data
 Official government statistics, built into `data/popularity.json` by `scripts/build-popularity.py`:
@@ -33,8 +32,6 @@ Official government statistics, built into `data/popularity.json` by `scripts/bu
 | Australia · New South Wales | 1952–2025 (top 100) | NSW Registry of Births, Deaths & Marriages (CC BY 4.0) |
 | England & Wales (incl. London) | 1996–2025 | Office for National Statistics (Open Government Licence v3.0) |
 | France | 1900–2024 | INSEE (Licence Ouverte) |
-
-India doesn't publish official national baby-name statistics, so it isn't included.
 
 ## Run it
 No build step. Open `index.html`, or serve the folder with any static server.

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Baby Name Maker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #f8f1e7; --card: #fffbf5; --ink: #3a2a22; --muted: #8a7262; --line: #e8d9c6; --chip: #f1e4d3;
@@ -181,6 +181,118 @@
   @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.97); } }
   @media (max-width: 720px) { .grid { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 400px) { .grid { grid-template-columns: 1fr; } }
+
+  /* ═══════════ TECH THEME: amber-terminal HUD in muted warm tones ═══════════ */
+  :root, :root:not([data-theme="light"]) {
+    --bg: #0c0a08; --card: #14100c; --ink: #efe3cf; --muted: #8c7a64; --line: #2c241c; --chip: #1d1712;
+    --girl: #d0674a; --girl-soft: rgba(208,103,74,.14); --boy: #c9a24f; --boy-soft: rgba(201,162,79,.14);
+    --either: #e08a3c; --either-soft: rgba(224,138,60,.14); --gold: #c9a24f; --grid: rgba(239,227,207,.035);
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace; --disp: "Space Grotesk", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #0c0a08; --card: #14100c; --ink: #efe3cf; --muted: #8c7a64; --line: #2c241c; --chip: #1d1712;
+    --girl: #d0674a; --girl-soft: rgba(208,103,74,.14); --boy: #c9a24f; --boy-soft: rgba(201,162,79,.14); --either: #e08a3c; --either-soft: rgba(224,138,60,.14); --gold: #c9a24f; } }
+  ::selection { background: var(--accent); color: var(--bg); }
+  body { font: 14.5px/1.55 var(--mono); background-color: var(--bg);
+    background-image: radial-gradient(ellipse at 50% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%),
+      linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 100% 100%, 32px 32px, 32px 32px; background-attachment: fixed; }
+  body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 60; opacity: .3;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,.35) 0 1px, transparent 1px 3px); }
+  .floaters, .hero { display: none; }
+
+  /* hero */
+  .hero-wrap { border-radius: 0; padding-top: 18px; margin-bottom: 26px; border-bottom: 1px solid var(--line); }
+  .statusbar { display: flex; justify-content: space-between; gap: 10px; font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); padding-bottom: 10px; border-bottom: 1px dashed var(--line); margin-bottom: 26px; }
+  .led { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 8px; box-shadow: 0 0 8px var(--accent); animation: blink 1.6s steps(2) infinite; }
+  h1 { font-family: var(--disp); font-weight: 700; text-transform: uppercase; letter-spacing: .03em; font-size: clamp(2.3rem, 8vw, 4.4rem); line-height: 1;
+    background: none; -webkit-background-clip: border-box; background-clip: border-box; color: var(--ink); text-shadow: 0 0 28px color-mix(in srgb, var(--accent) 45%, transparent); }
+  .glitch { position: relative; }
+  .glitch::before, .glitch::after { content: attr(data-text); position: absolute; inset: 0; pointer-events: none; }
+  .glitch::before { color: var(--girl); transform: translate(-2px, 0); clip-path: inset(0 0 100% 0); animation: glitchA 4.5s infinite steps(1); mix-blend-mode: screen; }
+  .glitch::after { color: var(--boy); transform: translate(2px, 0); clip-path: inset(100% 0 0 0); animation: glitchB 4.5s infinite steps(1); mix-blend-mode: screen; }
+  @keyframes glitchA { 0%, 88%, 100% { clip-path: inset(0 0 100% 0); } 89% { clip-path: inset(10% 0 60% 0); transform: translate(-4px, -1px); } 92% { clip-path: inset(55% 0 20% 0); transform: translate(3px, 1px); } 95% { clip-path: inset(30% 0 45% 0); } }
+  @keyframes glitchB { 0%, 88%, 100% { clip-path: inset(100% 0 0 0); } 90% { clip-path: inset(65% 0 10% 0); transform: translate(4px, 1px); } 93% { clip-path: inset(20% 0 55% 0); transform: translate(-3px, 0); } 96% { clip-path: inset(40% 0 30% 0); } }
+  .tagline { text-align: center; color: var(--accent); font-size: 1.05rem; margin: 14px 0 0; letter-spacing: .02em; }
+  .cursor { animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .terminal { max-width: 600px; margin: 20px auto 0; text-align: left; background: rgba(0,0,0,.42); border: 1px solid var(--line); border-left: 2px solid var(--accent);
+    padding: 12px 14px; font-size: .76rem; line-height: 1.75; color: var(--muted); min-height: 9.2em; backdrop-filter: blur(2px); }
+  .terminal .ok { color: color-mix(in srgb, var(--accent) 75%, var(--ink)); }
+  .terminal .rdy { color: var(--ink); }
+  .sub { font-size: .8rem; letter-spacing: .14em; text-transform: uppercase; margin: 16px 0 0; }
+  .sub b { font-size: 1.05rem; letter-spacing: .06em; }
+  .paint-hint { font-family: var(--mono); text-transform: none; letter-spacing: .04em; font-size: .72rem; opacity: .6; }
+
+  /* HUD corner brackets */
+  .panel, .card { --c: var(--accent); border-radius: 4px; border: 1px solid var(--line);
+    background:
+      linear-gradient(var(--c), var(--c)) top left / 12px 1px no-repeat, linear-gradient(var(--c), var(--c)) top left / 1px 12px no-repeat,
+      linear-gradient(var(--c), var(--c)) top right / 12px 1px no-repeat, linear-gradient(var(--c), var(--c)) top right / 1px 12px no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom left / 12px 1px no-repeat, linear-gradient(var(--c), var(--c)) bottom left / 1px 12px no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom right / 12px 1px no-repeat, linear-gradient(var(--c), var(--c)) bottom right / 1px 12px no-repeat,
+      linear-gradient(180deg, rgba(255,240,220,.025), transparent 40%), var(--card); }
+  .card { --c: var(--a1); }
+  .card::before { height: 1px; opacity: .6; }
+  .aura { opacity: .16; }
+  .section-label, label { font-family: var(--mono); letter-spacing: .14em; text-transform: uppercase; font-size: .68rem; }
+  .section-label::before { content: "// "; color: var(--accent); }
+
+  /* controls */
+  .tabs { gap: 6px; }
+  .tab, .gbtn, .ghost, .pills button { border-radius: 3px; font-family: var(--mono); font-weight: 700; border-width: 1px; letter-spacing: .04em; }
+  .tab { background: transparent; color: var(--muted); padding: 8px 14px; }
+  .tab .pfx { color: var(--accent); opacity: .8; }
+  .tab.on { color: var(--ink); background: var(--accent-soft); border-color: var(--accent); box-shadow: 0 0 16px -4px var(--accent); }
+  .gbtn { text-transform: uppercase; letter-spacing: .14em; font-size: .8rem; }
+  .gbtn.on { box-shadow: 0 0 16px -6px currentColor; }
+  .gbtn[data-v="girl"].on { color: var(--girl); } .gbtn[data-v="boy"].on { color: var(--boy); } .gbtn[data-v="either"].on { color: var(--either); }
+  select, input { border-radius: 3px; background: #0a0806; font-family: var(--mono); font-size: .88rem; }
+  select:focus, input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 14px -4px var(--accent); }
+  .go { border-radius: 3px; font-family: var(--mono); text-transform: uppercase; letter-spacing: .24em; font-size: .95rem; color: #0c0a08;
+    background: linear-gradient(100deg, #d0674a, #e08a3c 55%, #c9a24f); box-shadow: 0 0 22px -6px #e08a3c; }
+  .go:hover { filter: brightness(1.08); }
+  .ghost { text-transform: lowercase; }
+  .count { font-size: .76rem; letter-spacing: .06em; }
+  .count::before { content: "> "; color: var(--accent); }
+  .hint { font-size: .8rem; }
+
+  /* cards as data records */
+  .card .name { font-family: var(--disp); font-size: 1.65rem; letter-spacing: .01em; }
+  .card:hover .name { animation: jitter .25s steps(2) 2; text-shadow: -2px 0 var(--girl), 2px 0 var(--boy); }
+  @keyframes jitter { 50% { transform: translate(1px, -1px); } }
+  .card .meta, .readout, .popbadge, .chip, .vibe span, .meter, .also { font-family: var(--mono); }
+  .card .meta { font-size: .66rem; letter-spacing: .14em; }
+  .readout { font-size: .64rem; letter-spacing: .1em; color: var(--muted); margin-top: 8px; padding: 4px 6px; border: 1px dashed var(--line); text-transform: uppercase; }
+  .card .mean { font-weight: 500; }
+  .card .mean::before { content: "> "; color: var(--a1); }
+  .card .src { font-style: normal; font-size: .76rem; }
+  .card .src::before { content: "// "; color: var(--a1); }
+  .icon { border-radius: 3px; background: transparent; border: 1px solid color-mix(in srgb, var(--a1) 60%, transparent); width: 42px; height: 42px; }
+  .icon svg { stroke: var(--a1); }
+  .vibe span { border-radius: 2px; background: transparent; border: 1px solid color-mix(in srgb, var(--a1) 55%, transparent); text-transform: uppercase; letter-spacing: .1em; font-size: .64rem; font-weight: 700; }
+  .meter { font-size: .6rem; }
+  .track { height: 7px; border-radius: 0; background: repeating-linear-gradient(90deg, var(--line) 0 5px, transparent 5px 7px); }
+  .track i { left: 0 !important; top: 0; height: 100%; width: 0; border-radius: 0; transform: none; box-shadow: none;
+    background: repeating-linear-gradient(90deg, var(--a1) 0 5px, transparent 5px 7px); transition: width .9s cubic-bezier(.2,.8,.2,1); }
+  .chip { border-radius: 2px; font-size: .64rem; text-transform: uppercase; letter-spacing: .08em; }
+  .popbadge { border-radius: 2px; font-size: .64rem; letter-spacing: .06em; }
+  .heart { font-family: var(--mono); }
+  .featured .name { font-family: var(--disp); text-transform: none; }
+  .featured .kicker { font-family: var(--mono); letter-spacing: .3em; }
+  .formula { font-family: var(--mono); font-size: 1.1rem; }
+  .formula .pill { border-radius: 3px; border-width: 1px; }
+  .formula .q { color: #0c0a08; }
+  .spell { font-family: var(--disp); border-radius: 3px; border-width: 1px; }
+  .spell small { font-family: var(--mono); }
+  .rank { border-radius: 3px; font-family: var(--mono); }
+  .rank .nm { font-family: var(--disp); }
+  .rank .bar { border-radius: 0; height: 6px; background: repeating-linear-gradient(90deg, var(--accent) 0 5px, transparent 5px 7px); }
+  .pop-col h3, .results h3 { font-family: var(--mono); font-size: .8rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .pop-col h3::before, .results h3::before { content: "// "; color: var(--accent); }
+  footer { font-family: var(--mono); }
+  .viewall { width: 100%; margin-top: 10px; padding: 10px; color: var(--accent); }
+  .scrambling { color: var(--accent) !important; }
 </style>
 </head>
 <body data-g="girl">
@@ -188,38 +300,19 @@
 <main>
   <div class="hero-wrap" id="heroWrap">
   <canvas id="paint" aria-hidden="true"></canvas>
-  <svg class="hero" viewBox="0 0 600 190" role="img" aria-label="A baby mobile with a moon, stars and clouds">
-    <g class="drift1"><path class="cloud" d="M60 120a22 22 0 0 1 30-26 30 30 0 0 1 56 6 20 20 0 0 1 4 40H66a20 20 0 0 1-6-20z"/></g>
-    <g class="drift2"><path class="cloud" d="M440 92a18 18 0 0 1 25-21 25 25 0 0 1 46 5 17 17 0 0 1 3 33h-69a17 17 0 0 1-5-17z"/></g>
-    <path class="moon" d="M520 22a26 26 0 1 0 30 34 21 21 0 1 1-30-34z"/>
-    <path class="tw" style="animation-delay:0s" d="M40 30l3 8 8 3-8 3-3 8-3-8-8-3 8-3z"/>
-    <path class="tw" style="animation-delay:.8s" d="M170 20l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>
-    <path class="tw" style="animation-delay:1.6s" d="M420 30l2.5 6 6 2.5-6 2.5-2.5 6-2.5-6-6-2.5 6-2.5z"/>
-    <path class="tw" style="animation-delay:.4s" d="M575 110l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>
-    <path class="tw" style="animation-delay:1.2s" d="M20 150l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/>
-    <g class="mobile">
-      <line class="string" x1="300" y1="0" x2="300" y2="34"/>
-      <path class="a" d="M210 36q90-14 180 0" fill="none" stroke="var(--accent)" stroke-width="4" stroke-linecap="round"/>
-      <circle class="a" cx="300" cy="34" r="6"/>
-      <g class="dangle"><line class="string" x1="222" y1="34" x2="222" y2="92"/>
-        <path class="as" d="M222 92l7 15 16 2-12 11 3 16-14-8-14 8 3-16-12-11 16-2z"/></g>
-      <g class="dangle" style="animation-delay:-1.2s"><line class="string" x1="300" y1="40" x2="300" y2="118"/>
-        <path class="as" d="M290 118a20 20 0 1 0 26 26 16 16 0 1 1-26-26z"/></g>
-      <g class="dangle" style="animation-delay:-2.1s"><line class="string" x1="378" y1="34" x2="378" y2="84"/>
-        <path class="as" d="M378 126s-22-13-22-30a12 12 0 0 1 22-7 12 12 0 0 1 22 7c0 17-22 30-22 30z"/></g>
-    </g>
-  </svg>
-  <h1>Baby Name Maker</h1>
-  <p class="sub">Over <b id="total" class="scrambling">092490823948450294sdfjkSADJ</b> names for your little one 👶</p>
-  <p class="paint-hint">move over the colors · tap to throw some</p>
+  <div class="statusbar"><span><i class="led"></i>name_engine v3.0</span><span id="clock">--:--:--</span><span>sys: online</span></div>
+  <h1 class="glitch" data-text="Baby Name Maker">Baby Name Maker</h1>
+  <p class="tagline">&gt; I can code you a name<span class="cursor">_</span></p>
+  <div class="terminal" id="boot" aria-label="Startup log"></div>
+  <p class="sub"><b id="total" class="scrambling">092490823948450294sdfjkSADJ</b> names indexed</p>
+  <p class="paint-hint">// drag across the field · click to inject color</p>
   </div>
 
   <div class="tabs">
-    <button class="tab on" data-tab="find">Find names</button>
-    <button class="tab" data-tab="blend">Mom + Dad</button>
-    <button class="tab" data-tab="spell">Spellings</button>
-    <button class="tab" data-tab="popular">Popular</button>
-    <button class="tab" data-tab="favs">Favorites <span id="favCount"></span></button>
+    <button class="tab on" data-tab="find"><span class="pfx">./</span>find</button>
+    <button class="tab" data-tab="blend"><span class="pfx">./</span>mom+dad</button>
+    <button class="tab" data-tab="spell"><span class="pfx">./</span>spell</button>
+    <button class="tab" data-tab="popular"><span class="pfx">./</span>popular</button>
   </div>
 
   <div class="panel" id="panel">
@@ -266,16 +359,15 @@
     </div>
 
     <div class="actions">
-      <button class="go" id="go">✨ Make names</button>
-      <button class="ghost" id="reset" title="Clear filters">Reset</button>
+      <button class="go" id="go">▶ Execute</button>
+      <button class="ghost" id="reset" title="Clear filters">Clr</button>
     </div>
   </div>
 
   <div class="panel hidden" id="spellPanel">
-    <p class="hint">Type any name to see other ways to spell it, like Jayden → Jaiden, Myra → Maira, or Suhani → Suhaani.</p>
     <div class="actions">
       <input id="spellIn" placeholder="Type a name, e.g. Amaira">
-      <button class="go" id="spellGo" style="flex:0 0 auto;padding:12px 22px">See spellings</button>
+      <button class="go" id="spellGo" style="flex:0 0 auto;padding:12px 22px">▶ Run</button>
     </div>
     <div class="spell-list" id="spellList"></div>
   </div>
@@ -295,12 +387,11 @@
 
   <p class="count" id="count"></p>
   <div class="results" id="results"></div>
-  <div class="actions" style="margin-top:16px"><button class="ghost hidden" id="more" style="flex:1;padding:12px">Show more names ↓</button></div>
+  <div class="actions" style="margin-top:16px"><button class="ghost hidden" id="more" style="flex:1;padding:12px">load --more ↓</button></div>
 </main>
 
 <footer style="position:relative;z-index:1;max-width:860px;margin:0 auto;padding:0 16px 40px;font-size:.78rem;color:var(--muted);text-align:center">
   Popularity data: US Social Security Administration · Statistics Canada (Open Government Licence – Canada) · NSW Registry of Births, Deaths &amp; Marriages (CC BY 4.0) · Office for National Statistics (Open Government Licence v3.0) · INSEE (Licence Ouverte).
-  India does not publish official national baby-name statistics.
 </footer>
 <script src="names.js"></script>
 <script src="generator.js"></script>
@@ -320,10 +411,6 @@ const KIND_LABEL = { real: "Real name", root: "Built from roots", invented: "✨
 let gender = "girl", tab = "find", pools = null, shown = [], seen = new Set();
 
 // ── favorites (per browser) ──
-const favKey = x => `${x.n}|${x.o}`;
-function loadFavs() { try { return JSON.parse(localStorage.getItem("bnm-favs-v2")) || []; } catch { return []; } }
-function saveFavs() { try { localStorage.setItem("bnm-favs-v2", JSON.stringify(favs)); } catch {} }
-let favs = loadFavs();
 
 // ── filter dropdowns ──
 const uniq = arr => [...new Set(arr)].filter(Boolean).sort((a, b) => a.localeCompare(b));
@@ -403,15 +490,16 @@ const left = () => pools && ["real", "root", "invented"].some(k => pools.ptr[k] 
 
 // ── rendering ──
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const meter = (l, r, val) => `<div class="meter"><span>${l}</span><div class="track"><i style="left:${(val * 100).toFixed(0)}%"></i></div><span>${r}</span></div>`;
+const meter = (l, r, val) => `<div class="meter"><span>${l}</span><div class="track"><i style="width:${(val * 100).toFixed(0)}%"></i></div><span>${r}</span></div>`;
+// a stable hex ID per name, like a record number
+const hexId = n => "0x" + ([...n].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) & 0xffff).toString(16).toUpperCase().padStart(4, "0");
+const syllables = n => (fold(n).match(/[aeiouy]+/g) || []).length;
 function card(x, i, featured = false) {
-  const on = favs.some(f => favKey(f) === favKey(x));
   const v = vibeOf(x);
   const where = [x.o, x.l && x.l !== x.o ? x.l : ""].filter(Boolean).join(" · ") || "Original";
   const themes = themesOf(x).slice(0, 3);
   return `<div class="card${featured ? " featured" : ""}" style="animation-delay:${(i % BATCH) * 35}ms;--a1:${v.aura[0]};--a2:${v.aura[1]}">
     <div class="aura"></div>
-    <button class="heart ${on ? "on" : ""}" data-i="${i}" aria-label="Save ${esc(x.n)}">${on ? "♥" : "♡"}</button>
     <div class="wm">${iconFor(x)}</div>
     <div class="head">${featured ? `<div class="kicker">Your baby's name could be</div>` : `<div class="icon">${iconFor(x)}</div>`}<div>
       <div class="name">${esc(x.n)}</div>
@@ -419,6 +507,7 @@ function card(x, i, featured = false) {
     </div></div>
     ${x.m ? `<div class="mean">“${esc(x.m)}”</div>` : ""}
     ${x.src ? `<div class="src">${esc(x.src)}</div>` : ""}
+    <div class="readout">${hexId(x.n)} · syl ${syllables(x.n)} · len ${fold(x.n).length} · key ${esc(soundKey(x.n))}</div>
     ${popBadges(x)}
     <div class="vibe">${v.words.map(w => `<span>${w}</span>`).join("")}</div>
     <div class="meters">${meter("Soft", "Strong", 1 - v.soft)}${meter("Classic", "Modern", v.modern)}${meter("Playful", "Elegant", v.elegant)}</div>
@@ -463,7 +552,6 @@ function alsoSpelled(x) {
 // items: array of names, or of {heading} markers
 function render(items, emptyMsg) {
   shown = items;
-  $("#favCount").textContent = favs.length ? `(${favs.length})` : "";
   if (!items.some(x => !x.heading && !x.formula)) { $("#results").innerHTML = `<div class="empty">${emptyMsg}</div>`; return; }
   $("#results").innerHTML = items.map((x, i) =>
     x.heading ? `<h3>${esc(x.heading)}</h3>` :
@@ -474,6 +562,7 @@ function render(items, emptyMsg) {
 function find() {
   seen = new Set(); buildPools();
   render(draw(BATCH), "No names match all those filters. Try loosening one!");
+  $$("#results .card .name").forEach((el, i) => scramble(el, el.textContent, 420, i * 45));
   $("#more").classList.toggle("hidden", !left());
 }
 function more() {
@@ -522,7 +611,7 @@ function blend() {
 // ── Popularity (official government data) ──
 let POP = null;
 const SHORT = { us: "US", ca: "Canada", au: "NSW", ew: "Eng & Wales", fr: "France" };
-fetch("data/popularity.json").then(r => r.json()).then(d => {
+fetch("data/popularity.json?v=5").then(r => r.json()).then(d => {
   POP = d; buildPopControls();
   if (tab === "popular") showPopular(); else if (shown.length) render(shown);
 }).catch(() => {});
@@ -533,7 +622,7 @@ function popRanks(name, g) {
   const out = [];
   for (const c of POP.countries) for (const sx of sexes) {
     const hit = POP.lookup[c.key][`${sx}:${name.toLowerCase()}`];
-    if (hit) out.push([SHORT[c.key], hit[0], hit[1], c.last]);
+    if (hit) out.push([SHORT[c.key] || c.label, hit[0], hit[1], c.last]);
   }
   return out.sort((a, b) => a[1] - b[1]);
 }
@@ -541,11 +630,10 @@ function popBadges(x) {
   const r = popRanks(x.n, x.g).slice(0, 3);
   return r.map(([c, rank, , yr]) => `<span class="popbadge" title="Rank in ${c}, ${yr}">#${rank} ${c} ${yr}</span>`).join("");
 }
-let popCountry = "us", popWin = "1";
+let popCountry = "us", popWin = "1", popAll = false;
 function buildPopControls() {
   $("#popCountry").innerHTML = [...POP.countries].sort((a, b) => a.label.localeCompare(b.label))
-    .map(c => `<option value="${c.key}" ${c.key === popCountry ? "selected" : ""}>${esc(c.label)}</option>`).join("") +
-    `<option disabled>India (no official data published)</option>`;
+    .map(c => `<option value="${c.key}" ${c.key === popCountry ? "selected" : ""}>${esc(c.label)}</option>`).join("");
 }
 function showPopular() {
   $("#more").classList.add("hidden"); $("#results").innerHTML = ""; $("#count").textContent = "";
@@ -560,14 +648,16 @@ function showPopular() {
   const col = sx => {
     const list = w[sx], max = list[0] ? list[0][1] : 1;
     return `<div class="pop-col panel"><h3>${sx === "girl" ? "Feminine" : "Masculine"} names · ${span}</h3>` +
-      list.slice(0, 50).map(([n, ct], i) => `<div class="rank ${i < 3 ? "top3" : ""}" data-spell="${esc(n)}" style="animation-delay:${Math.min(i, 20) * 25}ms">
+      list.slice(0, popAll ? 100 : 10).map(([n, ct], i) => `<div class="rank ${i < 3 ? "top3" : ""}" data-spell="${esc(n)}" style="animation-delay:${Math.min(i, 20) * 25}ms">
         <span class="n">${i + 1}</span><div><div class="nm">${esc(n)}</div><div class="bar" style="width:${(ct / max * 100).toFixed(1)}%"></div></div>
-        <span class="ct">${ct.toLocaleString()} babies</span></div>`).join("") + `</div>`;
+        <span class="ct">${ct.toLocaleString()} babies</span></div>`).join("") +
+      (list.length > 10 ? `<button class="ghost viewall" data-all>${popAll ? "collapse --top 10 ↑" : `view all --top ${list.length} ↓`}</button>` : "") + `</div>`;
   };
   $("#popList").innerHTML = `<div class="pop-cols">${sexes.map(col).join("")}</div>`;
 }
-$("#popCountry").onchange = e => { popCountry = e.target.value; showPopular(); };
-$("#popWindow").onchange = e => { popWin = e.target.value; showPopular(); };
+$("#popCountry").onchange = e => { popCountry = e.target.value; popAll = false; showPopular(); };
+$("#popWindow").onchange = e => { popWin = e.target.value; popAll = false; showPopular(); };
+$("#popList").addEventListener("click", e => { if (e.target.closest("[data-all]")) { popAll = !popAll; showPopular(); } });
 $("#popList").onclick = e => { const r = e.target.closest("[data-spell]"); if (!r) return; $("#spellIn").value = r.dataset.spell; $('.tab[data-tab="spell"]').click(); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
 // ── Spellings ──
@@ -596,8 +686,7 @@ function spell() {
   render(known, "None of these spellings are in our list of names with meanings yet. They're still valid names!");
 }
 
-function showFavs() { $("#count").textContent = ""; $("#more").classList.add("hidden"); render(favs, "No favorites yet. Tap ♡ on a name to save it."); }
-const run = () => tab === "find" ? find() : tab === "blend" ? blend() : tab === "spell" ? spell() : tab === "popular" ? showPopular() : showFavs();
+const run = () => tab === "find" ? find() : tab === "blend" ? blend() : tab === "spell" ? spell() : showPopular();
 
 // Decoder-style reveal: random digits and letters lock in one by one.
 const GLYPHS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&@";
@@ -716,7 +805,7 @@ $$(".gbtn").forEach(btn => btn.onclick = () => {
 $$(".tab").forEach(btn => btn.onclick = () => {
   tab = btn.dataset.tab;
   $$(".tab").forEach(b => b.classList.toggle("on", b === btn));
-  $("#panel").classList.toggle("hidden", tab === "favs" || tab === "spell" || tab === "popular");
+  $("#panel").classList.toggle("hidden", tab === "spell" || tab === "popular");
   $("#popPanel").classList.toggle("hidden", tab !== "popular");
   if (tab !== "popular") $("#popList").innerHTML = "";
   $("#spellPanel").classList.toggle("hidden", tab !== "spell");
@@ -727,14 +816,6 @@ $$(".tab").forEach(btn => btn.onclick = () => {
 $("#results").onclick = e => {
   const sp = e.target.closest("[data-spell]");
   if (sp) { $("#spellIn").value = sp.dataset.spell; $('.tab[data-tab="spell"]').click(); return window.scrollTo({ top: 0, behavior: "smooth" }); }
-  const h = e.target.closest(".heart"); if (!h) return;
-  const x = shown[h.dataset.i];
-  favs = favs.some(f => favKey(f) === favKey(x)) ? favs.filter(f => favKey(f) !== favKey(x)) : [...favs, x];
-  saveFavs();
-  if (favs.some(f => favKey(f) === favKey(x))) burst(h);
-  if (tab === "favs") return showFavs();
-  h.classList.toggle("on"); h.textContent = h.classList.contains("on") ? "♥" : "♡";
-  $("#favCount").textContent = favs.length ? `(${favs.length})` : "";
 };
 // keep "starts with letter" and "first 2 letters" in sync
 $("#first2").oninput = () => { const c = $("#first2").value.trim()[0]; if (c) $("#first").value = c.toUpperCase(); };
@@ -748,6 +829,33 @@ $("#reset").onclick = () => {
   ["#theme", "#religion", "#culture", "#lang", "#first", "#first2", "#ends", "#len"].forEach(s => $(s).value = "");
   run();
 };
+
+// Boot log: types out what the engine just loaded.
+(function boot() {
+  const el = $("#boot"), fast = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const n = x => x.toLocaleString();
+  const cultures = new Set(REAL.map(x => x.o)).size, faiths = new Set(REAL.flatMap(x => x.r)).size;
+  const lines = [
+    ["> init name_engine --mode=edgy", ""],
+    [`[ok] ${n(REAL.length)} real names · ${cultures} cultures · ${faiths} faiths & mythologies`, "ok"],
+    [`[ok] ${n(ROOT_NAMES.length)} names compiled from sanskrit/arabic/greek/germanic/norse roots`, "ok"],
+    ["[ok] syllable synthesizer online", "ok"],
+    ["[ok] popularity feeds: US · CA · AU · UK · FR", "ok"],
+    ["> ready. awaiting input_", "rdy"],
+  ];
+  let li = 0, ci = 0, line;
+  const tick = () => {
+    if (li >= lines.length) return;
+    if (ci === 0) { line = document.createElement("div"); line.className = lines[li][1]; el.appendChild(line); }
+    const text = lines[li][0];
+    ci = fast ? text.length : Math.min(text.length, ci + 3);
+    line.textContent = text.slice(0, ci);
+    if (ci >= text.length) { li++; ci = 0; setTimeout(tick, fast ? 0 : 140); } else setTimeout(tick, 12);
+  };
+  tick();
+  const clock = () => { $("#clock").textContent = new Date().toTimeString().slice(0, 8); };
+  clock(); setInterval(clock, 1000);
+})();
 
 // Intro: the total starts as a long jumble of characters, shrinks, then locks into the real count.
 (function decodeTotal() {
