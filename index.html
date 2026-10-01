@@ -158,6 +158,25 @@
   .featured .aura { top: -40%; right: auto; left: 50%; transform: translateX(-50%); width: 520px; height: 360px; opacity: .35; animation: none; }
   .scrambling { font-family: ui-monospace, "SF Mono", Menlo, monospace !important; letter-spacing: .04em; color: var(--muted); }
   .burst.star { color: var(--gold); }
+  /* Popular tab */
+  .pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pills button { border: 2px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 999px; padding: 7px 14px; font: inherit; font-weight: 700; font-size: .9rem; cursor: pointer; }
+  .pills button.on { border-color: var(--accent); background: var(--accent-soft); }
+  .pills button[disabled] { opacity: .5; cursor: help; }
+  .pop-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .pop-col h3 { font-family: Fraunces, serif; margin: 0 0 10px; font-size: 1.25rem; }
+  .rank { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 12px; cursor: pointer; animation: pop .35s ease both; }
+  .rank:hover { background: var(--chip); }
+  .rank .n { font-weight: 800; color: var(--muted); text-align: right; font-size: .9rem; }
+  .rank .nm { font-family: Fraunces, serif; font-weight: 700; font-size: 1.08rem; position: relative; }
+  .rank .bar { height: 6px; border-radius: 6px; margin-top: 4px; background: linear-gradient(90deg, #b5533c, #c97a4a 55%, #c4a052); transform-origin: left; animation: grow .7s cubic-bezier(.2,.8,.2,1) both; }
+  .rank .ct { font-size: .8rem; color: var(--muted); font-weight: 700; white-space: nowrap; }
+  .rank.top3 .nm { font-size: 1.35rem; }
+  .rank.top3 .n { color: var(--accent); font-size: 1.1rem; }
+  @keyframes grow { from { transform: scaleX(0); } }
+  .popbadge { display: inline-block; font-size: .72rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; margin: 8px 4px 0 0;
+    background: color-mix(in srgb, var(--a1) 18%, transparent); border: 1px solid color-mix(in srgb, var(--a1) 40%, transparent); }
+  .spell small { font-family: Nunito, sans-serif; font-size: .7rem; font-weight: 800; opacity: .75; margin-left: 4px; }
   .hidden { display: none !important; }
   @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.97); } }
   @media (max-width: 720px) { .grid { grid-template-columns: 1fr 1fr; } }
@@ -199,6 +218,7 @@
     <button class="tab on" data-tab="find">Find names</button>
     <button class="tab" data-tab="blend">Mom + Dad</button>
     <button class="tab" data-tab="spell">Spellings</button>
+    <button class="tab" data-tab="popular">Popular</button>
     <button class="tab" data-tab="favs">Favorites <span id="favCount"></span></button>
   </div>
 
@@ -256,11 +276,28 @@
     <div class="spell-list" id="spellList"></div>
   </div>
 
+  <div class="panel hidden" id="popPanel">
+    <div class="section-label">Country</div>
+    <div class="pills" id="popCountry"></div>
+    <div class="section-label" style="margin-top:14px">Time period</div>
+    <div class="pills" id="popWindow">
+      <button data-w="1" class="on">This year</button><button data-w="5">Last 5 years</button>
+      <button data-w="50">Last 50 years</button><button data-w="100">Last 100 years</button>
+    </div>
+    <p class="hint" id="popNote" style="margin:14px 0 0"></p>
+  </div>
+  <div id="popList"></div>
+
   <p class="count" id="count"></p>
   <div class="results" id="results"></div>
   <div class="actions" style="margin-top:16px"><button class="ghost hidden" id="more" style="flex:1;padding:12px">Show more names ↓</button></div>
 </main>
 
+<footer style="position:relative;z-index:1;max-width:860px;margin:0 auto;padding:0 16px 40px;font-size:.78rem;color:var(--muted);text-align:center">
+  Popularity data: US Social Security Administration · Statistics Canada (Open Government Licence – Canada) · BC Vital Statistics Agency (Open Government Licence – BC) ·
+  NSW Registry of Births, Deaths &amp; Marriages (CC BY 4.0) · Office for National Statistics (Open Government Licence v3.0) · INSEE (Licence Ouverte).
+  India does not publish official national baby-name statistics.
+</footer>
 <script src="names.js"></script>
 <script src="generator.js"></script>
 <script>
@@ -373,6 +410,7 @@ function card(x, i, featured = false) {
     </div></div>
     ${x.m ? `<div class="mean">“${esc(x.m)}”</div>` : ""}
     ${x.src ? `<div class="src">${esc(x.src)}</div>` : ""}
+    ${popBadges(x)}
     <div class="vibe">${v.words.map(w => `<span>${w}</span>`).join("")}</div>
     <div class="meters">${meter("Soft", "Strong", 1 - v.soft)}${meter("Classic", "Modern", v.modern)}${meter("Playful", "Elegant", v.elegant)}</div>
     ${alsoSpelled(x)}
@@ -472,6 +510,56 @@ function blend() {
   revealAll();
 }
 
+// ── Popularity (official government data) ──
+let POP = null;
+const SHORT = { us: "US", ca: "Canada", bc: "BC", au: "NSW", ew: "Eng & Wales", fr: "France" };
+fetch("data/popularity.json").then(r => r.json()).then(d => {
+  POP = d; buildPopControls();
+  if (tab === "popular") showPopular(); else if (shown.length) render(shown);
+}).catch(() => {});
+// best ranks for a name across countries, e.g. [["US", 3, 14718, 2024], ...]
+function popRanks(name, g) {
+  if (!POP) return [];
+  const sexes = g === "either" ? ["g", "b"] : [g[0]];
+  const out = [];
+  for (const c of POP.countries) for (const sx of sexes) {
+    const hit = POP.lookup[c.key][`${sx}:${name.toLowerCase()}`];
+    if (hit) out.push([SHORT[c.key], hit[0], hit[1], c.last]);
+  }
+  return out.sort((a, b) => a[1] - b[1]);
+}
+function popBadges(x) {
+  const r = popRanks(x.n, x.g).slice(0, 3);
+  return r.map(([c, rank, , yr]) => `<span class="popbadge" title="Rank in ${c}, ${yr}">#${rank} ${c} ${yr}</span>`).join("");
+}
+let popCountry = "us", popWin = "1";
+function buildPopControls() {
+  $("#popCountry").innerHTML = POP.countries.map(c => `<button data-c="${c.key}" class="${c.key === popCountry ? "on" : ""}">${esc(c.label)}</button>`).join("") +
+    `<button disabled title="India doesn't publish official national baby-name statistics">India: no official data</button>`;
+}
+function showPopular() {
+  $("#more").classList.add("hidden"); $("#results").innerHTML = ""; $("#count").textContent = "";
+  if (!POP) { $("#popList").innerHTML = `<div class="empty">Loading official data…</div>`; return; }
+  const c = POP.countries.find(c => c.key === popCountry), w = c.top[popWin];
+  const span = w.from === c.last ? `${c.last}` : `${w.from}–${c.last}`;
+  const short = popWin !== "1" && c.last - w.from + 1 < +popWin;
+  $("#popNote").innerHTML = `Showing <b>${span}</b> · source: ${esc(c.source)}` +
+    (short ? ` · <b>Heads up:</b> ${esc(c.label)} data only starts in ${c.first}, so this covers ${c.last - c.first + 1} years.` : "") +
+    (popCountry === "ew" ? " · London is counted inside England & Wales." : "");
+  const sexes = gender === "either" ? ["girl", "boy"] : [gender];
+  const col = sx => {
+    const list = w[sx], max = list[0] ? list[0][1] : 1;
+    return `<div class="pop-col panel"><h3>${sx === "girl" ? "Feminine" : "Masculine"} names · ${span}</h3>` +
+      list.slice(0, 50).map(([n, ct], i) => `<div class="rank ${i < 3 ? "top3" : ""}" data-spell="${esc(n)}" style="animation-delay:${Math.min(i, 20) * 25}ms">
+        <span class="n">${i + 1}</span><div><div class="nm">${esc(n)}</div><div class="bar" style="width:${(ct / max * 100).toFixed(1)}%"></div></div>
+        <span class="ct">${ct.toLocaleString()} babies</span></div>`).join("") + `</div>`;
+  };
+  $("#popList").innerHTML = `<div class="pop-cols">${sexes.map(col).join("")}</div>`;
+}
+$("#popCountry").onclick = e => { const b = e.target.closest("button[data-c]"); if (!b) return; popCountry = b.dataset.c; $$("#popCountry button").forEach(x => x.classList.toggle("on", x === b)); showPopular(); };
+$("#popWindow").onclick = e => { const b = e.target.closest("button[data-w]"); if (!b) return; popWin = b.dataset.w; $$("#popWindow button").forEach(x => x.classList.toggle("on", x === b)); showPopular(); };
+$("#popList").onclick = e => { const r = e.target.closest("[data-spell]"); if (!r) return; $("#spellIn").value = r.dataset.spell; $('.tab[data-tab="spell"]').click(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+
 // ── Spellings ──
 const BY_NAME = new Map();
 [...REAL, ...ROOT_NAMES].forEach(x => {
@@ -483,12 +571,14 @@ function spell() {
   $("#more").classList.add("hidden");
   if (!name) { $("#spellList").innerHTML = ""; $("#count").textContent = ""; return render([], "Type a name to see its spellings ✏️"); }
   const pretty = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-  const vars = spellingsOf(name, soundAlikes(name)).slice(0, 20);
+  const best = n => (popRanks(n, gender)[0] || [0, 1e9])[1];
+  const vars = spellingsOf(name, soundAlikes(name)).slice(0, 20).sort((a, b) => (b.common - a.common) || (best(a.n) - best(b.n)));
+  const tag = n => { const r = popRanks(n, gender)[0]; return r ? `<small>#${r[1]} ${r[0]}</small>` : ""; };
   const all = [{ n: pretty, common: true }, ...vars];
   const known = all.flatMap(s => BY_NAME.get(fold(s.n)) || []);
   const nCommon = vars.filter(s => s.common).length;
   $("#spellList").innerHTML = all.map((s, i) =>
-    `<span class="spell ${i === 0 ? "orig" : s.common ? "known" : "possible"}">${esc(s.n)}</span>`).join("") +
+    `<span class="spell ${i === 0 ? "orig" : s.common ? "known" : "possible"}">${esc(s.n)}${tag(s.n)}</span>`).join("") +
     (vars.length ? `<div class="legend" style="flex-basis:100%">Filled = common spellings &amp; forms used around the world · dashed = possible spellings</div>` : "");
   $("#count").innerHTML = vars.length
     ? `<b>${nCommon}</b> common and <b>${vars.length - nCommon}</b> possible spellings of ${esc(pretty)}`
@@ -497,7 +587,7 @@ function spell() {
 }
 
 function showFavs() { $("#count").textContent = ""; $("#more").classList.add("hidden"); render(favs, "No favorites yet. Tap ♡ on a name to save it."); }
-const run = () => tab === "find" ? find() : tab === "blend" ? blend() : tab === "spell" ? spell() : showFavs();
+const run = () => tab === "find" ? find() : tab === "blend" ? blend() : tab === "spell" ? spell() : tab === "popular" ? showPopular() : showFavs();
 
 // Decoder-style reveal: random digits and letters lock in one by one.
 const GLYPHS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&@";
@@ -616,7 +706,9 @@ $$(".gbtn").forEach(btn => btn.onclick = () => {
 $$(".tab").forEach(btn => btn.onclick = () => {
   tab = btn.dataset.tab;
   $$(".tab").forEach(b => b.classList.toggle("on", b === btn));
-  $("#panel").classList.toggle("hidden", tab === "favs" || tab === "spell");
+  $("#panel").classList.toggle("hidden", tab === "favs" || tab === "spell" || tab === "popular");
+  $("#popPanel").classList.toggle("hidden", tab !== "popular");
+  if (tab !== "popular") $("#popList").innerHTML = "";
   $("#spellPanel").classList.toggle("hidden", tab !== "spell");
   $("#blendInputs").classList.toggle("hidden", tab !== "blend");
   $("#letterFilters").classList.toggle("hidden", tab === "blend");

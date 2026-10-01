@@ -19,7 +19,23 @@ Find the perfect name for your baby boy or girl. There are **240,000+ names**, i
 - **Culture / ethnicity** and **language** filters
 - **Letter filters:** starts with a letter, first 2 letters, ends with
 - **Mom + Dad:** blends both parents' names, and suggests names that use both their initials
+- **Popular:** top names this year and over the last 5, 50 and 100 years, by country
+- **Popularity badges:** each card and spelling shows its real rank, like #3 US 2024
 - **Favorites:** tap ♡ to save names (stored in your browser)
+
+## Popularity data
+Official government statistics, built into `data/popularity.json` by `scripts/build-popularity.py`:
+
+| Where | Years | Source |
+|---|---|---|
+| United States | 1880–2024 | Social Security Administration (public domain) |
+| Canada | 1991–2025 | Statistics Canada, table 17-10-0147-01 (Open Government Licence – Canada) |
+| Canada · British Columbia | 1924–2023 | BC Vital Statistics Agency (Open Government Licence – BC) |
+| Australia · New South Wales | 1952–2025 (top 100) | NSW Registry of Births, Deaths & Marriages (CC BY 4.0) |
+| England & Wales (incl. London) | 1996–2025 | Office for National Statistics (Open Government Licence v3.0) |
+| France | 1900–2024 | INSEE (Licence Ouverte) |
+
+India doesn't publish official national baby-name statistics, so it isn't included.
 
 ## Run it
 No build step. Open `index.html`, or serve the folder with any static server.
