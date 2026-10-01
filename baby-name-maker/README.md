@@ -10,10 +10,7 @@ Find the perfect name for your baby boy or girl. There are **240,000+ names**, i
 | **Invented originals** | 230,000+ | Brand-new names made from syllables and checked to make sure they're easy to say. |
 
 ## Features
-- **Feminine / Masculine / Gender neutral**
-- **Spelling variations:** common real-world spellings and forms (Mohammed → Muhammad, Mohamed, Mehmet; Leila → Layla, Laila), names that sound alike, and possible letter-swap spellings (Jayden → Jaiden, Suhani → Suhaani)
-- **Vibes:** every card has a color aura, vibe words (dreamy, regal, fierce, timeless…) and Soft↔Strong, Classic↔Modern, Playful↔Elegant meters
-- **Mom + Dad reveal:** the top blend decodes from random characters into the name
+- **Girl / Boy / Either**
 - **Meaning groups:** Beautiful, Feminine & graceful, Kind & gentle, Strong, Brave & fierce, Wise, Divine & faith, Royal & noble, Light & sun, Moon & stars, Nature, Love & joy, and more. Girl themes are listed first for girls, boy themes first for boys.
 - **Religion filter:** Christian, Islamic, Jewish, Hindu, Sikh, Buddhist, Jain, Zoroastrian, Greek, Norse and Celtic myth
 - **Culture / ethnicity** and **language** filters
