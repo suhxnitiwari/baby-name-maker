@@ -514,12 +514,12 @@ if (typeof module !== "undefined") Object.assign(module.exports, { spellingsOf, 
 // 7. VIBES: what a name feels like, from how it sounds + what it means.
 //    soft (0 strong … 1 soft), modern (0 classic … 1 modern), elegant (0 playful … 1 elegant)
 // ─────────────────────────────────────────────────────────────
-const AURAS = { // [color 1, color 2] for the card glow
-  celestial: ["#8b7fe8", "#c9b8ff"], earthy: ["#8fb07a", "#e2c79a"], regal: ["#c9a227", "#9b5fb5"],
-  fierce: ["#e8603c", "#f2a33a"], romantic: ["#f08aa8", "#ffc4a8"], spiritual: ["#f0a830", "#ffe08a"],
-  calm: ["#6fb6d9", "#a8e0d4"], playful: ["#ffd23f", "#7fdcb0"], modern: ["#3cc6c0", "#9a7bf0"],
-  timeless: ["#c8a888", "#e8dcc8"], strong: ["#c0563a", "#5a6fd6"], bold: ["#e2553f", "#7a5af0"], wise: ["#4f78c4", "#9fc3e8"],
-  warm: ["#f39a5b", "#f7c873"], dreamy: ["#b69cf0", "#f5b8d8"], fresh: ["#5ccf9f", "#b8ec7a"],
+const AURAS = { // [color 1, color 2] for the card glow, all warm Holi tones
+  celestial: ["#e0a526", "#7a1f2b"], earthy: ["#a8743a", "#d9b25c"], regal: ["#b8860b", "#8c1d2c"],
+  fierce: ["#d93a2f", "#f2762e"], romantic: ["#e8564a", "#f7a37a"], spiritual: ["#f28c1c", "#f5c542"],
+  calm: ["#e9a06b", "#f3d29a"], playful: ["#f5b82e", "#ff7a45"], modern: ["#ec6b1f", "#c4532f"],
+  timeless: ["#b88a5e", "#e6cfa8"], bold: ["#c0262d", "#ec6b1f"], wise: ["#9a5a1f", "#e0a526"],
+  warm: ["#f39a3b", "#f7c873"], dreamy: ["#f07b5a", "#f5c16c"], fresh: ["#e0a526", "#f08c3a"], strong: ["#a3241f", "#d96b1f"],
 };
 const THEME_VIBE = {
   "Moon & stars": "celestial", "Light & sun": "dreamy", "Nature": "earthy", "Royal & noble": "regal",
