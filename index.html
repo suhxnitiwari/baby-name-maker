@@ -730,7 +730,7 @@ $("#results").onclick = e => {
 $("#first2").oninput = () => { const c = $("#first2").value.trim()[0]; if (c) $("#first").value = c.toUpperCase(); };
 $("#first").onchange = () => { const v = $("#first2").value.trim(); if (v && v[0].toUpperCase() !== $("#first").value) $("#first2").value = ""; find(); };
 ["#theme", "#religion", "#culture", "#lang", "#kind"].forEach(s => $(s).onchange = run);
-["#first2", "#ends", "#mom", "#dad", "#spellIn"].forEach(s => $(s).onkeydown = e => e.key === "Enter" && run());
+["#first2", "#ends", "#mom", "#dad", "#spellIn"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
 $("#go").onclick = e => { powder(e.clientX, e.clientY); window.throwPaint && throwPaint(); run(); };
 $("#more").onclick = more;
 $("#spellGo").onclick = spell;
