@@ -30,7 +30,6 @@ Official government statistics, built into `data/popularity.json` by `scripts/bu
 |---|---|---|
 | United States | 1880–2024 | Social Security Administration (public domain) |
 | Canada | 1991–2025 | Statistics Canada, table 17-10-0147-01 (Open Government Licence – Canada) |
-| Canada · British Columbia | 1924–2023 | BC Vital Statistics Agency (Open Government Licence – BC) |
 | Australia · New South Wales | 1952–2025 (top 100) | NSW Registry of Births, Deaths & Marriages (CC BY 4.0) |
 | England & Wales (incl. London) | 1996–2025 | Office for National Statistics (Open Government Licence v3.0) |
 | France | 1900–2024 | INSEE (Licence Ouverte) |

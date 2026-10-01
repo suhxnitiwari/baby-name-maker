@@ -210,7 +210,7 @@
     </g>
   </svg>
   <h1>Baby Name Maker</h1>
-  <p class="sub">Over <b id="total">200,000</b> names for your little one 👶</p>
+  <p class="sub">Over <b id="total" class="scrambling">092490823948450294sdfjkSADJ</b> names for your little one 👶</p>
   <p class="paint-hint">move over the colors · tap to throw some</p>
   </div>
 
@@ -277,12 +277,13 @@
   </div>
 
   <div class="panel hidden" id="popPanel">
-    <div class="section-label">Country</div>
-    <div class="pills" id="popCountry"></div>
-    <div class="section-label" style="margin-top:14px">Time period</div>
-    <div class="pills" id="popWindow">
-      <button data-w="1" class="on">This year</button><button data-w="5">Last 5 years</button>
-      <button data-w="50">Last 50 years</button><button data-w="100">Last 100 years</button>
+    <div class="grid" style="grid-template-columns: 1fr 1fr">
+      <div><label for="popCountry">Country</label><select id="popCountry"></select></div>
+      <div><label for="popWindow">Time period</label>
+        <select id="popWindow">
+          <option value="1">This year</option><option value="5">Last 5 years</option>
+          <option value="50">Last 50 years</option><option value="100">Last 100 years</option>
+        </select></div>
     </div>
     <p class="hint" id="popNote" style="margin:14px 0 0"></p>
   </div>
@@ -294,8 +295,7 @@
 </main>
 
 <footer style="position:relative;z-index:1;max-width:860px;margin:0 auto;padding:0 16px 40px;font-size:.78rem;color:var(--muted);text-align:center">
-  Popularity data: US Social Security Administration · Statistics Canada (Open Government Licence – Canada) · BC Vital Statistics Agency (Open Government Licence – BC) ·
-  NSW Registry of Births, Deaths &amp; Marriages (CC BY 4.0) · Office for National Statistics (Open Government Licence v3.0) · INSEE (Licence Ouverte).
+  Popularity data: US Social Security Administration · Statistics Canada (Open Government Licence – Canada) · NSW Registry of Births, Deaths &amp; Marriages (CC BY 4.0) · Office for National Statistics (Open Government Licence v3.0) · INSEE (Licence Ouverte).
   India does not publish official national baby-name statistics.
 </footer>
 <script src="names.js"></script>
@@ -512,7 +512,7 @@ function blend() {
 
 // ── Popularity (official government data) ──
 let POP = null;
-const SHORT = { us: "US", ca: "Canada", bc: "BC", au: "NSW", ew: "Eng & Wales", fr: "France" };
+const SHORT = { us: "US", ca: "Canada", au: "NSW", ew: "Eng & Wales", fr: "France" };
 fetch("data/popularity.json").then(r => r.json()).then(d => {
   POP = d; buildPopControls();
   if (tab === "popular") showPopular(); else if (shown.length) render(shown);
@@ -534,8 +534,9 @@ function popBadges(x) {
 }
 let popCountry = "us", popWin = "1";
 function buildPopControls() {
-  $("#popCountry").innerHTML = POP.countries.map(c => `<button data-c="${c.key}" class="${c.key === popCountry ? "on" : ""}">${esc(c.label)}</button>`).join("") +
-    `<button disabled title="India doesn't publish official national baby-name statistics">India: no official data</button>`;
+  $("#popCountry").innerHTML = [...POP.countries].sort((a, b) => a.label.localeCompare(b.label))
+    .map(c => `<option value="${c.key}" ${c.key === popCountry ? "selected" : ""}>${esc(c.label)}</option>`).join("") +
+    `<option disabled>India (no official data published)</option>`;
 }
 function showPopular() {
   $("#more").classList.add("hidden"); $("#results").innerHTML = ""; $("#count").textContent = "";
@@ -556,8 +557,8 @@ function showPopular() {
   };
   $("#popList").innerHTML = `<div class="pop-cols">${sexes.map(col).join("")}</div>`;
 }
-$("#popCountry").onclick = e => { const b = e.target.closest("button[data-c]"); if (!b) return; popCountry = b.dataset.c; $$("#popCountry button").forEach(x => x.classList.toggle("on", x === b)); showPopular(); };
-$("#popWindow").onclick = e => { const b = e.target.closest("button[data-w]"); if (!b) return; popWin = b.dataset.w; $$("#popWindow button").forEach(x => x.classList.toggle("on", x === b)); showPopular(); };
+$("#popCountry").onchange = e => { popCountry = e.target.value; showPopular(); };
+$("#popWindow").onchange = e => { popWin = e.target.value; showPopular(); };
 $("#popList").onclick = e => { const r = e.target.closest("[data-spell]"); if (!r) return; $("#spellIn").value = r.dataset.spell; $('.tab[data-tab="spell"]').click(); window.scrollTo({ top: 0, behavior: "smooth" }); };
 
 // ── Spellings ──
@@ -739,7 +740,30 @@ $("#reset").onclick = () => {
   run();
 };
 
-$("#total").textContent = (REAL.length + ROOT_NAMES.length + ["girl", "boy", "either"].reduce((s, g) => s + invented(g).length, 0)).toLocaleString();
+// Intro: the total starts as a long jumble of characters, shrinks, then locks into the real count.
+(function decodeTotal() {
+  const el = $("#total");
+  const text = (REAL.length + ROOT_NAMES.length + ["girl", "boy", "either"].reduce((s, g) => s + invented(g).length, 0)).toLocaleString();
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { el.textContent = text; return; }
+  const CH = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  const rnd = n => Array.from({ length: n }, () => CH[Math.random() * CH.length | 0]).join("");
+  const EXTRA = 26, NOISE = 900, LOCK = 1300;
+  el.classList.add("scrambling");
+  let t0 = null;
+  const step = ts => {
+    t0 ??= ts;
+    const t = ts - t0;
+    if (t < NOISE) el.textContent = rnd(text.length + EXTRA);               // pure noise
+    else {
+      const p = Math.min(1, (t - NOISE) / LOCK);
+      const locked = Math.floor(p * text.length), extra = Math.round((1 - p) * EXTRA);
+      el.textContent = text.slice(0, locked) + rnd(text.length - locked + extra);
+      if (p >= 1) { el.textContent = text; el.classList.remove("scrambling"); return; }
+    }
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+})();
 find();
 </script>
 </body>

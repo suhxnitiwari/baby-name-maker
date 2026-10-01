@@ -80,7 +80,6 @@ def glob1(d, ext): return next(os.path.join(d, f) for f in os.listdir(d) if f.en
 SOURCES = [
     ("us", "United States", "US Social Security Administration", us),
     ("ca", "Canada", "Statistics Canada", canada),
-    ("bc", "Canada · British Columbia", "BC Vital Statistics Agency", bc),
     ("au", "Australia · New South Wales", "NSW Registry of Births, Deaths & Marriages", nsw),
     ("ew", "England & Wales (incl. London)", "Office for National Statistics", england_wales),
     ("fr", "France", "INSEE", france),
