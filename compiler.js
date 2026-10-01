@@ -144,7 +144,7 @@ function blend() {
   if (fam.mode !== "new") {
     const pool = attestedPool();
     for (const n of pool) {
-      if (parentSet.has(fold(n))) continue;
+      if (parentSet.has(fold(n)) || wrongGender(n)) continue;
       const hit = carryBoth(n, a, b);
       if (hit) real.push({ n, hit, method: "real name" });
     }
@@ -155,6 +155,7 @@ function blend() {
   const synthKeys = new Set();
   let cands = [];
   for (const c of raw) {
+    if (wrongGender(c.n)) continue;
     const att = attestation(c.n);
     synthKeys.add(fold(c.n));
     cands.push(makeCand(c.n, c.segs, c.method, att, names));

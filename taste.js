@@ -83,7 +83,7 @@ function candidates() {
   const sounds = new Set(mine.map(soundKey));
   mine.forEach(n => (FAMILY_OF.get(fold(n)) || []).forEach(v => seen.add(fold(v))));
   const out = [];
-  const add = x => { const k = fold(x.n); if (seen.has(k) || sounds.has(soundKey(x.n))) return; seen.add(k); out.push(x); };
+  const add = x => { const k = fold(x.n); if (seen.has(k) || sounds.has(soundKey(x.n)) || wrongGender(x.n)) return; seen.add(k); out.push(x); };
   [...REAL, ...ROOT_NAMES].filter(genderOk).forEach(add);
   if (POP) {
     const sx = gender === "either" ? null : gender[0];

@@ -59,6 +59,7 @@ Timothy|b|Greek|Greek|Christian|honoring God|companion of Paul
 Lydia|g|Greek|Greek|Christian|woman from Lydia|first European convert in Acts
 Luke|b|Greek|Greek|Christian|from Lucania|author of the Gospel of Luke
 Aarav|b|Indian|Sanskrit||peaceful, calm|
+Anand|b|Indian|Sanskrit|Hindu|joy, bliss|
 Arjun|b|Indian|Sanskrit|Hindu|bright, shining|archer hero of the Mahabharata
 Krishna|b|Indian|Sanskrit|Hindu|dark, all-attractive|avatar of Vishnu, speaker of the Bhagavad Gita
 Ram|b|Indian|Sanskrit|Hindu|pleasing|hero of the Ramayana

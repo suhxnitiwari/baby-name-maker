@@ -492,7 +492,7 @@
 <footer style="position:relative;z-index:1;max-width:860px;margin:0 auto;padding:0 16px 40px;font-size:.78rem;color:var(--muted);text-align:center">
   Popularity data: US Social Security Administration · Statistics Canada (Open Government Licence – Canada) · NSW Registry of Births, Deaths &amp; Marriages (CC BY 4.0) · Office for National Statistics (Open Government Licence v3.0) · INSEE (Licence Ouverte).
 </footer>
-<script src="names.js"></script>
+<script src="names.js?v=3"></script>
 <script src="generator.js"></script>
 <script>
 const $ = s => document.querySelector(s);
@@ -809,6 +809,9 @@ $("#popList").onclick = e => { const r = e.target.closest("[data-spell]"); if (!
 
 // ── Spellings ──
 const BY_NAME = new Map();
+// A name our list only knows for the other gender never shows up for this one
+// (official records include a few cross-gender uses, like 47 girls named Anand in Canada).
+const wrongGender = n => { const k = BY_NAME.get(fold(n)); return !!(k && k.length && !k.some(genderOk)); };
 [...REAL, ...ROOT_NAMES].forEach(x => {
   const k = fold(x.n); BY_NAME.has(k) ? BY_NAME.get(k).push(x) : BY_NAME.set(k, [x]);
   const sk = soundKey(x.n); SOUND_INDEX.has(sk) ? SOUND_INDEX.get(sk).push(x.n) : SOUND_INDEX.set(sk, [x.n]);
@@ -1054,7 +1057,7 @@ addEventListener("DOMContentLoaded", function openShared() {
   $('.tab[data-tab="blend"]').click();
 });
 </script>
-<script src="taste.js?v=2"></script>
-<script src="compiler.js?v=2"></script>
+<script src="taste.js?v=3"></script>
+<script src="compiler.js?v=3"></script>
 </body>
 </html>
