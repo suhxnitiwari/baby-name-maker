@@ -261,12 +261,12 @@ function provHTML(x) {
   </div>`;
 }
 
-function pipelineHTML(log) {
+function pipelineHTML(log, title = "name compiler") {
   const dots = (a, b) => ".".repeat(Math.max(3, 52 - a.length - b.length));
   return `<div class="pipeline">
-    <div class="pipe-head">name compiler · ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+    <div class="pipe-head">${esc(title)} · ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
     ${log.map(([a, b], i) => `<div class="pipe-line" style="animation-delay:${i * 140}ms"><span>${esc(a)}</span><i>${dots(a, b)}</i><b>${esc(b)}</b></div>`).join("")}
-    <div class="pipe-note">scores are heuristics: balance, how easy it is to say, surname flow, real-name evidence, length</div>
+    ${title === "name compiler" ? `<div class="pipe-note">scores are heuristics: balance, how easy it is to say, surname flow, real-name evidence, length</div>` : ""}
   </div>`;
 }
 

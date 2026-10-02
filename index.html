@@ -298,6 +298,43 @@
   .flow-ok { color: #6f9a5c; font-weight: 700; font-size: .78rem; }
   .flow-warn { color: #c0763a; font-weight: 700; font-size: .78rem; }
   .flow-good { color: var(--muted); font: .68rem var(--mono); }
+  /* Lulla, the robot assistant */
+  .hero-grid { display: grid; grid-template-columns: 210px 1fr; gap: 26px; align-items: center; max-width: 820px; margin: 22px auto 0; }
+  .hero-grid .terminal { margin: 0; max-width: none; }
+  .bot-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .bot { position: relative; width: 140px; display: flex; flex-direction: column; align-items: center; animation: botFloat 4.5s ease-in-out infinite; }
+  @keyframes botFloat { 50% { transform: translateY(-7px); } }
+  .bot-antenna { width: 3px; height: 16px; background: #d9c8b6; border-radius: 3px; position: relative; }
+  .bot-antenna i { position: absolute; top: -8px; left: 50%; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent); animation: breathe 2.4s ease-in-out infinite; }
+  .bot-head { width: 140px; height: 104px; border-radius: 46px 46px 42px 42px; display: grid; place-items: center;
+    background: radial-gradient(circle at 30% 18%, #ffffff, #f5ede4 52%, #e5d6c6); box-shadow: inset 0 -7px 14px rgba(120,80,50,.13), 0 16px 30px -14px rgba(120,70,40,.4); }
+  .bot-visor { position: relative; width: 116px; height: 56px; border-radius: 30px; overflow: hidden; background: linear-gradient(180deg, #3b2c25, #18110e); box-shadow: inset 0 3px 8px rgba(0,0,0,.55); }
+  .bot-visor::after { content: ""; position: absolute; top: 5px; left: 14px; width: 54px; height: 10px; border-radius: 10px; background: linear-gradient(90deg, rgba(255,255,255,.2), transparent); }
+  .eye { position: absolute; top: 18px; width: 15px; height: 20px; border-radius: 10px; background: #f7c47d; box-shadow: 0 0 10px #f2a25a, 0 0 22px rgba(242,162,90,.55);
+    transform: translate(var(--ex, 0px), var(--ey, 0px)); transition: transform .14s ease-out, height .2s, top .2s, border-radius .2s; animation: blinkEye 5.5s infinite; }
+  .eye.l { left: 33px; } .eye.r { right: 33px; }
+  @keyframes blinkEye { 0%, 47%, 51%, 100% { clip-path: inset(0 0 0 0); } 49% { clip-path: inset(46% 0 46% 0); } }
+  .bot.happy .eye { height: 9px; top: 22px; border-radius: 12px 12px 3px 3px; }
+  .bot.think .eye { height: 8px; top: 24px; animation: scanEye .7s ease-in-out infinite alternate; }
+  @keyframes scanEye { from { transform: translateX(-9px); } to { transform: translateX(9px); } }
+  .bot-neck { width: 34px; height: 8px; background: #d9c8b6; border-radius: 0 0 6px 6px; }
+  .bot-body { width: 92px; height: 40px; border-radius: 24px 24px 18px 18px; display: grid; place-items: center;
+    background: radial-gradient(circle at 30% 20%, #ffffff, #efe4d8 60%, #e1d1c0); box-shadow: 0 10px 20px -12px rgba(120,70,40,.4); }
+  .bot-light { width: 36px; height: 5px; border-radius: 4px; background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: breathe 2.4s ease-in-out infinite; }
+  .bubble { position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 9px 14px; font: .74rem/1.5 var(--mono); color: var(--ink);
+    min-height: 2.8em; width: 210px; text-align: center; box-shadow: var(--shadow); backdrop-filter: blur(8px); }
+  .bubble::before { content: ""; position: absolute; top: -7px; left: 50%; width: 12px; height: 12px; margin-left: -6px; transform: rotate(45deg); background: var(--card); border-left: 1px solid var(--line); border-top: 1px solid var(--line); }
+  .step-q::before { content: ""; display: inline-block; width: 40px; height: 24px; margin-right: 12px; vertical-align: -3px; border-radius: 13px;
+    background: radial-gradient(circle at 33% 50%, #f7c47d 0 3.5px, transparent 4.5px), radial-gradient(circle at 67% 50%, #f7c47d 0 3.5px, transparent 4.5px), linear-gradient(180deg, #3b2c25, #18110e);
+    box-shadow: 0 0 12px rgba(242,162,90,.35); }
+  /* a soft sensor scan sweeping down the page */
+  body::before { content: ""; position: fixed; left: 0; right: 0; top: -140px; height: 140px; z-index: 0; pointer-events: none;
+    background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 9%, transparent) 70%, color-mix(in srgb, var(--accent) 22%, transparent) 72%, transparent 74%);
+    animation: sensorScan 10s cubic-bezier(.5,0,.5,1) infinite; }
+  @keyframes sensorScan { 0% { transform: translateY(0); } 55%, 100% { transform: translateY(calc(100vh + 280px)); } }
+  @media (prefers-reduced-motion: reduce) { body::before, .bot, .eye { animation: none !important; } }
+  @media (max-width: 680px) { .hero-grid { grid-template-columns: 1fr; } }
+
   /* full-page paint layer */
   #paint { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
   .hero-wrap { overflow: visible; }
@@ -387,7 +424,18 @@
   <div class="statusbar"><span><i class="led"></i>lullabyte online</span><span id="clock">--:--:--</span></div>
   <h1 class="glitch" data-text="Lullabyte">Lullabyte</h1>
   <p class="tagline">&gt; I can code you a name<span class="cursor">_</span></p>
-  <div class="terminal" id="boot" aria-label="Startup log"></div>
+  <div class="hero-grid">
+    <div class="bot-wrap">
+      <div class="bot" id="bot" aria-hidden="true">
+        <div class="bot-antenna"><i></i></div>
+        <div class="bot-head"><div class="bot-visor"><span class="eye l"></span><span class="eye r"></span></div></div>
+        <div class="bot-neck"></div>
+        <div class="bot-body"><span class="bot-light"></span></div>
+      </div>
+      <div class="bubble" id="botSay" aria-live="polite">…</div>
+    </div>
+    <div class="terminal" id="boot" aria-label="Startup log"></div>
+  </div>
   <p class="sub"><b id="total" class="scrambling">092490823948450294sdfjkSADJ</b> names indexed</p>
   <p class="paint-hint">move your cursor anywhere · tap the background to splash</p>
   </div>
@@ -1159,6 +1207,7 @@ addEventListener("DOMContentLoaded", function openShared() {
 });
 </script>
 <script src="taste.js?v=3"></script>
-<script src="compiler.js?v=3"></script>
+<script src="compiler.js?v=5"></script>
+<script src="bot.js?v=2"></script>
 </body>
 </html>
