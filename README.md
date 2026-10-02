@@ -1,8 +1,22 @@
 # Lullabyte
 
-*Baby names, engineered softly. I can code you a name.*
+*Every name is a lullaby.*
 
-Find the perfect name for your baby. **516,000+ names**: 256,000+ real names from official registries plus 260,000 generated, including hundreds of real ones with meanings and stories from many cultures and faiths.
+A music box for baby names. Every name is punched into a strip and played: the first screen is a brass music-box drum you can spin, and every result is a strip of night-velvet paper whose lit holes are the name's notes. **516,000+ names**: 256,000+ real names from official registries plus 260,000 generated, including hundreds of real ones with meanings and stories from many cultures and faiths.
+
+## How a name becomes a tune
+`musicbox.js` turns any name into a melody, the same way every time:
+
+| | Means |
+|---|---|
+| A note | one syllable |
+| Pitch | the vowel sound: "oo" low and dark, "oh", "ah" in the middle, "eh", "ee" high and bright; "ay" glides between two notes |
+| Nudge | the consonant before the vowel: lips (M, B, P) pull the note down, L and R lift it a step, the tongue tip (N, D, T, S) two, the back of the mouth (K, G, J) three |
+| Small holes | a hard K/T/D adds a pluck below the note, an S/SH adds a sparkle an octave up |
+| Rhythm | the first syllable is held longest; an open ending (-a, -i) rings out |
+| The ring ○ | every tune comes home to the same low C: the Lullabyte signature |
+
+Notes sit on a two-octave pentatonic ladder on a 15-tooth comb, so no name can sound wrong. Spellings that sound alike punch the same holes (Layla, Leila and Laila play one song; Lila is a different tune). The sound is synthesized in the browser with Web Audio: each pluck is a stack of sine partials with a long ring and a small generated room. `drum.js` draws the drum on a canvas.
 
 ## Where the names come from
 | Type | How many | What it is |
