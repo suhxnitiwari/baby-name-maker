@@ -85,14 +85,8 @@ function candidates() {
   const out = [];
   const add = x => { const k = fold(x.n); if (seen.has(k) || sounds.has(soundKey(x.n)) || wrongGender(x.n)) return; seen.add(k); out.push(x); };
   [...REAL, ...ROOT_NAMES].filter(genderOk).forEach(add);
-  if (POP) {
-    const sx = gender === "either" ? null : gender[0];
-    for (const c of POP.countries) for (const key of Object.keys(POP.lookup[c.key])) {
-      const [s, n] = key.split(":");
-      if (sx && s !== sx) continue;
-      add({ n: n.split("-").map(cap1).join("-"), g: gender, o: "", l: "", r: [], m: "", src: "", type: "attested" });
-    }
-  }
+  // real names from the official database (single-word names 30+ people have, matching gender)
+  for (const e of DB) if (e.g && genderOk(e) && e.cnt >= 30 && !e.n.includes(" ")) add(e);
   invented(gender).slice(0, 25000).forEach(add);
   return out;
 }

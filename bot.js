@@ -32,7 +32,7 @@ const bot = (() => {
 
   // intro lines, until the user starts doing things
   function intro(total) {
-    const lines = ["hi. i'm lulla, your naming assistant.", `i've read ${total} names.`,
+    const lines = ["hi. i'm lulla, your naming assistant.", `i've indexed ${total} names.`, `${(REAL.length + DB.length).toLocaleString()} are real, from 10 official registries.`,
       "i check sound, meaning, flow & official records.", "tell me who we're naming ↓"];
     let k = 0;
     const next = () => { if (!chatty) return; say(lines[k % lines.length]); k++; if (k < lines.length) idleTimer = setTimeout(next, 3200); };
@@ -112,5 +112,6 @@ function addSearchLog() {
   $("#results").insertAdjacentHTML("afterbegin", pipelineHTML(log, "lulla · search"));
 }
 
-bot.intro((REAL.length + ROOT_NAMES.length + ["girl", "boy", "either"].reduce((t, g) => t + invented(g).length, 0)).toLocaleString());
+// say hello once the official database has loaded, with the real total
+dbReady.then(() => bot.intro((REAL.length + DB.length + ROOT_NAMES.length + ["girl", "boy", "either"].reduce((t, g) => t + invented(g).length, 0)).toLocaleString()));
 

@@ -83,7 +83,8 @@ function genderFit(n) {
 
 // 4. Attestation from our list + official records
 function attestation(n) {
-  const known = BY_NAME.get(fold(n));
+  const known = BY_NAME.get(fold(n)), e = dbEntry(n);
+  if (!known && e) return { badge: e.cnt >= 500 ? "Real name" : "Rare real name", obj: Object.assign({}, e, { g: e.g || gender }), rank: Math.round(1e7 / (e.cnt + 1)) };
   const ranks = popRanks(n, gender);
   if (known && known.length) {
     const obj = known.find(genderOk) || known[0];
@@ -106,6 +107,8 @@ function mostlyOtherGender(n, sx) {
 function attestedPool() {
   const pool = new Map();
   [...REAL, ...ROOT_NAMES].filter(genderOk).forEach(x => pool.set(fold(x.n), x.n));
+  // every real name in the official database for this gender (single-word names that 20+ people have)
+  if (DB_READY) { for (const e of DB) if (e.g && genderOk(e) && e.cnt >= 20 && !e.n.includes(" ")) pool.set(fold(e.n), e.n); return [...pool.values()]; }
   if (POP) {
     const sx = gender === "either" ? null : gender[0];
     for (const c of POP.countries) for (const key of Object.keys(POP.lookup[c.key])) {
@@ -143,8 +146,12 @@ function blend() {
   let real = [];
   if (fam.mode !== "new") {
     const pool = attestedPool();
+    // quick prefilter: the name must share at least 3 letters in a row with one parent
+    const grams = new Set(); for (const p of [a, b]) { const w = fold(p); for (let i = 0; i + 3 <= w.length; i++) grams.add(w.slice(i, i + 3)); }
     for (const n of pool) {
-      if (parentSet.has(fold(n)) || wrongGender(n)) continue;
+      const w = fold(n); let ok = false;
+      for (let i = 0; i + 3 <= w.length && !ok; i++) ok = grams.has(w.slice(i, i + 3));
+      if (!ok || parentSet.has(w) || wrongGender(n)) continue;
       const hit = carryBoth(n, a, b);
       if (hit) real.push({ n, hit, method: "real name" });
     }

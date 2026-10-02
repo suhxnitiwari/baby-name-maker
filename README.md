@@ -2,7 +2,7 @@
 
 *Baby names, engineered softly. I can code you a name.*
 
-Find the perfect name for your baby boy or girl. There are **240,000+ names**, including hundreds of real ones with meanings and stories from many cultures and faiths.
+Find the perfect name for your baby. **516,000+ names**: 256,000+ real names from official registries plus 260,000 generated, including hundreds of real ones with meanings and stories from many cultures and faiths.
 
 ## Where the names come from
 | Type | How many | What it is |
@@ -25,16 +25,27 @@ Find the perfect name for your baby boy or girl. There are **240,000+ names**, i
 - **Popular:** top names this year and over the last 5, 50 and 100 years, by country
 - **Popularity badges:** each card and spelling shows its real rank, like #3 US 2024
 
-## Popularity data
-Official government statistics, built into `data/popularity.json` by `scripts/build-popularity.py`:
+## Real names database
+`data/names-db.tsv` holds **256,487 real first names** from 10 official government registries, built by `scripts/build_names_db.py`. Columns: name, gender (f / m / u = used for both / ? = registry has no sex), countries, people recorded. Registry placeholders such as "Baby" or "Unknown" are removed. About 58,000 entries are compound given names (e.g. "María del Carmen"), which Spain, Québec and Argentina register as single names.
 
-| Where | Years | Source |
+| Source | Coverage | License |
 |---|---|---|
-| United States | 1880–2024 | Social Security Administration (public domain) |
-| Canada | 1991–2025 | Statistics Canada, table 17-10-0147-01 (Open Government Licence – Canada) |
-| Australia · New South Wales | 1952–2025 (top 100) | NSW Registry of Births, Deaths & Marriages (CC BY 4.0) |
-| England & Wales (incl. London) | 1996–2025 | Office for National Statistics (Open Government Licence v3.0) |
-| France | 1900–2024 | INSEE (Licence Ouverte) |
+| US Social Security Administration | 1880–2024, names given to 5+ babies a year | Public domain |
+| Statistics Canada, table 17-10-0147-01 | 1991–2025 | Open Government Licence – Canada |
+| Retraite Québec | 1980–2025, every name given twice or more | CC BY 4.0 |
+| Office for National Statistics (England & Wales) | 1996–2025 | Open Government Licence v3.0 |
+| Central Statistics Office Ireland (VSA50/VSA60) | 1964–2024, 3+ babies a year | CC BY 4.0 |
+| INSEE France | 1900–2024 | Licence Ouverte |
+| INE Spain | whole population, names held by 20+ people | Reuse with attribution |
+| Swiss Federal Statistical Office | whole population by birth year | Attribution; non-commercial use |
+| NSW Registry of Births, Deaths & Marriages | 1952–2025, top 100 | CC BY 4.0 |
+| RENAPER Argentina | newborns 2012–2024 | Reuse with attribution |
+
+## Popularity data
+`data/popularity.json` (built by `scripts/build-popularity.py`) powers the Popular tab and rank badges: US, Canada, NSW, England & Wales and France.
+
+## Generated names
+About 260,000 more names are generated in the browser: ~3,800 built from Sanskrit, Greek, Germanic, Norse and Arabic roots (with meanings), and ~256,000 invented from syllables (no meanings). Generated names never repeat a real name from the database.
 
 ## Run it
 No build step. Open `index.html`, or serve the folder with any static server.

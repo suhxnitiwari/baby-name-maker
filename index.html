@@ -223,6 +223,8 @@
   .terminal .rdy { color: var(--ink); font-weight: 700; }
   .sub { font-size: .9rem; color: var(--muted); margin: 18px 0 0; }
   .sub b { font-family: var(--mono); font-size: 1.05rem; }
+  .sub-split { text-align: center; font: .72rem var(--mono); color: var(--muted); margin: 4px 0 0; }
+  .sub-split b { color: var(--ink); }
   .paint-hint { font: .72rem var(--mono); text-transform: none; letter-spacing: .02em; opacity: .55; }
 
   /* soft glass panels and cards */
@@ -437,6 +439,7 @@
     <div class="terminal" id="boot" aria-label="Startup log"></div>
   </div>
   <p class="sub"><b id="total" class="scrambling">092490823948450294sdfjkSADJ</b> names indexed</p>
+  <p class="sub-split" id="totalSplit">linking official registries…</p>
   <p class="paint-hint">move your cursor anywhere · tap the background to splash</p>
   </div>
 
@@ -585,11 +588,14 @@
   <div class="actions" style="margin-top:16px"><button class="ghost hidden" id="more" style="flex:1;padding:12px">Load more names ↓</button></div>
 </main>
 
-<footer style="position:relative;z-index:1;max-width:860px;margin:0 auto;padding:0 16px 40px;font-size:.78rem;color:var(--muted);text-align:center">
-  Popularity data: US Social Security Administration · Statistics Canada (Open Government Licence – Canada) · NSW Registry of Births, Deaths &amp; Marriages (CC BY 4.0) · Office for National Statistics (Open Government Licence v3.0) · INSEE (Licence Ouverte).
+<footer style="position:relative;z-index:1;max-width:860px;margin:0 auto;padding:0 16px 40px;font-size:.7rem;color:var(--muted);text-align:center;line-height:1.7">
+  Real names &amp; popularity from official registries, used with attribution: US Social Security Administration · Statistics Canada (Open Government Licence – Canada) ·
+  Retraite Québec (CC BY 4.0) · Office for National Statistics, England &amp; Wales (Open Government Licence v3.0) · Central Statistics Office Ireland (CC BY 4.0) ·
+  INSEE France (Licence Ouverte) · INE Spain · Swiss Federal Statistical Office (FSO) · NSW Registry of Births, Deaths &amp; Marriages (CC BY 4.0) · RENAPER Argentina.
+  Generated names are invented by Lullabyte and have no recorded meaning.
 </footer>
 <script src="names.js?v=3"></script>
-<script src="generator.js"></script>
+<script src="generator.js?v=4"></script>
 <script>
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -598,6 +604,36 @@ const BATCH = 12;
 // ── data ──
 const ROOT_NAMES = buildRootNames();
 const TAKEN = new Set([...REAL, ...ROOT_NAMES].map(x => x.n.toLowerCase()));
+
+// ── Official names database: every real name from 10 government registries (data/names-db.tsv) ──
+// name <TAB> gender (f / m / u = both / ? = registry has no sex) <TAB> countries <TAB> people recorded
+let DB = [], DB_READY = false;
+const DB_KEYS = new Map();
+const DB_G = { f: "girl", m: "boy", u: "either", "?": null };
+const CC_LABEL = { us: "US", ca: "Canada", qc: "Québec", au: "NSW", uk: "Eng & Wales", ie: "Ireland", fr: "France", es: "Spain", ch: "Switzerland", ar: "Argentina" };
+const dbReady = fetch("data/names-db.tsv?v=1").then(r => r.text()).then(t => {
+  const ours = new Set([...REAL, ...ROOT_NAMES].map(x => fold(x.n)));
+  for (const line of t.split("\n")) {
+    if (!line) continue;
+    const [n, g, cc, cnt] = line.split("\t"), k = fold(n);
+    const e = { n, g: DB_G[g], cc: cc.split(","), cnt: +cnt, o: "", l: "", r: [], m: "", src: "", type: "attested" };
+    if (!DB_KEYS.has(k)) DB_KEYS.set(k, e);
+    TAKEN.add(k);
+    if (!ours.has(k)) DB.push(e);
+  }
+  for (const g in INVENTED) delete INVENTED[g]; // rebuild invented names without any real ones
+  DB_READY = true;
+  dispatchEvent(new Event("namesdb"));
+}).catch(() => {});
+const dbEntry = n => DB_KEYS.get(fold(n));
+// once the database is in, refresh whatever view is open so it includes real names
+addEventListener("namesdb", () => {
+  if (tab === "find") { seen = new Set(); buildPools(); render(draw(BATCH), "No names match all those filters. Try loosening one!"); $("#more").classList.toggle("hidden", !left()); window.addSearchLog && addSearchLog(); }
+  else if (tab === "blend" && $("#mom").value.trim() && $("#dad").value.trim()) blend();
+  else if (tab === "taste") showTaste();
+  // spellings: index every real name by how it sounds
+  setTimeout(() => { for (const e of DB) { if (e.cnt < 20 || e.n.includes(" ")) continue; const sk = soundKey(e.n); SOUND_INDEX.has(sk) ? SOUND_INDEX.get(sk).push(e.n) : SOUND_INDEX.set(sk, [e.n]); } }, 50);
+});
 const INVENTED = {}; // built lazily per gender
 const invented = g => INVENTED[g] || (INVENTED[g] = buildInvented(g, TAKEN));
 const fold = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[\s-]/g, "");
@@ -667,19 +703,21 @@ function buildPools() {
   pools = {
     real: want("real") ? shuffle(REAL.filter(x => matches(x, f))) : [],
     root: want("root") ? shuffle(ROOT_NAMES.filter(x => matches(x, f))) : [],
+    // real names from official records: weighted toward names more people actually have
+    db: !needsMeaning ? DB.filter(x => matches(x, f)).map(x => [Math.random() ** (1 / (1 + Math.log10(x.cnt))), x]).sort((a, b) => b[0] - a[0]).map(p => p[1]) : [],
     invented: want("invented") && !needsMeaning ? shuffle(invented(gender).filter(x => matches(x, f))) : [],
   };
-  pools.ptr = { real: 0, root: 0, invented: 0 };
-  const total = pools.real.length + pools.root.length + pools.invented.length;
+  pools.ptr = { real: 0, db: 0, root: 0, invented: 0 };
+  const total = pools.real.length + pools.db.length + pools.root.length + pools.invented.length;
   const fmt = n => n.toLocaleString();
   $("#count").innerHTML = total
-    ? `<b>${fmt(total)}</b> matching names · ${fmt(pools.real.length)} real · ${fmt(pools.root.length)} from roots · ${fmt(pools.invented.length)} invented`
+    ? `<b>${fmt(total)}</b> matching names · ${fmt(pools.real.length)} with stories · ${fmt(pools.db.length)} from official records · ${fmt(pools.root.length)} from roots · ${fmt(pools.invented.length)} invented`
     : "";
 }
 
 // Mix real names, root names and invented names; real ones show up most.
 function draw(n) {
-  const out = [], W = { real: 5, root: 3, invented: 3 };
+  const out = [], W = { real: 4, db: 4, root: 2, invented: 3 };
   while (out.length < n) {
     const open = Object.keys(W).filter(k => pools.ptr[k] < pools[k].length);
     if (!open.length) break;
@@ -690,7 +728,7 @@ function draw(n) {
   }
   return out;
 }
-const left = () => pools && ["real", "root", "invented"].some(k => pools.ptr[k] < pools[k].length);
+const left = () => pools && ["real", "db", "root", "invented"].some(k => pools.ptr[k] < pools[k].length);
 
 // ── rendering ──
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -701,7 +739,7 @@ const hexId = n => "0x" + ([...n].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>
 const syllables = n => (fold(n).replace(/y(?=[aeiou])/g, "Y").match(/[aeiouy]+/g) || []).length;
 function card(x, i, featured = false) {
   const v = vibeOf(x);
-  const where = [x.o, x.l && x.l !== x.o ? x.l : ""].filter(Boolean).join(" · ") || (x.type === "attested" ? "Real name · official records" : "Original");
+  const where = [x.o, x.l && x.l !== x.o ? x.l : ""].filter(Boolean).join(" · ") || (x.type === "attested" ? "Official records · " + (x.cc || (dbEntry(x.n) || {}).cc || []).slice(0, 3).map(c => CC_LABEL[c]).join(", ") : "Original");
   const themes = themesOf(x).slice(0, 3);
   return `<div class="card${featured ? " featured" : ""}" style="animation-delay:${(i % BATCH) * 35}ms;--a1:${v.aura[0]};--a2:${v.aura[1]}">
     <div class="aura"></div>
@@ -907,7 +945,10 @@ $("#popList").onclick = e => { const r = e.target.closest("[data-spell]"); if (!
 const BY_NAME = new Map();
 // A name our list only knows for the other gender never shows up for this one
 // (official records include a few cross-gender uses, like 47 girls named Anand in Canada).
-const wrongGender = n => { const k = BY_NAME.get(fold(n)); return !!(k && k.length && !k.some(genderOk)); };
+const wrongGender = n => {
+  const k = BY_NAME.get(fold(n)); if (k && k.length) return !k.some(genderOk);
+  const e = dbEntry(n); return !!(e && (!e.g || !genderOk(e)));
+};
 [...REAL, ...ROOT_NAMES].forEach(x => {
   const k = fold(x.n); BY_NAME.has(k) ? BY_NAME.get(k).push(x) : BY_NAME.set(k, [x]);
   const sk = soundKey(x.n); SOUND_INDEX.has(sk) ? SOUND_INDEX.get(sk).push(x.n) : SOUND_INDEX.set(sk, [x.n]);
@@ -917,8 +958,9 @@ function spell() {
   $("#more").classList.add("hidden");
   if (!name) { $("#spellList").innerHTML = ""; $("#count").textContent = ""; return render([], "Type a name to see its spellings ✏️"); }
   const pretty = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
-  const best = n => (popRanks(n, gender)[0] || [0, 1e9])[1];
-  const vars = spellingsOf(name, soundAlikes(name)).slice(0, 20).sort((a, b) => (b.common - a.common) || (best(a.n) - best(b.n)));
+  const used = n => (dbEntry(n) || { cnt: 0 }).cnt;
+  const vars = spellingsOf(name, soundAlikes(name)).slice(0, 30).map(s => ({ ...s, common: s.common || used(s.n) > 0 }))
+    .sort((a, b) => (b.common - a.common) || (used(b.n) - used(a.n))).slice(0, 20);
   const tag = n => { const r = popRanks(n, gender)[0]; return r ? `<small>#${r[1]} ${r[0]}</small>` : ""; };
   const all = [{ n: pretty, common: true }, ...vars];
   const known = all.flatMap(s => BY_NAME.get(fold(s.n)) || []);
@@ -1156,7 +1198,7 @@ $("#reset").onclick = () => {
     [`[ok] ${n(REAL.length)} real names · ${cultures} cultures · ${faiths} faiths & mythologies`, "ok"],
     [`[ok] ${n(ROOT_NAMES.length)} names compiled from sanskrit/arabic/greek/germanic/norse roots`, "ok"],
     ["[ok] syllable synthesizer online", "ok"],
-    ["[ok] popularity feeds: US · CA · AU · UK · FR", "ok"],
+    ["[ok] official registries: US · CA · QC · UK · IE · FR · ES · CH · AU · AR", "ok"],
     ["> ready. awaiting input_", "rdy"],
   ];
   let li = 0, ci = 0, line;
@@ -1176,19 +1218,22 @@ $("#reset").onclick = () => {
 // Intro: the total starts as a long jumble of characters, shrinks, then locks into the real count.
 (function decodeTotal() {
   const el = $("#total");
-  const text = (REAL.length + ROOT_NAMES.length + ["girl", "boy", "either"].reduce((s, g) => s + invented(g).length, 0)).toLocaleString();
+  const count = () => (REAL.length + DB.length + ROOT_NAMES.length + ["girl", "boy", "either"].reduce((s, g) => s + invented(g).length, 0));
+  let text = count().toLocaleString();
+  dbReady.then(() => { text = count().toLocaleString(); $("#totalSplit").innerHTML = `<b>${(REAL.length + DB.length).toLocaleString()}</b> real names from 10 official registries · <b>${(ROOT_NAMES.length + ["girl", "boy", "either"].reduce((s, g) => s + invented(g).length, 0)).toLocaleString()}</b> generated`; });
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) { el.textContent = text; return; }
   const CH = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
   const rnd = n => Array.from({ length: n }, () => CH[Math.random() * CH.length | 0]).join("");
   const EXTRA = 26, NOISE = 900, LOCK = 1300;
   el.classList.add("scrambling");
-  let t0 = null;
+  let t0 = null, t0lock = null;
   const step = ts => {
     t0 ??= ts;
     const t = ts - t0;
-    if (t < NOISE) el.textContent = rnd(text.length + EXTRA);               // pure noise
+    if (t < NOISE || (!DB_READY && t < 9000)) el.textContent = rnd(text.length + EXTRA); // noise until the database is in
     else {
-      const p = Math.min(1, (t - NOISE) / LOCK);
+      t0lock ??= t;
+      const p = Math.min(1, (t - t0lock) / LOCK);
       const locked = Math.floor(p * text.length), extra = Math.round((1 - p) * EXTRA);
       el.textContent = text.slice(0, locked) + rnd(text.length - locked + extra);
       if (p >= 1) { el.textContent = text; el.classList.remove("scrambling"); return; }
@@ -1206,8 +1251,8 @@ addEventListener("DOMContentLoaded", function openShared() {
   $('.tab[data-tab="blend"]').click();
 });
 </script>
-<script src="taste.js?v=3"></script>
-<script src="compiler.js?v=5"></script>
-<script src="bot.js?v=2"></script>
+<script src="taste.js?v=4"></script>
+<script src="compiler.js?v=6"></script>
+<script src="bot.js?v=3"></script>
 </body>
 </html>
