@@ -1,4 +1,6 @@
-# 👶 Baby Name Maker
+# Lullabyte
+
+*Baby names, engineered softly. I can code you a name.*
 
 Find the perfect name for your baby boy or girl. There are **240,000+ names**, including hundreds of real ones with meanings and stories from many cultures and faiths.
 

@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Baby Name Maker</title>
+<title>Lullabyte</title>
+<meta name="description" content="Lullabyte: baby names, engineered softly. Taste matching, a Mom + Dad name compiler and official popularity data.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700&family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
@@ -357,8 +358,8 @@
 <main>
   <div class="hero-wrap" id="heroWrap">
   <canvas id="paint" aria-hidden="true"></canvas>
-  <div class="statusbar"><span><i class="led"></i>name engine online</span><span id="clock">--:--:--</span></div>
-  <h1 class="glitch" data-text="Baby Name Maker">Baby Name Maker</h1>
+  <div class="statusbar"><span><i class="led"></i>lullabyte online</span><span id="clock">--:--:--</span></div>
+  <h1 class="glitch" data-text="Lullabyte">Lullabyte</h1>
   <p class="tagline">&gt; I can code you a name<span class="cursor">_</span></p>
   <div class="terminal" id="boot" aria-label="Startup log"></div>
   <p class="sub"><b id="total" class="scrambling">092490823948450294sdfjkSADJ</b> names indexed</p>
@@ -1003,7 +1004,7 @@ $("#reset").onclick = () => {
   const n = x => x.toLocaleString();
   const cultures = new Set(REAL.map(x => x.o)).size, faiths = new Set(REAL.flatMap(x => x.r)).size;
   const lines = [
-    ["> starting name engine…", ""],
+    ["> booting lullabyte…", ""],
     [`[ok] ${n(REAL.length)} real names · ${cultures} cultures · ${faiths} faiths & mythologies`, "ok"],
     [`[ok] ${n(ROOT_NAMES.length)} names compiled from sanskrit/arabic/greek/germanic/norse roots`, "ok"],
     ["[ok] syllable synthesizer online", "ok"],
