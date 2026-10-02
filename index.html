@@ -298,6 +298,32 @@
   .flow-ok { color: #6f9a5c; font-weight: 700; font-size: .78rem; }
   .flow-warn { color: #c0763a; font-weight: 700; font-size: .78rem; }
   .flow-good { color: var(--muted); font: .68rem var(--mono); }
+  /* full-page paint layer */
+  #paint { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
+  .hero-wrap { overflow: visible; }
+
+  /* step-by-step form */
+  .wiz-progress { height: 6px; border-radius: 999px; background: var(--chip); overflow: hidden; }
+  #wizBar { display: block; height: 100%; width: 20%; border-radius: 999px; background: linear-gradient(90deg, #c8725a, #d08c5e 55%, #c4a052); transition: width .45s cubic-bezier(.2,.8,.2,1); }
+  .wiz-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 10px 0 18px; font: 700 .66rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .wiz-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+  .wiz-chips button { border: 1px solid var(--line); background: var(--chip); color: var(--ink); border-radius: 999px; padding: 3px 10px; font: 700 .72rem Nunito, sans-serif; text-transform: none; letter-spacing: 0; cursor: pointer; }
+  .wiz-chips button:hover { border-color: var(--accent); }
+  .step { display: none; }
+  .step.active { display: block; animation: stepIn .4s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes stepIn { from { opacity: 0; transform: translateX(14px); } }
+  .step-q { font: 700 clamp(1.35rem, 4vw, 1.8rem)/1.2 var(--disp); letter-spacing: -.015em; margin: 0 0 18px; }
+  .step .gender { margin-bottom: 4px; }
+  .step .gbtn { padding: 20px 8px; font-size: 1rem; }
+  .wiz-nav { display: flex; gap: 8px; margin-top: 22px; }
+  .wiz-nav .go { flex: 1; }
+  .wiz-nav .ghost { padding: 0 16px; }
+  .wiz-nav .ghost:disabled { opacity: .35; cursor: default; }
+  .wiz-foot { text-align: center; margin-top: 10px; }
+  .linkish { border: 0; background: none; color: var(--muted); font: 600 .78rem Nunito, sans-serif; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  @media (max-width: 560px) { .wiz-nav { flex-wrap: wrap; } .wiz-nav .go { flex-basis: 100%; order: -1; } .wiz-meta { flex-direction: column; align-items: flex-start; } .wiz-chips { justify-content: flex-start; } }
+  #panel .grid { margin-bottom: 0; }
+
   /* Mom + Dad compiler */
   .lock-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 14px; }
   .lock-row button { border: 1px solid var(--accent); background: var(--accent-soft); color: var(--ink); border-radius: 999px; padding: 5px 12px; font: 700 .76rem Nunito, sans-serif; cursor: pointer; }
@@ -355,15 +381,15 @@
 </head>
 <body data-g="girl">
 <div class="floaters" id="floaters" aria-hidden="true"></div>
+<canvas id="paint" aria-hidden="true"></canvas>
 <main>
   <div class="hero-wrap" id="heroWrap">
-  <canvas id="paint" aria-hidden="true"></canvas>
   <div class="statusbar"><span><i class="led"></i>lullabyte online</span><span id="clock">--:--:--</span></div>
   <h1 class="glitch" data-text="Lullabyte">Lullabyte</h1>
   <p class="tagline">&gt; I can code you a name<span class="cursor">_</span></p>
   <div class="terminal" id="boot" aria-label="Startup log"></div>
   <p class="sub"><b id="total" class="scrambling">092490823948450294sdfjkSADJ</b> names indexed</p>
-  <p class="paint-hint">move your cursor through the colors · tap to splash</p>
+  <p class="paint-hint">move your cursor anywhere · tap the background to splash</p>
   </div>
 
   <div class="tabs">
@@ -375,14 +401,13 @@
   </div>
 
   <div class="panel" id="panel">
-    <div class="gender">
-      <button class="gbtn on" data-v="girl">Feminine</button>
-      <button class="gbtn" data-v="boy">Masculine</button>
-      <button class="gbtn" data-v="either">Gender neutral</button>
+    <div class="wiz-top">
+      <div class="wiz-progress"><i id="wizBar"></i></div>
+      <div class="wiz-meta"><span id="wizCount">step 1 of 5</span><span class="wiz-chips" id="wizChips"></span></div>
     </div>
 
-    <div id="blendInputs" class="hidden">
-      <div class="section-label">Family inputs</div>
+    <section class="step" data-step="family" id="blendInputs">
+      <h2 class="step-q">Whose names should we weave together?</h2>
       <div class="grid" style="grid-template-columns: 1fr 1fr">
         <div><label for="mom">Mom's name</label><input id="mom" placeholder="e.g. Suhani"></div>
         <div><label for="dad">Dad's name</label><input id="dad" placeholder="e.g. Alexander"></div>
@@ -393,19 +418,49 @@
         <div><label for="synthMode">Names to include</label>
           <select id="synthMode"><option value="both">Real names + new blends</option><option value="real">Real names only</option><option value="new">New blends only</option></select></div>
       </div>
-      <div class="lock-row hidden" id="lockRow"></div>
-    </div>
+    </section>
 
-    <div class="section-label">Meaning &amp; background</div>
-    <div class="grid">
-      <div><label for="theme">Meaning</label><select id="theme"></select></div>
-      <div><label for="religion">Religion</label><select id="religion"></select></div>
-      <div><label for="culture">Culture / ethnicity</label><select id="culture"></select></div>
-      <div><label for="lang">Language</label><select id="lang"></select></div>
-    </div>
+    <section class="step" data-step="gender">
+      <h2 class="step-q">Who are we naming?</h2>
+      <div class="gender">
+        <button class="gbtn on" data-v="girl">Feminine</button>
+        <button class="gbtn" data-v="boy">Masculine</button>
+        <button class="gbtn" data-v="either">Gender neutral</button>
+      </div>
+    </section>
 
-    <div id="letterFilters">
-      <div class="section-label">Letters &amp; length</div>
+    <section class="step" data-step="feel">
+      <h2 class="step-q">What should it feel like?</h2>
+      <div class="grid" style="grid-template-columns: 1fr 1fr">
+        <div><label for="theme">Meaning</label><select id="theme"></select></div>
+        <div><label for="vibeSel">Vibe</label>
+          <select id="vibeSel">
+            <option value="">Any vibe</option>
+            <option value="soft">Soft &amp; sweet</option>
+            <option value="bold">Strong &amp; bold</option>
+            <option value="timeless">Classic &amp; timeless</option>
+            <option value="modern">Modern &amp; fresh</option>
+            <option value="playful">Cute &amp; playful</option>
+            <option value="elegant">Elegant &amp; lyrical</option>
+            <option value="celestial">Celestial &amp; dreamy</option>
+            <option value="earthy">Earthy &amp; natural</option>
+            <option value="spiritual">Spiritual</option>
+            <option value="regal">Regal</option>
+          </select></div>
+      </div>
+    </section>
+
+    <section class="step" data-step="background">
+      <h2 class="step-q">Any background in mind?</h2>
+      <div class="grid" style="grid-template-columns: 1fr 1fr 1fr">
+        <div><label for="religion">Religion</label><select id="religion"></select></div>
+        <div><label for="culture">Culture / ethnicity</label><select id="culture"></select></div>
+        <div><label for="lang">Language</label><select id="lang"></select></div>
+      </div>
+    </section>
+
+    <section class="step" data-step="shape">
+      <h2 class="step-q">What shape should the name have?</h2>
       <div class="grid">
         <div><label for="first">Starts with letter</label><select id="first"></select></div>
         <div><label for="first2">First 2 letters</label><input id="first2" maxlength="2" placeholder="e.g. Ar"></div>
@@ -422,34 +477,26 @@
             <option value="1-7">Up to 7 letters</option>
           </select></div>
       </div>
-    </div>
+    </section>
 
-    <div class="section-label">Vibe &amp; full name</div>
-    <div class="grid" style="grid-template-columns: 1fr 1fr 1fr">
-      <div><label for="vibeSel">Vibe</label>
-        <select id="vibeSel">
-          <option value="">Any vibe</option>
-          <option value="soft">Soft &amp; sweet</option>
-          <option value="bold">Strong &amp; bold</option>
-          <option value="timeless">Classic &amp; timeless</option>
-          <option value="modern">Modern &amp; fresh</option>
-          <option value="playful">Cute &amp; playful</option>
-          <option value="elegant">Elegant &amp; lyrical</option>
-          <option value="celestial">Celestial &amp; dreamy</option>
-          <option value="earthy">Earthy &amp; natural</option>
-          <option value="spiritual">Spiritual</option>
-          <option value="regal">Regal</option>
-        </select></div>
-      <div><label for="lastName">Last name</label><input id="lastName" placeholder="e.g. Tiwari"></div>
-      <div><label for="showAs">Show names as</label>
-        <select id="showAs"><option value="first">First name only</option><option value="full">Full name (first + last)</option></select></div>
-    </div>
+    <section class="step" data-step="full">
+      <h2 class="step-q">Want to see it with your last name?</h2>
+      <div class="grid" style="grid-template-columns: 1fr 1fr">
+        <div><label for="lastName">Last name</label><input id="lastName" placeholder="e.g. Tiwari"></div>
+        <div><label for="showAs">Show names as</label>
+          <select id="showAs"><option value="first">First name only</option><option value="full">Full name (first + last)</option></select></div>
+      </div>
+    </section>
 
-    <div class="actions">
+    <div class="wiz-nav">
+      <button class="ghost" id="wizBack">← Back</button>
+      <button class="ghost" id="wizSkip">Skip</button>
+      <button class="ghost" id="wizNext">Next →</button>
       <button class="go" id="go">✦ Generate names</button>
-      <button class="ghost" id="reset" title="Clear filters">Reset</button>
     </div>
+    <div class="wiz-foot"><button class="linkish" id="reset">Start over</button></div>
   </div>
+  <div class="lock-row hidden" id="lockRow"></div>
 
   <div class="panel hidden" id="tastePanel">
     <div class="section-label">01 · Seed your taste</div>
@@ -886,7 +933,7 @@ function powder(x, y, n = 26) {
 }
 // The paint canvas: pointer trails of powder, tap to throw a burst, idle brush when nobody's touching.
 (function paint() {
-  const cv = $("#paint"), ctx = cv.getContext("2d"), hero = $("#heroWrap");
+  const cv = $("#paint"), ctx = cv.getContext("2d");
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   let W, H, blobs = [], last = null, t = 0, idle = true, ci = 0, spawned = 0;
   const size = () => { const r = devicePixelRatio || 1; W = cv.offsetWidth; H = cv.offsetHeight; cv.width = W * r; cv.height = H * r; ctx.setTransform(r, 0, 0, r, 0, 0); };
@@ -907,9 +954,15 @@ function powder(x, y, n = 26) {
   };
   window.throwPaint = () => throwAt(W * (.25 + Math.random() * .5), H * (.3 + Math.random() * .4));
   const pos = e => { const b = cv.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
-  hero.addEventListener("pointermove", e => move(...pos(e)));
-  hero.addEventListener("pointerdown", e => { if (!e.target.closest("button, a, input, select")) throwAt(...pos(e)); });
-  hero.addEventListener("pointerleave", () => { last = null; idle = true; });
+  // the paint layer covers the whole page: trails follow the cursor anywhere,
+  // and tapping empty background (not a control or card) throws a splash
+  let lastMove = 0;
+  addEventListener("pointermove", e => { lastMove = performance.now(); move(e.clientX, e.clientY); }, { passive: true });
+  addEventListener("pointerdown", e => {
+    if (!e.target.closest("button, a, input, select, textarea, label, summary, .card, .panel, .pipeline, .terminal, .tabs, .statusbar")) throwAt(e.clientX, e.clientY);
+  });
+  document.documentElement.addEventListener("mouseleave", () => { last = null; idle = true; });
+  setInterval(() => { if (performance.now() - lastMove > 1500) { last = null; idle = true; } }, 500);
   const frame = () => {
     ctx.clearRect(0, 0, W, H);
     if (idle && !still) { t += .006; const x = W / 2 + Math.cos(t * 1.3) * W * .4, y = H / 2 + Math.sin(t * 2.1) * H * .34; if (Math.random() < .5) add(x, y, 10); }
@@ -953,6 +1006,50 @@ $$(".gbtn").forEach(btn => btn.onclick = () => {
   $$(".gbtn").forEach(b => b.classList.toggle("on", b === btn));
   fillThemes(); run();
 });
+// ── Step-by-step form ──
+const WIZ = { find: ["gender", "feel", "background", "shape", "full"], blend: ["family", "gender", "feel", "shape", "full"] };
+let wizI = 0;
+const wizSteps = () => WIZ[tab] || WIZ.find;
+const GENDER_LABEL = { girl: "Feminine", boy: "Masculine", either: "Gender neutral" };
+function wizChips() {
+  const opt = sel => { const o = $(sel).selectedOptions[0]; return o && o.value ? o.text : ""; };
+  const chips = [];
+  if (tab === "blend" && $("#mom").value.trim() && $("#dad").value.trim()) chips.push(["family", `${$("#mom").value.trim()} + ${$("#dad").value.trim()}`]);
+  chips.push(["gender", GENDER_LABEL[gender]]);
+  [["feel", opt("#theme")], ["feel", opt("#vibeSel")], ["background", opt("#religion")], ["background", opt("#culture")], ["background", opt("#lang")],
+   ["shape", $("#first").value && tab !== "blend" ? `starts with ${$("#first").value}` : ""], ["shape", $("#first2").value && tab !== "blend" ? `“${$("#first2").value}…”` : ""],
+   ["shape", $("#ends").value && tab !== "blend" ? `“…${$("#ends").value}”` : ""], ["shape", opt("#len")], ["full", lastName()]].forEach(([st, t]) => t && chips.push([st, t]));
+  $("#wizChips").innerHTML = chips.map(([st, t]) => `<button data-goto="${st}">${esc(t)}</button>`).join("");
+}
+function wizShow() {
+  const st = wizSteps();
+  wizI = Math.max(0, Math.min(wizI, st.length - 1));
+  $$("#panel .step").forEach(el => el.classList.toggle("active", el.dataset.step === st[wizI]));
+  $("#wizBar").style.width = ((wizI + 1) / st.length * 100) + "%";
+  $("#wizCount").textContent = `step ${wizI + 1} of ${st.length}`;
+  $("#wizBack").disabled = wizI === 0;
+  const lastStep = wizI === st.length - 1, required = st[wizI] === "family";
+  $("#wizNext").classList.toggle("hidden", lastStep);
+  $("#wizSkip").classList.toggle("hidden", lastStep || required || st[wizI] === "gender");
+  wizChips();
+}
+function wizNext() {
+  if (wizSteps()[wizI] === "family" && (!$("#mom").value.trim() || !$("#dad").value.trim())) {
+    ($("#mom").value.trim() ? $("#dad") : $("#mom")).focus(); return;
+  }
+  wizI++; wizShow();
+}
+$("#wizNext").onclick = wizNext;
+$("#wizSkip").onclick = () => { wizI++; wizShow(); };
+$("#wizBack").onclick = () => { wizI--; wizShow(); };
+$("#wizChips").onclick = e => { const b = e.target.closest("[data-goto]"); if (b) { wizI = wizSteps().indexOf(b.dataset.goto); wizShow(); } };
+// picking a gender moves you straight to the next question
+$$(".gbtn").forEach(b => b.addEventListener("click", () => { if (wizSteps()[wizI] === "gender") setTimeout(wizNext, 260); else wizChips(); }));
+["#theme", "#vibeSel", "#religion", "#culture", "#lang", "#first", "#len", "#showAs"].forEach(sel => $(sel).addEventListener("change", wizChips));
+["#first2", "#ends", "#lastName", "#mom", "#dad"].forEach(sel => $(sel).addEventListener("input", wizChips));
+// after generating, glide down to the results
+$("#go").addEventListener("click", () => setTimeout(() => $("#count").scrollIntoView({ behavior: "smooth", block: "start" }), 120));
+
 $$(".tab").forEach(btn => btn.onclick = () => {
   tab = btn.dataset.tab;
   $$(".tab").forEach(b => b.classList.toggle("on", b === btn));
@@ -963,8 +1060,10 @@ $$(".tab").forEach(btn => btn.onclick = () => {
   $("#spellPanel").classList.toggle("hidden", tab !== "spell");
   $("#blendInputs").classList.toggle("hidden", tab !== "blend");
   ["#first", "#first2", "#ends"].forEach(sel => $(sel).parentElement.classList.toggle("hidden", tab === "blend"));
+  wizI = 0; wizShow();
   run();
 });
+wizShow();
 $("#results").onclick = e => {
   const sayBtn = e.target.closest("[data-say]");
   if (sayBtn) return say(sayBtn.dataset.say, sayBtn.dataset.lang);
@@ -994,6 +1093,7 @@ $("#go").onclick = e => { powder(e.clientX, e.clientY); window.throwPaint && thr
 $("#more").onclick = more;
 $("#spellGo").onclick = spell;
 $("#reset").onclick = () => {
+  wizI = 0; setTimeout(wizShow);
   ["#theme", "#religion", "#culture", "#lang", "#first", "#first2", "#ends", "#len", "#vibeSel"].forEach(s => $(s).value = "");
   run();
 };
