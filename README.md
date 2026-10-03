@@ -2,9 +2,18 @@
 
 *Every name is a lullaby.*
 
-**→ [suhxnitiwari.github.io/baby-name-maker](https://suhxnitiwari.github.io/baby-name-maker/)**
+**Live:** [suhxnitiwari.github.io/baby-name-maker](https://suhxnitiwari.github.io/baby-name-maker/)
 
-A crib mobile for baby names. Every name plays its own lullaby: on the first screen each note hangs from a wooden mobile as a felt charm (low notes hang long, high notes short, so the melody is the mobile's shape), and every result is a garland of felt beads strung on a melody line. **777,000+ names**: 529,000 real first names from government records in 18 countries, plus 249,000 generated, including hundreds of real ones with meanings and stories from many cultures and faiths.
+## What it is
+
+A crib mobile for baby names. Every name plays its own lullaby: on the first screen each note hangs from a wooden mobile as a
+felt charm (low notes hang long, high notes short, so the melody is the mobile's shape), and every result is a garland of felt
+beads strung on a melody line.
+
+Behind the softness is a lot of data: **828,006 names** in the browser, made of 529,563 real first names from official
+government records in 18 countries, tens of thousands of names with meanings and stories from 165 cultures and sacred texts,
+12,105 names built from real roots, and 245,015 invented originals. There is a taste model that learns what you like, and a
+Mom + Dad compiler that shows exactly which letters came from whom. No server, no build step, no framework.
 
 ## How a name becomes a tune
 `musicbox.js` turns any name into a melody, the same way every time:
@@ -18,20 +27,31 @@ A crib mobile for baby names. Every name plays its own lullaby: on the first scr
 | Rhythm | the first syllable is held longest; an open ending (-a, -i) rings out |
 | The ring ○ | every tune comes home to the same low C: the Lullabyte signature |
 
-When no name fits every blank of a search, the page never comes back empty: it loosens the fewest, least important blanks (feel and length first, letters last), says which, and composes new names that keep every letter, length and feel asked for.
+Notes sit on a two-octave pentatonic ladder, so no name can sound wrong. Spellings that sound alike make the same tune (Layla, Leila and Laila play one song; Lila is a different tune). The sound is synthesized in the browser with Web Audio: each note is a music-box chime, a stack of sine partials with a long ring and a small generated room. `mobile.js` draws the mobile on a canvas: it turns slowly, you drag sideways to spin it and tap to play.
 
-Notes sit on a two-octave pentatonic ladder, so no name can sound wrong. Spellings that sound alike make the same tune (Layla, Leila and Laila play one song; Lila is a different tune). The sound is synthesized in the browser with Web Audio: each note is a music-box chime, a stack of sine partials with a long ring and a small generated room. `mobile.js` draws the mobile on a canvas.
+## How it's built
+
+- **A sound-alike key.** `soundKey()` in `generator.js` normalizes spelling to sound (ph → f, soft c → s, doubled letters collapsed, silent final e and h dropped) so Layla, Leila and Laila share one melody and one spelling family, and your taste results never hand you a respelling of a name you already typed.
+- **A taste model** (`taste.js`). From the names you love it learns a profile: softness, modernity and elegance, syllable range, favorite ending, cultures and how rare you like names. Each candidate is scored on six weighted signals, led by sound similarity (Dice coefficient on letter bigrams against every name you love), then feel, length, ending, culture and rarity on a log scale. Names that sound like ones you rejected, cultures you ruled out, and lengths or popularity you said no to are penalized. It ranks every name with a meaning, every official-record name held by 30+ people, and 25,000 invented ones, shows a confidence score and a "why this name?" breakdown, and remembers your taste in `localStorage`.
+- **The Mom + Dad compiler** (`compiler.js`). Parents' names (plus family names to honor) are spliced at syllable cut points with every letter's origin tracked, real names are scanned for both parents' sounds, then results are filtered for pronounceability, tested with your surname and ranked. A visible pipeline shows real counts at every step, and every name shows its provenance (which letters came from whom and the contribution %).
+- **Never an empty page.** When no name fits every blank of a search, it loosens the fewest, least important blanks by a cost table (feel and length first, letters last), says which ones it loosened, and composes new names that keep every letter, length and feel you asked for.
+- **Names built from roots** (`generator.js`). Sanskrit, Greek, Germanic and Norse names joined from two meaningful elements with vowel elision (Chandra + esh → Chandresh), and Arabic names formed from "servant of" one of the 99 names of God, each with its meaning.
+- **A reproducible data pipeline** (`scripts/`). Python scripts fetch and merge government open data, Wiktionary, Wikidata and JMnedict into compact TSV and JSON files the page loads on demand.
 
 ## Where the names come from
 | Type | How many | What it is |
 |---|---|---|
-| **Real names** | ~550 | Hand-picked names with meanings and stories: Greek, Indian (Sanskrit, Tamil, Punjabi), Arabic, Persian, Hebrew, Latin, Irish, Norse, Japanese, African and more. Includes names from the Bible, the Quran, Hindu epics, Sikh gurus, the life of the Buddha, Jain tradition, and Greek, Norse and Celtic myth. |
-| **Built from real roots** | ~3,800 | Made the traditional way by joining meaningful parts: Sanskrit (Dev + ansh), Greek (Theo + dora), Germanic (Wil + helm), Norse (Thor + stein), and Arabic (Abdul + one of the 99 names of God, -uddin, -ullah). Each one comes with its meaning. |
-| **Invented originals** | 230,000+ | Brand-new names made from syllables and checked to make sure they're easy to say. |
+| **Official records** | 529,563 | Real first names from government records in 18 countries (`data/names-db.tsv`) |
+| **Hand-written names** | ~3,200 entries | Names with meanings and stories in `names.js`: Greek, Indian (Sanskrit, Tamil, Punjabi), Arabic, Persian, Hebrew, Latin, Irish, Norse, Japanese, African, Pacific, Latin American and more, including names from the Bible, the Quran, Hindu epics, Sikh gurus, the life of the Buddha, Jain tradition, and Greek, Norse and Celtic myth |
+| **Sacred texts, cultures, East Asia** | 13,695 + 32,000+ + 47,569 | Names with stories from scripture, names sorted into 123 cultures, and Japanese, Korean and Chinese names with their characters (details below) |
+| **Built from real roots** | 12,105 | Made the traditional way by joining meaningful parts: Sanskrit (Dev + ansh), Greek (Theo + dora), Germanic (Wil + helm), Norse (Thor + stein), and Arabic (Abdul + one of the 99 names of God, -uddin, -ullah). Each one comes with its meaning. |
+| **Invented originals** | 245,015 | Brand-new names made from syllables and checked to make sure they're easy to say |
+
+Overlapping names are merged, so the total on the page counts each name once.
 
 ## Features
-- **Mom + Dad compiler:** parents' names plus optional family names to honor. It splices names and scans thousands of real names for both parents' sounds, then removes hard-to-say results, tests them with your surname and ranks them. A visible pipeline shows real counts at every step. Every name shows its provenance (which letters came from whom, contribution %, how it was built), a badge (Real name / Rare real name / Built from roots / New blend), and top picks by category (best overall, most equal blend, best real name, rarest, easiest to say, best with surname, wildcard). 🔒 Lock a start or ending and it rebuilds around it.
-- **Your taste (taste model):** type names you love and don't; it learns your profile (softness, syllables, endings, cultures, rarity) and ranks ~28,000 names with a match score and a "why this name?" breakdown. Telling it why you reject a name updates the model.
+- **Mom + Dad compiler:** every name gets a badge (Real name / Rare real name / Built from roots / New blend) and top picks by category (best overall, most equal blend, best real name, rarest, easiest to say, best with surname, wildcard). Lock a start or ending and it rebuilds around it.
+- **Your taste:** type names you love and don't, get ranked matches with a "why this name?" breakdown. Telling it why you reject a name updates the model.
 - **Feminine / Masculine / Gender neutral**
 - **Spelling variations:** common real-world spellings and forms (Mohammed → Muhammad, Mohamed, Mehmet; Leila → Layla, Laila), names that sound alike, and possible letter-swap spellings (Jayden → Jaiden, Suhani → Suhaani)
 - **Vibes:** every card has a color aura, vibe words (dreamy, regal, fierce, timeless…) and Soft↔Strong, Classic↔Modern, Playful↔Elegant meters
@@ -70,13 +90,18 @@ Every source, its license, and the countries we checked that don't publish (or t
 `data/popularity.json` (built by `scripts/build-popularity.py`) powers the Popular tab and rank badges: US, Canada, NSW, England & Wales and France.
 
 ## Generated names
-About 249,000 more names are generated in the browser: ~3,800 built from Sanskrit, Greek, Germanic, Norse and Arabic roots (with meanings), and ~245,000 invented from syllables (no meanings). Generated names never repeat a real name from the database.
+About 257,000 more names are generated in the browser: 12,105 built from Sanskrit, Greek, Germanic, Norse and Arabic roots (with meanings), and 245,015 invented from syllables (no meanings). Generated names never repeat a real name from the database.
+
+## Tech stack
+Vanilla JavaScript · Web Audio API · Canvas 2D · Python data scripts · government open data, Wiktionary, Wikidata, JMnedict · GitHub Pages
 
 ## Run it
-No build step. Open `index.html`, or serve the folder with any static server.
+No build step. Serve the folder with any static server (`python3 -m http.server`) so the data files can load.
 
 ## Add names
 Add a line to `REAL_RAW` in `names.js`:
 ```
 Name|g/b/e|Culture|Language|Religion1,Religion2|meaning|story
 ```
+
+Built by [Suhani Tiwari](https://suhanitiwari.com).
