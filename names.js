@@ -641,6 +641,88 @@ Salote|g|Tongan|Tongan|Christian|Charlotte|name of Queen Sālote Tupou III
 Malakai|b|Tongan|Tongan|Christian|Malachi|
 Mere|g|Fijian|Fijian|Christian|Mary|
 Vilisoni|b|Fijian|Fijian|Christian|Wilson|
+Arthit|b|Thai|Thai|Buddhist|sun|
+Suriya|b|Thai|Thai|Buddhist|sun|
+Chanthira|g|Thai|Thai|Buddhist|moon|
+Duangjai|g|Thai|Thai|Buddhist|heart; beloved|
+Kanokwan|g|Thai|Thai|Buddhist|golden complexion|
+Kamon|e|Thai|Thai|Buddhist|lotus; heart|
+Kittipong|b|Thai|Thai|Buddhist|lineage of honor|
+Nattapong|b|Thai|Thai|Buddhist|lineage of the wise|
+Sakda|b|Thai|Thai|Buddhist|power, might|
+Somsak|b|Thai|Thai|Buddhist|worthy of honor|
+Somporn|e|Thai|Thai|Buddhist|worthy of blessings|
+Supachai|b|Thai|Thai|Buddhist|auspicious victory|
+Thanawat|b|Thai|Thai|Buddhist|growing wealth|
+Wichai|b|Thai|Thai|Buddhist|victory|
+Chai|b|Thai|Thai|Buddhist|victory|
+Wanida|g|Thai|Thai|Buddhist|woman, lady|
+Naree|g|Thai|Thai|Buddhist|woman|
+Pornthip|g|Thai|Thai|Buddhist|divine blessing|
+Rungnapa|g|Thai|Thai|Buddhist|rainbow in the sky|
+Benjamas|g|Thai|Thai|Buddhist|chrysanthemum|
+Saowalak|g|Thai|Thai|Buddhist|of fine features|
+Ploy|g|Thai|Thai|Buddhist|gem|
+Fah|g|Thai|Thai|Buddhist|sky|
+Dao|g|Thai|Thai|Buddhist|star|
+Kulap|g|Thai|Thai|Buddhist|rose|
+Aye|e|Burmese|Burmese|Buddhist|calm, cool|
+Hla|e|Burmese|Burmese|Buddhist|beautiful|
+Mya|g|Burmese|Burmese|Buddhist|emerald|
+Myint|b|Burmese|Burmese|Buddhist|high, lofty|
+Kyaw|b|Burmese|Burmese|Buddhist|famous, renowned|
+Win|b|Burmese|Burmese|Buddhist|bright, radiant|
+Htet|b|Burmese|Burmese|Buddhist|superior, higher|
+Min|b|Burmese|Burmese|Buddhist|king|
+Thant|b|Burmese|Burmese|Buddhist|clean, pure|U Thant, third UN Secretary-General
+Phyu|e|Burmese|Burmese|Buddhist|white|
+Khaing|e|Burmese|Burmese|Buddhist|firm, strong|
+Thiri|g|Burmese|Burmese|Buddhist|glory, splendor|
+Moe|e|Burmese|Burmese|Buddhist|rain; sky|
+Nyein|e|Burmese|Burmese|Buddhist|calm, peaceful|
+Kyi|e|Burmese|Burmese|Buddhist|clear, bright|
+Naing|b|Burmese|Burmese|Buddhist|to win, victorious|
+Tun|b|Burmese|Burmese|Buddhist|bright, shining|
+Shwe|e|Burmese|Burmese|Buddhist|gold|
+Ngwe|e|Burmese|Burmese|Buddhist|silver|
+Yadanar|g|Burmese|Burmese|Buddhist|jewel, treasure|
+Sandar|g|Burmese|Burmese|Buddhist|moon|
+Vanna|e|Khmer|Khmer|Buddhist|golden-colored|
+Kosal|b|Khmer|Khmer|Buddhist|merit, good deeds|
+Rithy|b|Khmer|Khmer|Buddhist|power|
+Visal|b|Khmer|Khmer|Buddhist|great, vast|
+Pich|e|Khmer|Khmer|Buddhist|diamond|
+Srey|g|Khmer|Khmer|Buddhist|woman, girl|
+Mealea|g|Khmer|Khmer|Buddhist|garland|
+Phalla|e|Khmer|Khmer|Buddhist|fruit|
+Sovann|e|Khmer|Khmer|Buddhist|gold|
+Socheata|g|Khmer|Khmer|Buddhist|well-born|
+Kunthea|g|Khmer|Khmer|Buddhist|fragrance|
+Leakhena|g|Khmer|Khmer|Buddhist|of fine features|
+Veasna|b|Khmer|Khmer|Buddhist|destiny|
+Seyha|b|Khmer|Khmer|Buddhist|lion|
+Samnang|b|Khmer|Khmer|Buddhist|lucky|
+Thida|g|Khmer|Khmer|Buddhist|daughter|
+Ratanak|b|Khmer|Khmer|Buddhist|jewel|
+Sophal|b|Khmer|Khmer|Buddhist|fruitful, prosperous|
+Sina|g|Samoan|Samoan||white|heroine of the legend of Sina and the eel, which became the first coconut
+Masina|g|Samoan|Samoan||moon|
+Lagi|e|Samoan|Samoan||sky, heaven|
+Moana|e|Samoan|Samoan||ocean, deep sea|
+Malie|g|Samoan|Samoan||pleasant, sweet|
+Mana|e|Samoan|Samoan||power, prestige|
+Tama|b|Samoan|Samoan||boy, child|
+Tasi|e|Samoan|Samoan||one|
+Tavita|b|Samoan|Samoan|Christian|David|
+Losa|g|Samoan|Samoan|Christian|Rose|
+Ioane|b|Samoan|Samoan|Christian|John|
+Iosefa|b|Samoan|Samoan|Christian|Joseph|
+Sefo|b|Samoan|Samoan|Christian|Joe, Joseph|
+Pita|b|Samoan|Samoan|Christian|Peter|
+Mikaele|b|Samoan|Samoan|Christian|Michael|
+Peniamina|b|Samoan|Samoan|Christian|Benjamin|
+Elisapeta|g|Samoan|Samoan|Christian|Elizabeth|
+Mele|g|Samoan|Samoan|Christian|Mary|
 `;
 
 const REAL = REAL_RAW.trim().split("\n").map(line => {
