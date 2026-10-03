@@ -73,6 +73,20 @@ Names that can't be verified are left out. Spot-checks of the 300 most common na
 
 `data/hebrew-names.json` then adds **942 names with cards** (Hebrew spelling and how many Israeli babies got the name): **496 with Hebrew roots** (Hebrew by origin: Bible, a native-Hebrew Wikidata label, or the usual-spelling list) and **446 Israeli** (mostly given in Israel, whatever their origin, e.g. Russian and Ethiopian names). Search them with "with ⟨Hebrew / Israeli⟩ roots".
 
+## 🇯🇵 🇰🇷 🇨🇳 Japanese, Korean and Chinese names
+
+None of these governments publish name counts, so `scripts/build_east_asian.py` builds `data/east-asian-names.json` from open dictionaries of names and characters:
+
+| | Source | Names | How |
+|---|---|---|---|
+| **Japanese** | **JMnedict** (EDRDG): every given name in Japan's largest open names dictionary, with its gender and every way it is written | **33,831 real names** | romanized as on Japanese passports (Yūki → Yuki); the spelling shown uses the characters most often used for that name, at its usual length (Haruto 春人, Sakura 咲良); meanings from **KANJIDIC2**, with name-friendly senses for common name kanji (博 "learned", not "Dr."); gender from JMnedict's tags, or official records where they're clear (Haruto, Riku: boys) |
+| **Korean** | name syllables with their usual hanja, checked against **KANJIDIC2**'s Korean readings | **3,881** (real ones like Minjun, Seoyeon, Haeun marked real) | built the way Korean names are made, two syllables (민 敏 clever + 준 俊 talented = Minjun), in the official Revised Romanization; a girls' and a boys' syllable never mix |
+| **Chinese** | ~150 common given-name characters, pinyin and meanings from **CC-CEDICT** (MDBG) | **9,857** (3,800+ registered somewhere, like Zihan, Xinyi, Yuxuan, marked real) | two characters (子 zǐ child + 涵 hán contain = Zihan), pinyin without tone marks in the name, with them in the story; doubled names (Tingting) for girls |
+
+Where one spelling exists in two languages, it lives in one: Japanese first (real names), then Korean, then Chinese (Yui is Japanese, Minjun Korean). Search with "with ⟨Japanese / Korean / Chinese⟩ roots".
+
+⚠️ JMnedict, KANJIDIC2 and CC-CEDICT are CC BY-SA 4.0 (share-alike), like the Brazil list.
+
 ## ⏳ Found, not in yet (needs a manual download or more work)
 
 | Country | Source | What it has | Why it's not in |

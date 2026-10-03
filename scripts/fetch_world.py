@@ -51,6 +51,10 @@ FILES = [
     *[("israel", f"wd-he-{k}.tsv", "https://query.wikidata.org/sparql?query=" + urllib.parse.quote(
         f'SELECT ?t ?he ?en WHERE {{ VALUES ?t {{ wd:Q202444 wd:Q11879590 wd:Q3409032 }} ?i wdt:P31 ?t . ?i {p} ?he . FILTER(lang(?he)="he") ?i rdfs:label ?en . FILTER(lang(?en)="en") }}')
         + "&format=tsv") for k, p in (("native", "wdt:P1705"), ("label", "rdfs:label"), ("alias", "skos:altLabel"))],
+    # ── Japanese, Korean, Chinese (read by build_east_asian.py) ──
+    ("east-asia", "JMnedict.xml.gz", "http://ftp.edrdg.org/pub/Nihongo/JMnedict.xml.gz"),          # EDRDG, CC BY-SA 4.0
+    ("east-asia", "kanjidic2.xml.gz", "http://www.edrdg.org/kanjidic/kanjidic2.xml.gz"),           # EDRDG, CC BY-SA 4.0
+    ("east-asia", "cedict_1_0_ts_utf-8_mdbg.txt.gz", "https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz"),  # MDBG, CC BY-SA 4.0
     # ── sacred texts (read by build_scriptures.py) ──
     # Bible: every person named (STEPBible TIPNR, Tyndale House, CC BY 4.0) and name meanings (Hitchcock, 1869, public domain)
     ("bible", "tipnr.txt", "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/master/Proper%20Nouns/TIPNR%20-%20Translators%20Individualised%20Proper%20Names%20with%20all%20References%20-%20STEPBible.org%20CC%20BY.txt"),

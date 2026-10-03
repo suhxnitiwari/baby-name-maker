@@ -446,6 +446,7 @@
   Names from sacred texts: STEPBible TIPNR, Tyndale House (CC BY 4.0) · Hitchcock's Bible Names Dictionary (1869, public domain) ·
   Cologne Digital Sanskrit Dictionaries, The Sanskrit Library: Sørensen's Index to the Names in the Mahābhārata, Dikshitar's Purāṇa Index, Vettam Mani's Purāṇic Encyclopaedia,
   Macdonell &amp; Keith's Vedic Index, Mehendale's Mahābhārata Cultural Index (CC BY-NC-SA 3.0) · Bhagavad Gita text, gita/gita (public domain) · Quranic Arabic Corpus, Kais Dukes (GPL), text by Tanzil.
+  Japanese, Korean &amp; Chinese names: JMnedict &amp; KANJIDIC2, Electronic Dictionary Research and Development Group (CC BY-SA 4.0) · CC-CEDICT, MDBG (CC BY-SA 4.0).
   Generated names are invented by Lullabyte and have no recorded meaning. Tunes are generated from how each name sounds.
 </footer>
 
@@ -471,15 +472,26 @@ const CC_LABEL = { us: "US", ca: "Canada", qc: "Québec", au: "Australia", uk: "
   ar: "Argentina", br: "Brazil", cl: "Chile", pl: "Poland", de: "Germany", at: "Austria", no: "Norway", lu: "Luxembourg", pt: "Portugal", il: "Israel", fi: "Finland", be: "Belgium", sct: "Scotland", nz: "New Zealand" };
 // Names from sacred texts (Bible & Torah, Hindu epics, Puranas, Vedas & the Gita, the Quran), with their stories: data/scripture-names.json
 // …and Hebrew names from Israel's birth records (data/hebrew-names.json), with their Hebrew spelling
-const storied = Promise.all(["data/scripture-names.json?v=1", "data/hebrew-names.json?v=1"].map(u => fetch(u).then(r => r.json()).catch(() => [])))
-  .then(([a, b]) => addStoried([...a, ...b])).catch(() => {});
+// …and Japanese, Korean and Chinese names with their characters (data/east-asian-names.json)
+function eastAsian(d) {
+  const rows = [];
+  for (const [n, g, kanji, kana, ways, m] of d.ja || [])
+    rows.push([n, g, "Japanese", "Japanese", "", m, (kanji ? `Written ${kanji} (${m})` + (ways > 1 ? `, one of ${ways} ways to write ${n} in kanji` : "") + ". " : "") + `In kana: ${kana}.`, "", "real"]);
+  for (const [n, g, hangul, hanja, m, real] of d.ko || [])
+    rows.push([n, g, "Korean", "Korean", "", m, `Written ${hangul} (${hanja}): ${m}.` + (real ? "" : " Built the way Korean names are made: two name syllables, each with its hanja."), "", real ? "real" : "root"]);
+  for (const [n, g, hanzi, pinyin, m, real] of d.zh || [])
+    rows.push([n, g, "Chinese", "Mandarin", "", m, `Written ${hanzi} (${pinyin}): ${m}.` + (real ? "" : " Built from two given-name characters."), "", real ? "real" : "root"]);
+  return rows;
+}
+const storied = Promise.all(["data/scripture-names.json?v=1", "data/hebrew-names.json?v=1", "data/east-asian-names.json?v=1"].map(u => fetch(u).then(r => r.json()).catch(() => [])))
+  .then(([a, b, c]) => addStoried([...a, ...b, ...eastAsian(c)])).catch(e => console.error(e));
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
-  for (const [n, g, o, l, r, m, src, texts] of rows) {
+  for (const [n, g, o, l, r, m, src, texts, kind] of rows) {
     const x = texts ? texts.split(",") : [], k = fold(n), cur = have.get(k);
     if (cur) { cur.x = [...new Set([...(cur.x || []), ...x])]; cur.m ||= m; cur.src = cur.src ? (src && !cur.src.includes(src) && src.startsWith("Given to") ? `${cur.src} ${src}` : cur.src) : src; continue; }   // keep our hand-written entry, add where it's named
-    const e = { n, g: { g: "girl", b: "boy", e: "either" }[g], o, l, r: r ? r.split(",") : [], m, src, type: "real", x };
-    REAL.push(e); ALL_NAMED.push(e); have.set(k, e); TAKEN.add(k);
+    const e = { n, g: { g: "girl", b: "boy", e: "either" }[g], o, l, r: r ? r.split(",") : [], m, src, type: kind === "root" ? "root" : "real", x };
+    (kind === "root" ? ROOT_NAMES : REAL).push(e); ALL_NAMED.push(e); have.set(k, e); TAKEN.add(k);
     BY_NAME.has(k) ? BY_NAME.get(k).push(e) : BY_NAME.set(k, [e]);
     const sk = soundKey(n); SOUND_INDEX.has(sk) ? SOUND_INDEX.get(sk).push(n) : SOUND_INDEX.set(sk, [n]);
   }

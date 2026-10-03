@@ -60,6 +60,9 @@ Every source, its license, and the countries we checked that don't publish (or t
 ## Names from sacred texts
 `data/scripture-names.json` (built by `scripts/build_scriptures.py`) adds **13,695 names with stories**: every person named in the **Bible** (the Torah, the Hebrew Bible and the New Testament, with Hitchcock's meanings), the people, gods and sages of the **Mahabharata, Bhagavad Gita, Ramayana, Puranas and Vedas**, and every person, angel and name-giving word of the **Quran**, each with its verse. Search them with the "named in ⟨the Torah / the Quran / the Bhagavad Gita…⟩" blank. Sources and licenses: [docs/name-sources.md](docs/name-sources.md).
 
+## Japanese, Korean and Chinese names
+`data/east-asian-names.json` (built by `scripts/build_east_asian.py`) adds **33,831 real Japanese given names** from JMnedict, each with its usual kanji and meaning (Haruto: 春人, spring + person), plus **3,881 Korean** and **9,857 Chinese** names built from name syllables and characters with their hanja or hanzi, readings and meanings (Minjun: 敏俊; Zihan: 子涵, zǐ hán). Sources and how they're built: [docs/name-sources.md](docs/name-sources.md).
+
 ## Popularity data
 `data/popularity.json` (built by `scripts/build-popularity.py`) powers the Popular tab and rank badges: US, Canada, NSW, England & Wales and France.
 
