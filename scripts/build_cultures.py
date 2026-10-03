@@ -198,6 +198,7 @@ def clean(t):
     t = re.sub(r"\[\[(?:[^|\]]*\|)?([^\]]*)\]\]", r"\1", t)
     t = re.sub(r"\{\{[^{}]*\}\}", "", t); t = re.sub(r"\{\{[^{}]*\}\}", "", t)
     t = re.sub(r"<[^>]+>|'''?", "", t)
+    t = re.sub(r"\{\{.*$|\}\}", "", t)                                        # unfinished template markup
     return re.sub(r"\s+", " ", t).strip(" ,.;:")
 def section(text, lang):
     m = re.search(r"(?m)^==\s*" + re.escape(lang) + r"\s*==\s*$", text)
@@ -269,7 +270,7 @@ if __name__ == "__main__":
                   "Indonesian", "Malay", "Javanese", "Mongolian", "Uyghur"}
     for es in entries.values():
         for e in es:
-            if not e["m"] and found.get(e["n"]) and (e["o"] in WORD_NAMES or set(e["oo"]) & {"African", "South Asian"}): e["m"] = found[e["n"]]
+            if not e["m"] and found.get(e["n"]) and (e["o"] in WORD_NAMES or set(e["oo"]) & {"African", "South Asian"}): e["m"] = clean(found[e["n"]])
     rows = []
     for k, es in entries.items():
         # one name, one home: the entry with a meaning first, Wiktionary before Wikidata; the other cultures are kept as "also"

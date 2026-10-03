@@ -761,6 +761,125 @@ Fetu'u|e|Tongan|Tongan||star|
 Kakala|g|Tongan|Tongan||fragrant flowers|
 Heilala|g|Tongan|Tongan||the heilala flower, Tonga's national flower|
 Moana|e|Tongan|Tongan||ocean, deep sea|
+Anuhea|g|Hawaiian|Hawaiian||cool, fragrant breeze|
+Haunani|g|Hawaiian|Hawaiian||beautiful dew|
+Hina|g|Hawaiian|Hawaiian||goddess of the moon|the moon goddess of Hawaiian legend
+Haumea|g|Hawaiian|Hawaiian||goddess of fertility and childbirth|
+Ikaika|b|Hawaiian|Hawaiian||strong|
+Iokepa|b|Hawaiian|Hawaiian|Christian|Joseph|
+Iakopa|b|Hawaiian|Hawaiian|Christian|Jacob|
+Iosua|b|Hawaiian|Hawaiian|Christian|Joshua|
+Kahale|b|Hawaiian|Hawaiian||the house|
+Kailani|g|Hawaiian|Hawaiian||sea and sky|
+Kaimana|e|Hawaiian|Hawaiian||diamond|
+Kainalu|b|Hawaiian|Hawaiian||the billowing sea|
+Kainoa|b|Hawaiian|Hawaiian||the name|
+Kaipo|b|Hawaiian|Hawaiian||the sweetheart|
+Kalama|e|Hawaiian|Hawaiian||the torch|
+Kalei|e|Hawaiian|Hawaiian||the lei; the beloved|
+Kaleialoha|g|Hawaiian|Hawaiian||lei of love|
+Kaleo|b|Hawaiian|Hawaiian||the voice|
+Kaleolani|e|Hawaiian|Hawaiian||heavenly voice|
+Kama|b|Hawaiian|Hawaiian||child|
+Kamaile|g|Hawaiian|Hawaiian||the maile vine|
+Kamaka|b|Hawaiian|Hawaiian||the eye; the face|
+Kamalani|g|Hawaiian|Hawaiian||child of heaven|
+Kamalei|g|Hawaiian|Hawaiian||beloved child|
+Kamehameha|b|Hawaiian|Hawaiian||the lonely one, one set apart|Kamehameha I, who united the Hawaiian Islands
+Kamuela|b|Hawaiian|Hawaiian|Christian|Samuel|
+Kanaloa|b|Hawaiian|Hawaiian||god of the ocean|
+Kanani|g|Hawaiian|Hawaiian||the beauty|
+Kaniela|b|Hawaiian|Hawaiian|Christian|Daniel|
+Kanoa|b|Hawaiian|Hawaiian||the free one|
+Kanoelani|g|Hawaiian|Hawaiian||heavenly mist|
+Kapono|b|Hawaiian|Hawaiian||the righteous one|
+Kapua|e|Hawaiian|Hawaiian||the flower|
+Kaulana|e|Hawaiian|Hawaiian||famous|
+Kawai|e|Hawaiian|Hawaiian||the water|
+Kawailani|e|Hawaiian|Hawaiian||heavenly water|
+Kawehi|e|Hawaiian|Hawaiian||the adornment|
+Kawika|b|Hawaiian|Hawaiian|Christian|David|
+Kāwika|b|Hawaiian|Hawaiian|Christian|David|
+Keahi|e|Hawaiian|Hawaiian||the fire|
+Keala|e|Hawaiian|Hawaiian||the path|
+Kealani|e|Hawaiian|Hawaiian||the heavenly path|
+Kealoha|e|Hawaiian|Hawaiian||the beloved|
+Keao|e|Hawaiian|Hawaiian||the dawn|
+Kekoa|b|Hawaiian|Hawaiian||the brave one|
+Keola|e|Hawaiian|Hawaiian||life|
+Keone|b|Hawaiian|Hawaiian||the sand|
+Kepano|b|Hawaiian|Hawaiian|Christian|Stephen|
+Kiele|g|Hawaiian|Hawaiian||gardenia|
+Kimokeo|b|Hawaiian|Hawaiian|Christian|Timothy|
+Kimona|b|Hawaiian|Hawaiian|Christian|Simon|
+Kolomona|b|Hawaiian|Hawaiian|Christian|Solomon|
+Kāne|b|Hawaiian|Hawaiian||man; god of creation and life|
+Kēhau|e|Hawaiian|Hawaiian||the dew|
+Kēhaulani|g|Hawaiian|Hawaiian||heavenly dew|
+Kalā|e|Hawaiian|Hawaiian||the sun|
+Kalehua|e|Hawaiian|Hawaiian||the lehua blossom|
+Laka|g|Hawaiian|Hawaiian||goddess of hula|
+Lanakila|b|Hawaiian|Hawaiian||victory|
+Lani|e|Hawaiian|Hawaiian||sky, heaven|
+Lehua|g|Hawaiian|Hawaiian||the ʻōhiʻa lehua blossom|
+Lei|g|Hawaiian|Hawaiian||flower garland; beloved|
+Leialoha|g|Hawaiian|Hawaiian||lei of love|
+Leimomi|g|Hawaiian|Hawaiian||pearl lei|
+Leinani|g|Hawaiian|Hawaiian||beautiful lei|
+Lepeka|g|Hawaiian|Hawaiian|Christian|Rebecca|
+Lilinoe|g|Hawaiian|Hawaiian||fine mist|goddess of the mists of Maunakea
+Lono|b|Hawaiian|Hawaiian||god of agriculture and peace|
+Lāhela|g|Hawaiian|Hawaiian|Christian|Rachel|
+Makana|e|Hawaiian|Hawaiian||gift|
+Makamae|e|Hawaiian|Hawaiian||precious|
+Makoa|b|Hawaiian|Hawaiian||courageous|
+Maleko|b|Hawaiian|Hawaiian|Christian|Mark|
+Mililani|e|Hawaiian|Hawaiian||praised by the heavens|
+Moani|g|Hawaiian|Hawaiian||fragrant breeze|
+Moke|b|Hawaiian|Hawaiian|Christian|Moses|
+Mokihana|g|Hawaiian|Hawaiian||a fragrant berry of Kauaʻi|
+Momi|g|Hawaiian|Hawaiian||pearl|
+Momilani|g|Hawaiian|Hawaiian||heavenly pearl|
+Māhealani|g|Hawaiian|Hawaiian||night of the full moon|
+Mālie|g|Hawaiian|Hawaiian||calm, gentle|
+Māpuana|g|Hawaiian|Hawaiian||fragrance|
+Māui|b|Hawaiian|Hawaiian||the demigod who fished up the islands|
+Nakoa|b|Hawaiian|Hawaiian||the warriors|
+Nalani|g|Hawaiian|Hawaiian||the heavens|
+Nanea|g|Hawaiian|Hawaiian||tranquil, relaxing|
+Nani|g|Hawaiian|Hawaiian||beautiful|
+Noelani|g|Hawaiian|Hawaiian||heavenly mist|
+Nohea|e|Hawaiian|Hawaiian||handsome, lovely|
+Pele|g|Hawaiian|Hawaiian||goddess of fire and volcanoes|
+Pua|g|Hawaiian|Hawaiian||flower|
+Pualani|g|Hawaiian|Hawaiian||heavenly flower|
+Ululani|g|Hawaiian|Hawaiian||heavenly inspiration|
+Wailani|e|Hawaiian|Hawaiian||heavenly water|
+Waiola|e|Hawaiian|Hawaiian||water of life|
+Maile|g|Hawaiian|Hawaiian||the maile vine, used for leis|
+Nāmaka|e|Hawaiian|Hawaiian||the eyes|
+Timoci|b|Fijian|Fijian|Christian|Timothy|
+Tomasi|b|Fijian|Fijian|Christian|Thomas|
+Josefa|b|Fijian|Fijian|Christian|Joseph|
+Jone|b|Fijian|Fijian|Christian|John|
+Inoke|b|Fijian|Fijian|Christian|Enoch|
+Isikeli|b|Fijian|Fijian|Christian|Ezekiel|
+Apisai|b|Fijian|Fijian|Christian|Abishai|
+Samisoni|b|Fijian|Fijian|Christian|Samson|
+Sakiusa|b|Fijian|Fijian|Christian|Zacchaeus|
+Peni|b|Fijian|Fijian|Christian|Ben|
+Isireli|b|Fijian|Fijian|Christian|Israel|
+Joritani|b|Fijian|Fijian|Christian|Jordan|
+Litia|g|Fijian|Fijian|Christian|Lydia|
+Losana|g|Fijian|Fijian|Christian|Rosanna|
+Losalini|g|Fijian|Fijian|Christian|Rosaline|
+Ateca|g|Fijian|Fijian|Christian|Agatha|
+Akanisi|g|Fijian|Fijian|Christian|Agnes|
+Unaisi|g|Fijian|Fijian|Christian|Eunice|
+Vereniki|g|Fijian|Fijian|Christian|Veronica|
+Elenoa|g|Fijian|Fijian|Christian|Eleanor|
+Varanisese|g|Fijian|Fijian|Christian|Frances|
+Ana|g|Fijian|Fijian|Christian|Anna|
 `;
 
 const REAL = REAL_RAW.trim().split("\n").map(line => {

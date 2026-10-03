@@ -451,7 +451,7 @@
   Generated names are invented by Lullabyte and have no recorded meaning. Tunes are generated from how each name sounds.
 </footer>
 
-<script src="names.js?v=6"></script>
+<script src="names.js?v=7"></script>
 <script src="generator.js?v=4"></script>
 <script src="musicbox.js?v=3"></script>
 <script>
@@ -485,7 +485,7 @@ function eastAsian(d) {
   return rows;
 }
 // …and names sorted into 120+ cultures, from Yoruba to Tamil to Māori (data/culture-names.json)
-const storied = Promise.all(["data/scripture-names.json?v=1", "data/hebrew-names.json?v=1", "data/east-asian-names.json?v=1", "data/culture-names.json?v=4"]
+const storied = Promise.all(["data/scripture-names.json?v=1", "data/hebrew-names.json?v=1", "data/east-asian-names.json?v=1", "data/culture-names.json?v=5"]
   .map(u => fetch(u).then(r => r.json()).catch(() => [])))
   .then(([a, b, c, d]) => addStoried([...a, ...b, ...eastAsian(c), ...d])).catch(e => console.error(e));
 function addStoried(rows) {
