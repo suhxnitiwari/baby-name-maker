@@ -202,6 +202,7 @@
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
   .chip { font: .62rem var(--mono); letter-spacing: .08em; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--rule); color: var(--muted); }
   .chip.rel { color: var(--rose); border-color: color-mix(in srgb, var(--rose) 40%, transparent); }
+  .chip.text { color: var(--ink); border-color: var(--brass); background: color-mix(in srgb, var(--brass) 14%, transparent); }
 
   /* Mom + Dad: the duet */
   .duet-in { display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: end; background: var(--night); color: var(--ivory); padding: 34px 34px 10px; border-radius: 16px 16px 0 0; margin-top: 10px; }
@@ -389,6 +390,9 @@
         <option value="earthy">earthy &amp; natural</option><option value="spiritual">spiritual</option><option value="regal">regal</option></select>
       and means <select class="slot" id="theme"></select>,
       with <select class="slot" id="culture"></select> roots, <select class="slot" id="lang"></select>, <select class="slot" id="religion"></select>,
+      named in <select class="slot" id="scripture"><option value="">any sacred text</option><option value="Torah">the Torah</option><option value="Hebrew Bible">the Hebrew Bible</option>
+        <option value="New Testament">the New Testament</option><option value="Bible">the Bible</option><option value="Quran">the Quran</option><option value="Bhagavad Gita">the Bhagavad Gita</option>
+        <option value="Mahabharata">the Mahabharata</option><option value="Ramayana">the Ramayana</option><option value="Puranas">the Puranas</option><option value="Vedas">the Vedas</option></select>,
       <span data-for="find">starting with <input class="slot" id="first2" maxlength="3" placeholder="any letter" size="7"> and ending in <input class="slot" id="ends" maxlength="5" placeholder="anything" size="7">,</span>
       <select class="slot" id="len"><option value="">any length</option><option value="3-4">short (3–4 letters)</option><option value="5-6">medium (5–6 letters)</option><option value="7-8">long (7–8 letters)</option><option value="9-99">extra long (9+)</option><option value="1-5">up to 5 letters</option><option value="1-6">up to 6 letters</option><option value="1-7">up to 7 letters</option></select>,
       to go with <input class="slot" id="lastName" placeholder="your last name" size="12">.
@@ -426,9 +430,15 @@
 </main>
 
 <footer>
-  Real names &amp; popularity from official registries, used with attribution: US Social Security Administration · Statistics Canada (Open Government Licence – Canada) ·
-  Retraite Québec (CC BY 4.0) · Office for National Statistics, England &amp; Wales (Open Government Licence v3.0) · Central Statistics Office Ireland (CC BY 4.0) ·
-  INSEE France (Licence Ouverte) · INE Spain · Swiss Federal Statistical Office (FSO) · NSW Registry of Births, Deaths &amp; Marriages (CC BY 4.0) · RENAPER Argentina.
+  Real names &amp; popularity from official government records, used with attribution: US Social Security Administration · Statistics Canada (Open Government Licence – Canada) ·
+  Retraite Québec (CC BY 4.0) · BC Vital Statistics (Open Government Licence – BC) · Alberta Vital Statistics (Open Government Licence – Alberta) · ServiceOntario (Open Government Licence – Ontario) ·
+  Office for National Statistics, England &amp; Wales (Open Government Licence v3.0) · NISRA, Northern Ireland (Open Government Licence) · Central Statistics Office Ireland (CC BY 4.0) ·
+  INSEE France (Licence Ouverte) · INE Spain · Swiss Federal Statistical Office (FSO) · Stadt Zürich (CC0) · Statistik Austria (CC BY 4.0) · German municipal open-data portals via GovData.de ·
+  Statistics Norway (NLOD) · PESEL register, Poland (dane.gov.pl) · IRN, Portugal (dados.gov.pt) · RNPP Luxembourg (data.public.lu) ·
+  NSW, Victoria, Queensland, South Australia &amp; Tasmania birth registries (CC BY) · RENAPER Argentina · Registro Civil de Chile (via the guaguas dataset, CC0) · IBGE Census 2010, Brazil (via Brasil.io).
+  Names from sacred texts: STEPBible TIPNR, Tyndale House (CC BY 4.0) · Hitchcock's Bible Names Dictionary (1869, public domain) ·
+  Cologne Digital Sanskrit Dictionaries, The Sanskrit Library: Sørensen's Index to the Names in the Mahābhārata, Dikshitar's Purāṇa Index, Vettam Mani's Purāṇic Encyclopaedia,
+  Macdonell &amp; Keith's Vedic Index, Mehendale's Mahābhārata Cultural Index (CC BY-NC-SA 3.0) · Bhagavad Gita text, gita/gita (public domain) · Quranic Arabic Corpus, Kais Dukes (GPL), text by Tanzil.
   Generated names are invented by Lullabyte and have no recorded meaning. Tunes are generated from how each name sounds.
 </footer>
 
@@ -445,13 +455,30 @@ if ("scrollRestoration" in history) history.scrollRestoration = "manual"; // alw
 const ROOT_NAMES = buildRootNames();
 const TAKEN = new Set([...REAL, ...ROOT_NAMES].map(x => x.n.toLowerCase()));
 
-// ── Official names database: every real name from 10 government registries (data/names-db.tsv) ──
+// ── Official names database: every real first name from government registries in 17 countries (data/names-db.tsv) ──
 // name <TAB> gender (f / m / u = both / ? = registry has no sex) <TAB> countries <TAB> people recorded
 let DB = [], DB_READY = false;
 const DB_KEYS = new Map();
 const DB_G = { f: "girl", m: "boy", u: "either", "?": null };
-const CC_LABEL = { us: "US", ca: "Canada", qc: "Québec", au: "NSW", uk: "Eng & Wales", ie: "Ireland", fr: "France", es: "Spain", ch: "Switzerland", ar: "Argentina" };
-const dbReady = fetch("data/names-db.tsv?v=1").then(r => r.text()).then(t => {
+const CC_LABEL = { us: "US", ca: "Canada", qc: "Québec", au: "Australia", uk: "Eng & Wales", nir: "N. Ireland", ie: "Ireland", fr: "France", es: "Spain", ch: "Switzerland",
+  ar: "Argentina", br: "Brazil", cl: "Chile", pl: "Poland", de: "Germany", at: "Austria", no: "Norway", lu: "Luxembourg", pt: "Portugal", fi: "Finland", be: "Belgium", sct: "Scotland", nz: "New Zealand" };
+// Names from sacred texts (Bible & Torah, Hindu epics, Puranas, Vedas & the Gita, the Quran), with their stories: data/scripture-names.json
+const storied = fetch("data/scripture-names.json?v=1").then(r => r.json()).then(addStoried).catch(() => {});
+function addStoried(rows) {
+  const have = new Map(REAL.map(x => [fold(x.n), x]));
+  for (const [n, g, o, l, r, m, src, texts] of rows) {
+    const x = texts.split(","), k = fold(n), cur = have.get(k);
+    if (cur) { cur.x = [...new Set([...(cur.x || []), ...x])]; cur.m ||= m; cur.src ||= src; continue; }   // keep our hand-written entry, add where it's named
+    const e = { n, g: { g: "girl", b: "boy", e: "either" }[g], o, l, r: r ? r.split(",") : [], m, src, type: "real", x };
+    REAL.push(e); ALL_NAMED.push(e); have.set(k, e); TAKEN.add(k);
+    BY_NAME.has(k) ? BY_NAME.get(k).push(e) : BY_NAME.set(k, [e]);
+    const sk = soundKey(n); SOUND_INDEX.has(sk) ? SOUND_INDEX.get(sk).push(n) : SOUND_INDEX.set(sk, [n]);
+  }
+  fillSelect($("#religion"), "any faith", uniq(ALL_NAMED.flatMap(x => x.r)));
+  fillSelect($("#culture"), "any", uniq(ALL_NAMED.map(x => x.o)));
+  fillSelect($("#lang"), "any language", uniq(ALL_NAMED.map(x => x.l)));
+}
+const dbReady = Promise.all([fetch("data/names-db.tsv?v=2").then(r => r.text()), storied]).then(([t]) => {
   const ours = new Set([...REAL, ...ROOT_NAMES].map(x => fold(x.n)));
   for (const line of t.split("\n")) {
     if (!line) continue;
@@ -512,7 +539,8 @@ fillThemes();
 
 function filters() {
   return { theme: $("#theme").value, religion: $("#religion").value, culture: $("#culture").value, lang: $("#lang").value,
-    first: $("#first").value.toLowerCase(), first2: fold($("#first2").value), ends: fold($("#ends").value), len: $("#len").value, vibe: $("#vibeSel").value };
+    first: $("#first").value.toLowerCase(), first2: fold($("#first2").value), ends: fold($("#ends").value), len: $("#len").value, vibe: $("#vibeSel").value,
+    text: $("#scripture").value };
 }
 const genderOk = x => gender === "either" ? x.g === "either" : x.g === gender || x.g === "either";
 
@@ -535,6 +563,7 @@ function matches(x, f, letters = true) {
   if (f.religion && !x.r.includes(f.religion)) return false;
   if (f.culture && x.o !== f.culture) return false;
   if (f.lang && x.l !== f.lang) return false;
+  if (f.text && !(x.x || []).includes(f.text)) return false;
   if (letters) {
     const n = fold(x.n);
     if (f.first && !n.startsWith(f.first)) return false;
@@ -550,7 +579,7 @@ const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.r
 
 function buildPools() {
   const f = filters();
-  const needsMeaning = f.theme || f.religion || f.culture || f.lang; // invented names have no meaning/background
+  const needsMeaning = f.theme || f.religion || f.culture || f.lang || f.text; // invented names have no meaning/background
   pools = {
     real: shuffle(REAL.filter(x => matches(x, f))),
     root: shuffle(ROOT_NAMES.filter(x => matches(x, f))),
@@ -636,7 +665,7 @@ function strip(x, i, featured = false) {
     ${bandHTML(m, featured ? 10 : 7, featured ? 52 : 46, featured ? "" : `${esc(x.n)} · No. ${hexId(x.n)}`)}
     <div class="drawer">
       <div>
-        ${x.m ? `<p class="mean">“${esc(x.m)}”</p>` : `<p class="mean none">${isNew ? "A brand-new name. No meaning yet: it's yours to give." : "A real name, from official birth records."}</p>`}
+        ${x.m ? `<p class="mean">“${esc(x.m)}”</p>` : `<p class="mean none">${isNew ? "A brand-new name. No meaning yet: it's yours to give." : x.x ? `A name from the ${esc(x.x.includes("Bhagavad Gita") ? "Bhagavad Gita" : x.x.includes("Torah") ? "Torah" : x.x[0])}.` : "A real name, from official birth records."}</p>`}
         ${x.src ? `<p class="src">${esc(x.src)}</p>` : ""}
         <div class="vibes">${v.words.map(w => `<em>${w}</em>`).join("")}</div>
         ${mo ? `<p class="micro" style="color:var(--rose);margin-top:10px">${mo}</p>` : ""}
@@ -656,7 +685,7 @@ function strip(x, i, featured = false) {
         ${fullName(x)}
         ${alsoSpelled(x)}
         <div class="acts"><button data-say="${esc(x.n)}" data-lang="${esc(x.o)}">Say it aloud</button><button data-copy="${esc(x.n)}">Copy</button></div>
-        <div class="chips">${x.r.map(r => `<span class="chip rel">${esc(r)}</span>`).join("")}${themes.map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div>
+        <div class="chips">${(x.x || []).filter(t => t !== "Hebrew Bible" || !(x.x || []).includes("Torah")).map(t => `<span class="chip text">📜 ${esc(t)}</span>`).join("")}${x.r.map(r => `<span class="chip rel">${esc(r)}</span>`).join("")}${themes.map(t => `<span class="chip">${esc(t)}</span>`).join("")}</div>
       </div>
     </div>
   </article>`;
@@ -952,7 +981,7 @@ $("#results").onclick = e => {
 };
 // "starting with" feeds the letter filter
 $("#first2").oninput = () => { const c = $("#first2").value.trim()[0]; $("#first").value = c ? c.toUpperCase() : ""; };
-["#theme", "#religion", "#culture", "#lang", "#len", "#vibeSel"].forEach(s => $(s).onchange = run);
+["#theme", "#religion", "#culture", "#lang", "#len", "#vibeSel", "#scripture"].forEach(s => $(s).onchange = run);
 $("#lastName").addEventListener("input", () => { clearTimeout(window._ln); window._ln = setTimeout(() => shown.length && render(shown), 300); });
 ["#first2", "#ends", "#mom", "#dad", "#spellIn", "#lastName"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
 ["#loveIn", "#hateIn"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key === "Enter") learn(); }));
@@ -960,7 +989,7 @@ $("#go").onclick = () => { MB.ensure(); run(); setTimeout(() => $("#count").scro
 $("#more").onclick = more;
 $("#spellGo").onclick = () => { spell(); const rows = $$("#spellList .spell-row"); let t = 0; rows.slice(0, 6).forEach(r => { duetTimers.push(setTimeout(() => MB.playEl(r, MB.melody(r.dataset.n)), t)); t += MB.melody(r.dataset.n).steps * MB.STEP * 1000 + 150; }); };
 $("#reset").onclick = () => {
-  ["#theme", "#religion", "#culture", "#lang", "#first", "#first2", "#ends", "#len", "#vibeSel"].forEach(s => $(s).value = "");
+  ["#theme", "#religion", "#culture", "#lang", "#first", "#first2", "#ends", "#len", "#vibeSel", "#scripture"].forEach(s => $(s).value = "");
   fitAll(); run();
 };
 

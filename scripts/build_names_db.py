@@ -103,7 +103,8 @@ for k, n in display.items():
     elif m >= .8 * (f + m): g = "m"
     else: g = "u"
     rows.append((n, g, ",".join(sorted(where[k])), f + m + u))
-rows.sort(key=lambda r: -r[3])
+from single_names import single_names
+rows = single_names(rows)  # one name per entry: split "María del Carmen" into María and Carmen
 with open(OUT, "w", encoding="utf-8") as fh:
     for r in rows: fh.write(f"{r[0]}\t{r[1]}\t{r[2]}\t{r[3]}\n")
 g = collections.Counter(r[1] for r in rows)

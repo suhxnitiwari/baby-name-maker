@@ -4,7 +4,7 @@
 
 **→ [suhxnitiwari.github.io/baby-name-maker](https://suhxnitiwari.github.io/baby-name-maker/)**
 
-A music box for baby names. Every name is punched into a strip and played: the first screen is a brass music-box drum you can spin, and every result is a strip of night-velvet paper whose lit holes are the name's notes. **516,000+ names**: 256,000+ real names from official registries plus 260,000 generated, including hundreds of real ones with meanings and stories from many cultures and faiths.
+A music box for baby names. Every name is punched into a strip and played: the first screen is a brass music-box drum you can spin, and every result is a strip of night-velvet paper whose lit holes are the name's notes. **777,000+ names**: 529,000 real first names from government records in 17 countries, plus 249,000 generated, including hundreds of real ones with meanings and stories from many cultures and faiths.
 
 ## How a name becomes a tune
 `musicbox.js` turns any name into a melody, the same way every time:
@@ -35,6 +35,7 @@ Notes sit on a two-octave pentatonic ladder on a 15-tooth comb, so no name can s
 - **Vibes:** every card has a color aura, vibe words (dreamy, regal, fierce, timeless…) and Soft↔Strong, Classic↔Modern, Playful↔Elegant meters
 - **Meaning groups:** Beautiful, Feminine & graceful, Kind & gentle, Strong, Brave & fierce, Wise, Divine & faith, Royal & noble, Light & sun, Moon & stars, Nature, Love & joy, and more. Girl themes are listed first for girls, boy themes first for boys.
 - **Religion filter:** Christian, Islamic, Jewish, Hindu, Sikh, Buddhist, Jain, Zoroastrian, Greek, Norse and Celtic myth
+- **Sacred texts:** names from the Torah, the Bible, the Quran, the Bhagavad Gita, the Mahabharata, the Ramayana, the Puranas and the Vedas
 - **Culture / ethnicity** and **language** filters
 - **Letter filters:** starts with a letter, first 2 letters, ends with
 - **Mom + Dad:** blends both parents' names, and suggests names that use both their initials
@@ -42,26 +43,26 @@ Notes sit on a two-octave pentatonic ladder on a 15-tooth comb, so no name can s
 - **Popularity badges:** each card and spelling shows its real rank, like #3 US 2024
 
 ## Real names database
-`data/names-db.tsv` holds **256,487 real first names** from 10 official government registries, built by `scripts/build_names_db.py`. Columns: name, gender (f / m / u = used for both / ? = registry has no sex), countries, people recorded. Registry placeholders such as "Baby" or "Unknown" are removed. About 58,000 entries are compound given names (e.g. "María del Carmen"), which Spain, Québec and Argentina register as single names.
+`data/names-db.tsv` holds **529,534 real first names** from official government records in **17 countries**: the US, Canada (national, Québec, BC, Alberta, Ontario), the UK (England & Wales, Northern Ireland), Ireland, France, Spain, Switzerland (national, Zürich), Germany (~1,000 city open-data files), Austria, Norway, Poland (the PESEL register), Portugal, Luxembourg, Australia (NSW, SA, Victoria, Queensland, Tasmania), Argentina, Chile and Brazil. Columns: name, gender (f / m / u = used for both / ? = registry has no sex), countries, people recorded.
 
-| Source | Coverage | License |
-|---|---|---|
-| US Social Security Administration | 1880–2024, names given to 5+ babies a year | Public domain |
-| Statistics Canada, table 17-10-0147-01 | 1991–2025 | Open Government Licence – Canada |
-| Retraite Québec | 1980–2025, every name given twice or more | CC BY 4.0 |
-| Office for National Statistics (England & Wales) | 1996–2025 | Open Government Licence v3.0 |
-| Central Statistics Office Ireland (VSA50/VSA60) | 1964–2024, 3+ babies a year | CC BY 4.0 |
-| INSEE France | 1900–2024 | Licence Ouverte |
-| INE Spain | whole population, names held by 20+ people | Reuse with attribution |
-| Swiss Federal Statistical Office | whole population by birth year | Attribution; non-commercial use |
-| NSW Registry of Births, Deaths & Marriages | 1952–2025, top 100 | CC BY 4.0 |
-| RENAPER Argentina | newborns 2012–2024 | Reuse with attribution |
+```
+python3 scripts/fetch_world.py     # download every reachable source into raw/ (not committed)
+python3 scripts/build_world.py     # merge them all into data/names-db.tsv
+```
+
+- **One name per entry.** Spain, Québec, Argentina and Switzerland register a person's full given name ("María del Carmen", "Jean-Pierre") as one name. `scripts/single_names.py` splits those, adds each person to every single name they carry, and drops pieces that never appear as a name on their own ("Dios").
+- **Clean.** Latin script only (the music box needs letters it can sound out), every name has a vowel (no "Md", "Jr"), registry placeholders ("Baby", "Unknown", "Kein Vorname", "Recién nacido") and patronymics removed. Names that differ only by accent stay separate spellings (José, Jose).
+
+Every source, its license, and the countries we checked that don't publish (or that still need a manual download: Finland, Belgium, Scotland, New Zealand, Israel) are in **[docs/name-sources.md](docs/name-sources.md)**.
+
+## Names from sacred texts
+`data/scripture-names.json` (built by `scripts/build_scriptures.py`) adds **13,695 names with stories**: every person named in the **Bible** (the Torah, the Hebrew Bible and the New Testament, with Hitchcock's meanings), the people, gods and sages of the **Mahabharata, Bhagavad Gita, Ramayana, Puranas and Vedas**, and every person, angel and name-giving word of the **Quran**, each with its verse. Search them with the "named in ⟨the Torah / the Quran / the Bhagavad Gita…⟩" blank. Sources and licenses: [docs/name-sources.md](docs/name-sources.md).
 
 ## Popularity data
 `data/popularity.json` (built by `scripts/build-popularity.py`) powers the Popular tab and rank badges: US, Canada, NSW, England & Wales and France.
 
 ## Generated names
-About 260,000 more names are generated in the browser: ~3,800 built from Sanskrit, Greek, Germanic, Norse and Arabic roots (with meanings), and ~256,000 invented from syllables (no meanings). Generated names never repeat a real name from the database.
+About 249,000 more names are generated in the browser: ~3,800 built from Sanskrit, Greek, Germanic, Norse and Arabic roots (with meanings), and ~245,000 invented from syllables (no meanings). Generated names never repeat a real name from the database.
 
 ## Run it
 No build step. Open `index.html`, or serve the folder with any static server.
