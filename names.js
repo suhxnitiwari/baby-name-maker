@@ -880,6 +880,151 @@ Vereniki|g|Fijian|Fijian|Christian|Veronica|
 Elenoa|g|Fijian|Fijian|Christian|Eleanor|
 Varanisese|g|Fijian|Fijian|Christian|Frances|
 Ana|g|Fijian|Fijian|Christian|Anna|
+Elisapeta|g|Māori|Māori|Christian|Elizabeth|
+Emere|g|Māori|Māori|Christian|Emily|
+Eruera|b|Māori|Māori|Christian|Edward|
+Haimona|b|Māori|Māori|Christian|Simon|
+Hariata|g|Māori|Māori|Christian|Harriet|
+Hāriata|g|Māori|Māori|Christian|Harriet|
+Hera|g|Māori|Māori|Christian|Sarah|
+Herewini|b|Māori|Māori|Christian|Selwyn|
+Himiona|b|Māori|Māori|Christian|Simeon|
+Hoana|g|Māori|Māori|Christian|Joanna|
+Hoani|b|Māori|Māori|Christian|John|
+Hohepa|b|Māori|Māori|Christian|Joseph|
+Hōhepa|b|Māori|Māori|Christian|Joseph|
+Hone|b|Māori|Māori|Christian|John|
+Hōne|b|Māori|Māori|Christian|John|
+Hāmiora|b|Māori|Māori|Christian|Samuel|
+Hāmuera|b|Māori|Māori|Christian|Samuel|
+Hārata|g|Māori|Māori|Christian|Charlotte|
+Hēmi|b|Māori|Māori|Christian|James|
+Hēnare|b|Māori|Māori|Christian|Henry|
+Hēni|g|Māori|Māori|Christian|Jane|
+Hōri|b|Māori|Māori|Christian|George|
+Hūhana|g|Māori|Māori|Christian|Susanna|
+Ihipera|g|Māori|Māori|Christian|Isabella|
+Irihāpeti|g|Māori|Māori|Christian|Elizabeth|
+Irāia|b|Māori|Māori|Christian|Elijah|
+Kararaina|g|Māori|Māori|Christian|Caroline|
+Maaka|b|Māori|Māori|Christian|Mark|
+Māka|b|Māori|Māori|Christian|Mark|
+Matire|g|Māori|Māori|Christian|Matilda|
+Matiu|b|Māori|Māori|Christian|Matthew|
+Mere|g|Māori|Māori|Christian|Mary|
+Mereana|g|Māori|Māori|Christian|Marian|
+Mikaere|b|Māori|Māori|Christian|Michael|
+Miriama|g|Māori|Māori|Christian|Miriam|
+Mākere|g|Māori|Māori|Christian|Margaret|
+Māta|g|Māori|Māori|Christian|Martha|
+Mātene|b|Māori|Māori|Christian|Martin|
+Nīkora|b|Māori|Māori|Christian|Nicholas|
+Petera|b|Māori|Māori|Christian|Peter|
+Pita|b|Māori|Māori|Christian|Peter|
+Pirihira|g|Māori|Māori|Christian|Priscilla|
+Piripi|b|Māori|Māori|Christian|Philip|
+Pāora|b|Māori|Māori|Christian|Paul|
+Rewi|b|Māori|Māori|Christian|Levi|
+Rihari|b|Māori|Māori|Christian|Richard|
+Ruiha|g|Māori|Māori|Christian|Louisa|
+Ruta|g|Māori|Māori|Christian|Ruth|
+Rāhera|g|Māori|Māori|Christian|Rachel|
+Rāniera|b|Māori|Māori|Christian|Daniel|
+Tāniora|b|Māori|Māori|Christian|Daniel|
+Rāpata|b|Māori|Māori|Christian|Robert|
+Rōpata|b|Māori|Māori|Christian|Robert|
+Rāwiri|b|Māori|Māori|Christian|David|
+Rēnata|b|Māori|Māori|Christian|Leonard|
+Rīpeka|g|Māori|Māori|Christian|Rebecca|
+Tame|b|Māori|Māori|Christian|Tom|
+Tipene|b|Māori|Māori|Christian|Stephen|
+Tīpene|b|Māori|Māori|Christian|Stephen|
+Tēpene|b|Māori|Māori|Christian|Stephen|
+Tāmati|b|Māori|Māori|Christian|Thomas|
+Tāre|b|Māori|Māori|Christian|Charles|
+Tīmoti|b|Māori|Māori|Christian|Timothy|
+Waata|b|Māori|Māori|Christian|Walter|
+Wāta|b|Māori|Māori|Christian|Walter|
+Wikitoria|g|Māori|Māori|Christian|Victoria|
+Wikitōria|g|Māori|Māori|Christian|Victoria|
+Wiremu|b|Māori|Māori|Christian|William|
+Wī|b|Māori|Māori|Christian|Will|
+Ānaru|b|Māori|Māori|Christian|Andrew|
+Ārama|b|Māori|Māori|Christian|Adam|
+Īhaka|b|Māori|Māori|Christian|Isaac|
+Īhāia|b|Māori|Māori|Christian|Isaiah|
+Ōriwa|b|Māori|Māori|Christian|Oliver|
+Aroha|g|Māori|Māori||love|
+Arohanui|g|Māori|Māori||great love|
+Hinemoa|g|Māori|Māori||maiden|heroine of the legend of Hinemoa and Tūtānekai, who swam Lake Rotorua to her love
+Hinemoana|g|Māori|Māori||maiden of the sea|
+Hinerangi|g|Māori|Māori||maiden of the sky|
+Hinewai|g|Māori|Māori||maiden of the water|
+Ngaio|e|Māori|Māori||a native coastal tree; clever|
+Roimata|g|Māori|Māori||tears|
+Moko|b|Māori|Māori||grandchild; traditional tattoo|
+Toi|e|Māori|Māori||summit; art|
+Reremoana|g|Māori|Māori||flying over the sea|
+Morehu|b|Māori|Māori||survivor|
+Kahurangi|g|Māori|Māori||treasured, precious|
+Mana|e|Māori|Māori||prestige, power, authority|
+Marama|e|Māori|Māori||moon; light|
+Tama|b|Māori|Māori||son, boy|
+Tāne|b|Māori|Māori||man; god of forests and birds|
+Wairua|e|Māori|Māori||spirit, soul|
+Ataahua|g|Māori|Māori||beautiful|
+Rangi|b|Māori|Māori||sky|
+Ranginui|b|Māori|Māori||the sky father|
+Nikau|b|Māori|Māori||the native nīkau palm|
+Kauri|e|Māori|Māori||the giant native kauri tree|
+Ariki|b|Māori|Māori||chief, leader|
+Māia|g|Māori|Māori||brave, bold|
+Mihi|g|Māori|Māori||greeting|
+Tūī|e|Māori|Māori||the tūī, a native songbird|
+Kōwhai|g|Māori|Māori||the golden-flowered kōwhai tree|
+Anahera|g|Māori|Māori||angel|
+Kaha|b|Māori|Māori||strong, strength|
+Whetū|e|Māori|Māori||star|
+Moana|e|Māori|Māori||ocean, sea|
+Pania|g|Māori|Māori||a sea maiden of Napier legend|
+Āwhina|g|Māori|Māori||help, support|
+Pili|b|Swahili|Swahili||second-born|
+Tatu|g|Swahili|Swahili||third-born|
+Mosi|b|Swahili|Swahili||first-born|
+Nyota|g|Swahili|Swahili||star|
+Kijana|b|Swahili|Swahili||youth|
+Asha|g|Swahili|Swahili||life|
+Hamisi|b|Swahili|Swahili||born on Thursday|
+Jumaane|b|Swahili|Swahili||born on Tuesday|
+Mwanajuma|g|Swahili|Swahili||born on Friday|
+Mwajuma|g|Swahili|Swahili||born on Friday|
+Nuru|e|Swahili|Swahili||light|
+Subira|g|Swahili|Swahili||patience|
+Uhuru|e|Swahili|Swahili||freedom|
+Wema|e|Swahili|Swahili||goodness, kindness|
+Fahari|e|Swahili|Swahili||pride, splendor|
+Hodari|b|Swahili|Swahili||capable, strong|
+Jasiri|b|Swahili|Swahili||brave|
+Kito|e|Swahili|Swahili||jewel|
+Mwangaza|e|Swahili|Swahili||light, brightness|
+Busara|e|Swahili|Swahili||wisdom|
+Heri|e|Swahili|Swahili||blessing, happiness|
+Shani|g|Swahili|Swahili||wonder, marvel|
+Tabasamu|g|Swahili|Swahili||smile|
+Rafiki|e|Swahili|Swahili||friend|
+Faraji|b|Swahili|Swahili||consolation, comfort|
+Zuberi|b|Swahili|Swahili||strong|
+Rashidi|b|Swahili|Swahili|Islamic|rightly guided|
+Latifa|g|Swahili|Swahili|Islamic|gentle, kind|
+Safiya|g|Swahili|Swahili|Islamic|pure|
+Swalehe|b|Swahili|Swahili|Islamic|righteous|
+Aisha|g|Swahili|Swahili|Islamic|alive, living|
+Fatuma|g|Swahili|Swahili|Islamic|the Swahili form of Fatima|
+Mariamu|g|Swahili|Swahili|Christian|Mary|
+Daudi|b|Swahili|Swahili|Christian|David|
+Yohana|b|Swahili|Swahili|Christian|John|
+Salama|e|Swahili|Swahili||safety, peace|
+Bahati|e|Swahili|Swahili||good fortune, luck|
 `;
 
 const REAL = REAL_RAW.trim().split("\n").map(line => {
