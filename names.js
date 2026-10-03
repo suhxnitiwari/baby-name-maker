@@ -723,6 +723,44 @@ Mikaele|b|Samoan|Samoan|Christian|Michael|
 Peniamina|b|Samoan|Samoan|Christian|Benjamin|
 Elisapeta|g|Samoan|Samoan|Christian|Elizabeth|
 Mele|g|Samoan|Samoan|Christian|Mary|
+Souksavanh|e|Lao|Lao|Buddhist|happiness of heaven|
+Souk|e|Lao|Lao|Buddhist|happiness|
+Sisouk|e|Lao|Lao|Buddhist|glorious happiness|
+Bounmy|e|Lao|Lao|Buddhist|one who has merit|
+Sengdao|g|Lao|Lao|Buddhist|starlight|
+Phonsavanh|e|Lao|Lao|Buddhist|heavenly blessing|
+Kham|e|Lao|Lao|Buddhist|gold|
+Bouakham|g|Lao|Lao|Buddhist|golden lotus|
+Boua|g|Lao|Lao|Buddhist|lotus|
+Khamsing|b|Lao|Lao|Buddhist|golden lion|
+Keo|e|Lao|Lao|Buddhist|gem, crystal|
+Phet|e|Lao|Lao|Buddhist|diamond|
+Chanthala|g|Lao|Lao|Buddhist|moon|
+Chanthavong|b|Lao|Lao|Buddhist|lineage of the moon|
+Somphone|b|Lao|Lao|Buddhist|worthy of blessings|
+Somsack|b|Lao|Lao|Buddhist|worthy of honor|
+Mali|g|Lao|Lao|Buddhist|jasmine|
+Noy|g|Lao|Lao|Buddhist|little one|
+Dao|g|Lao|Lao|Buddhist|star|
+Tevita|b|Tongan|Tongan|Christian|David|
+Viliami|b|Tongan|Tongan|Christian|William|
+Siaosi|b|Tongan|Tongan|Christian|George|
+Siosaia|b|Tongan|Tongan|Christian|Josiah|
+Semisi|b|Tongan|Tongan|Christian|James|
+Sitiveni|b|Tongan|Tongan|Christian|Stephen|
+Paula|b|Tongan|Tongan|Christian|Paul|a boys' name in Tonga
+Sela|g|Tongan|Tongan|Christian|Sarah|
+Lose|g|Tongan|Tongan|Christian|Rose|
+Losaline|g|Tongan|Tongan|Christian|Rosaline|
+Kalolaine|g|Tongan|Tongan|Christian|Caroline|
+Lupe|g|Tongan|Tongan||dove|
+Ofa|g|Tongan|Tongan||love|
+Mafi|b|Tongan|Tongan||power, strength|
+Mahina|g|Tongan|Tongan||moon|
+Fetu'u|e|Tongan|Tongan||star|
+Kakala|g|Tongan|Tongan||fragrant flowers|
+Heilala|g|Tongan|Tongan||the heilala flower, Tonga's national flower|
+Moana|e|Tongan|Tongan||ocean, deep sea|
 `;
 
 const REAL = REAL_RAW.trim().split("\n").map(line => {
