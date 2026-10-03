@@ -446,11 +446,12 @@
   Names from sacred texts: STEPBible TIPNR, Tyndale House (CC BY 4.0) · Hitchcock's Bible Names Dictionary (1869, public domain) ·
   Cologne Digital Sanskrit Dictionaries, The Sanskrit Library: Sørensen's Index to the Names in the Mahābhārata, Dikshitar's Purāṇa Index, Vettam Mani's Purāṇic Encyclopaedia,
   Macdonell &amp; Keith's Vedic Index, Mehendale's Mahābhārata Cultural Index (CC BY-NC-SA 3.0) · Bhagavad Gita text, gita/gita (public domain) · Quranic Arabic Corpus, Kais Dukes (GPL), text by Tanzil.
+  Cultures: Wiktionary (CC BY-SA 4.0) · Wikidata (CC0).
   Japanese, Korean &amp; Chinese names: JMnedict &amp; KANJIDIC2, Electronic Dictionary Research and Development Group (CC BY-SA 4.0) · CC-CEDICT, MDBG (CC BY-SA 4.0).
   Generated names are invented by Lullabyte and have no recorded meaning. Tunes are generated from how each name sounds.
 </footer>
 
-<script src="names.js?v=3"></script>
+<script src="names.js?v=4"></script>
 <script src="generator.js?v=4"></script>
 <script src="musicbox.js?v=3"></script>
 <script>
@@ -483,20 +484,31 @@ function eastAsian(d) {
     rows.push([n, g, "Chinese", "Mandarin", "", m, `Written ${hanzi} (${pinyin}): ${m}.` + (real ? "" : " Built from two given-name characters."), "", real ? "real" : "root"]);
   return rows;
 }
-const storied = Promise.all(["data/scripture-names.json?v=1", "data/hebrew-names.json?v=1", "data/east-asian-names.json?v=1"].map(u => fetch(u).then(r => r.json()).catch(() => [])))
-  .then(([a, b, c]) => addStoried([...a, ...b, ...eastAsian(c)])).catch(e => console.error(e));
+// …and names sorted into 120+ cultures, from Yoruba to Tamil to Māori (data/culture-names.json)
+const storied = Promise.all(["data/scripture-names.json?v=1", "data/hebrew-names.json?v=1", "data/east-asian-names.json?v=1", "data/culture-names.json?v=3"]
+  .map(u => fetch(u).then(r => r.json()).catch(() => [])))
+  .then(([a, b, c, d]) => addStoried([...a, ...b, ...eastAsian(c), ...d])).catch(e => console.error(e));
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
-  for (const [n, g, o, l, r, m, src, texts, kind] of rows) {
+  for (const [n, g, o, l, r, m, src, texts, kind, also] of rows) {
     const x = texts ? texts.split(",") : [], k = fold(n), cur = have.get(k);
-    if (cur) { cur.x = [...new Set([...(cur.x || []), ...x])]; cur.m ||= m; cur.src = cur.src ? (src && !cur.src.includes(src) && src.startsWith("Given to") ? `${cur.src} ${src}` : cur.src) : src; continue; }   // keep our hand-written entry, add where it's named
-    const e = { n, g: { g: "girl", b: "boy", e: "either" }[g], o, l, r: r ? r.split(",") : [], m, src, type: kind === "root" ? "root" : "real", x };
+    if (cur) {
+      if (o && o !== cur.o) cur.oo = [...new Set([...(cur.oo || []), o])];             // one name, many cultures (Amina: Hausa, Swahili, Somali)
+      if (also && also.length) cur.oo = [...new Set([...(cur.oo || []), ...also])].filter(c => c !== cur.o);
+      if (!cur.o && o) { cur.o = o; cur.l = cur.l || l; }
+      cur.x = [...new Set([...(cur.x || []), ...x])]; cur.m ||= m; cur.src = cur.src ? (src && !cur.src.includes(src) && src.startsWith("Given to") ? `${cur.src} ${src}` : cur.src) : src; continue; }   // keep our hand-written entry, add where it's named
+    const e = { n, g: { g: "girl", b: "boy", e: "either" }[g], o, l, r: r ? r.split(",") : [], m, src, type: kind === "root" ? "root" : "real", x, oo: also || [] };
     (kind === "root" ? ROOT_NAMES : REAL).push(e); ALL_NAMED.push(e); have.set(k, e); TAKEN.add(k);
     BY_NAME.has(k) ? BY_NAME.get(k).push(e) : BY_NAME.set(k, [e]);
     const sk = soundKey(n); SOUND_INDEX.has(sk) ? SOUND_INDEX.get(sk).push(n) : SOUND_INDEX.set(sk, [n]);
   }
+  // hand-written names join their broad basket too (a Zulu name is also African)
+  const GROUP = { African: "Zulu Xhosa Sotho Tswana Swahili Akan Somali Ethiopian Yoruba Igbo Hausa", "South Asian": "Indian Punjabi Urdu Pashtun Nepali Tamil Telugu Bengali",
+    Pacific: "Hawaiian Samoan Tongan Fijian Māori", Slavic: "Slavic Russian Ukrainian Polish" };
+  for (const x of REAL) for (const [grp, list] of Object.entries(GROUP))
+    if (x.o !== grp && list.split(" ").includes(x.o) && !(x.oo || []).includes(grp)) x.oo = [...(x.oo || []), grp];
   fillSelect($("#religion"), "any faith", uniq(ALL_NAMED.flatMap(x => x.r)));
-  fillSelect($("#culture"), "any", uniq(ALL_NAMED.map(x => x.o)));
+  fillSelect($("#culture"), "any", uniq(ALL_NAMED.flatMap(x => [x.o, ...(x.oo || [])])));
   fillSelect($("#lang"), "any language", uniq(ALL_NAMED.map(x => x.l)));
 }
 const dbReady = Promise.all([fetch("data/names-db.tsv?v=3").then(r => r.text()), storied]).then(([t]) => {
@@ -511,7 +523,7 @@ const dbReady = Promise.all([fetch("data/names-db.tsv?v=3").then(r => r.text()),
     if (!ours.has(k)) DB.push(e);
   }
   for (const g in INVENTED) delete INVENTED[g]; // rebuild invented names without any real ones
-  fillSelect($("#culture"), "any", uniq([...ALL_NAMED.map(x => x.o), "Israeli"]));
+  fillSelect($("#culture"), "any", uniq([...ALL_NAMED.flatMap(x => [x.o, ...(x.oo || [])]), "Israeli"]));
   DB_READY = true;
   dispatchEvent(new Event("namesdb"));
 }).catch(() => {});
@@ -554,7 +566,7 @@ const fitAll = () => $$(".slot").forEach(fit);
 document.addEventListener("input", e => fit(e.target));
 document.addEventListener("change", e => fit(e.target));
 fillSelect($("#religion"), "any faith", uniq(ALL_NAMED.flatMap(x => x.r)));
-fillSelect($("#culture"), "any", uniq(ALL_NAMED.map(x => x.o)));
+fillSelect($("#culture"), "any", uniq(ALL_NAMED.flatMap(x => [x.o, ...(x.oo || [])])));
 fillSelect($("#lang"), "any language", uniq(ALL_NAMED.map(x => x.l)));
 fillSelect($("#first"), "", "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split(""));
 const fillThemes = () => fillSelect($("#theme"), "anything", THEME_ORDER[gender]);
@@ -584,7 +596,7 @@ function matches(x, f, letters = true) {
   if (!genderOk(x)) return false;
   if (f.theme && !themesOf(x).includes(f.theme)) return false;
   if (f.religion && !x.r.includes(f.religion)) return false;
-  if (f.culture && x.o !== f.culture) return false;
+  if (f.culture && x.o !== f.culture && !(x.oo || []).includes(f.culture)) return false;
   if (f.lang && x.l !== f.lang) return false;
   if (f.text && !(x.x || []).includes(f.text)) return false;
   if (letters) {
@@ -827,7 +839,7 @@ const RELAX = [ // filter, cost of loosening it, how to say it
   ["start", 6, () => `starting with “${$("#first2").value.trim()}”`],
 ];
 const CHECK = {
-  vibe: (x, f) => vibeMatch(x, f.vibe), len: (x, f) => lenOk(x.n, f.len), lang: (x, f) => x.l === f.lang, culture: (x, f) => x.o === f.culture,
+  vibe: (x, f) => vibeMatch(x, f.vibe), len: (x, f) => lenOk(x.n, f.len), lang: (x, f) => x.l === f.lang, culture: (x, f) => x.o === f.culture || (x.oo || []).includes(f.culture),
   text: (x, f) => (x.x || []).includes(f.text), religion: (x, f) => x.r.includes(f.religion), theme: (x, f) => themesOf(x).includes(f.theme),
   ends: (x, f) => fold(x.n).endsWith(f.ends), start: (x, f) => fold(x.n).startsWith(f.first2 || f.first),
 };

@@ -87,6 +87,25 @@ Where one spelling exists in two languages, it lives in one: Japanese first (rea
 
 ⚠️ JMnedict, KANJIDIC2 and CC-CEDICT are CC BY-SA 4.0 (share-alike), like the Brazil list.
 
+## 🌍 Names sorted into their cultures
+
+Most names reach the database through registries abroad (a Yoruba name recorded in the UK, a Tamil name in Canada), with no culture attached. `scripts/build_cultures.py` builds `data/culture-names.json`, which puts **32,000+ names into 123 cultures**, each also in a broad basket (African, South Asian, Slavic, Central Asian, Pacific, Nordic, Celtic, Indigenous American, Taiwanese Indigenous).
+
+| Source | What it gives |
+|---|---|
+| **Wiktionary** (CC BY-SA 4.0), `scripts/fetch_wiktionary_names.py` | ~40,000 entries from 120 languages' "male / female / unisex given names" categories, with gender, and a meaning when the entry gives one (`meaning=`, a literal translation, the words it's built from, or the ordinary word the name is: Tamil அன்பு Anbu, "love") |
+| **Wiktionary**, `scripts/fetch_name_meanings.py` | meanings from each name's own page ("from Igbo, literally 'God leads'") and from the word in its language (Swahili *baraka*, "blessing") |
+| **Wikidata** (CC0) | 38,500 given names tagged with their language |
+| hand-written (`names.js`) | 136 well-known names with meanings for baskets the sources barely cover: Zulu, Xhosa, Sotho, Tswana, Swahili, Akan day names, Somali, Ethiopian, Punjabi, Urdu, Pashtun, Thai, Tibetan, Nepali, Burmese, Khmer, Samoan, Tongan, Fijian |
+
+Names in other scripts get their usual Latin spelling: Wiktionary's recorded romanization; the official systems for Cyrillic (per language: Ukrainian г is h, Bulgarian щ is sht…), Greek, Armenian and Georgian; and for the Indian scripts (one shared table for Devanagari, Bengali, Gurmukhi, Gujarati, Odia, Tamil, Telugu, Kannada and Malayalam) every likely reading, keeping the one already registered somewhere (Gurpreet, Murugan, Karthikeyan, Lavanya, Arnab), else the usual conventions (Tamil Senthil, Sadasivan). Thai, Burmese, Khmer, Lao and Arabic-script names without a recorded romanization are left out.
+
+Rules: a South Asian, African or Asian form of a name from far away (Tamil Moshe, from Hebrew) doesn't count as that culture's roots; one name can sit in several cultures (Amina: Hausa, Swahili, Somali); caste terms are removed.
+
+Biggest baskets: Turkish 2,053, Icelandic 1,963, Albanian 1,489, Italian 1,486, Faroese 1,384, Estonian 1,165, Polish 1,085, Finnish 996, Serbian & Croatian 928, Hindi 817, Kazakh 772, Filipino 768, Bengali 592, Russian 456, Armenian 454, Greek 452, Persian 409, Yoruba 398, Vietnamese 330, Igbo 213, Gujarati 207, Malayali 199, Hawaiian 193, Tamil 146, Hausa 118, Māori 105, Telugu 102.
+
+Country lists checked for this step, all top-10 to top-50 only (PDFs): Philippines (PSA), South Africa (Stats SA), Turkey (TÜİK), Kazakhstan, Kyrgyzstan, Armenia (Armstat), Hungary (KSH).
+
 ## ⏳ Found, not in yet (needs a manual download or more work)
 
 | Country | Source | What it has | Why it's not in |

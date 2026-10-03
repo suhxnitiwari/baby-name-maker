@@ -63,6 +63,9 @@ Every source, its license, and the countries we checked that don't publish (or t
 ## Japanese, Korean and Chinese names
 `data/east-asian-names.json` (built by `scripts/build_east_asian.py`) adds **33,831 real Japanese given names** from JMnedict, each with its usual kanji and meaning (Haruto: 春人, spring + person), plus **3,881 Korean** and **9,857 Chinese** names built from name syllables and characters with their hanja or hanzi, readings and meanings (Minjun: 敏俊; Zihan: 子涵, zǐ hán). Sources and how they're built: [docs/name-sources.md](docs/name-sources.md).
 
+## Names sorted into 123 cultures
+`data/culture-names.json` (built by `scripts/build_cultures.py` from Wiktionary and Wikidata) sorts **32,000+ names into 123 cultures**, from Yoruba, Igbo, Hausa and Akan to Tamil, Telugu, Bengali and Punjabi, Vietnamese, Filipino, Kazakh, Armenian, Georgian, Russian, Albanian and Māori, plus broad baskets (African, South Asian, Slavic, Central Asian, Pacific…). Names in other scripts get their usual Latin spelling, checked against registered names. Search with "with ⟨Yoruba / Tamil / Pacific…⟩ roots". Details: [docs/name-sources.md](docs/name-sources.md).
+
 ## Popularity data
 `data/popularity.json` (built by `scripts/build-popularity.py`) powers the Popular tab and rank badges: US, Canada, NSW, England & Wales and France.
 

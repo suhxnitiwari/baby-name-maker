@@ -491,6 +491,156 @@ Koa|b|Hawaiian|Hawaiian||warrior; the koa tree|
 Tenzin|e|Tibetan|Tibetan|Buddhist|upholder of the teachings|the Dalai Lama's name
 Pema|e|Tibetan|Tibetan|Buddhist|lotus|
 Dorje|b|Tibetan|Tibetan|Buddhist|thunderbolt|
+Thandiwe|g|Zulu|Zulu||beloved|
+Sipho|b|Zulu|Zulu||gift|
+Nomvula|g|Zulu|Zulu||mother of rain; born in the rain|
+Themba|b|Zulu|Zulu||hope|
+Lwazi|b|Zulu|Zulu||knowledge|
+Ayanda|e|Zulu|Zulu||they are increasing; the family grows|
+Andile|e|Zulu|Zulu||they have increased|
+Bongani|b|Zulu|Zulu||be thankful|
+Lindiwe|g|Zulu|Zulu||the awaited one|
+Zanele|g|Zulu|Zulu||they are enough|
+Nandi|g|Zulu|Zulu||sweet|mother of the Zulu king Shaka
+Mandla|b|Zulu|Zulu||strength, power|
+Sizwe|b|Zulu|Zulu||nation|
+Melokuhle|g|Zulu|Zulu||good conduct|among South Africa's most popular girls' names
+Enzokuhle|e|Zulu|Zulu||good deeds|
+Nkazimulo|b|Zulu|Zulu||glory|
+Siyabonga|b|Zulu|Zulu||we thank you|
+Thulani|b|Zulu|Zulu||be quiet, be calm|
+Nokuthula|g|Zulu|Zulu||peace; mother of peace|
+Lubanzi|b|Xhosa|Xhosa||breadth, wide open|among South Africa's most popular boys' names
+Lulama|e|Xhosa|Xhosa||be gentle, be kind|
+Unathi|e|Xhosa|Xhosa||God is with us|
+Thando|e|Xhosa|Xhosa||love|
+Lathitha|g|Xhosa|Xhosa||light, it is bright|
+Thabo|b|Sotho|Sotho||joy, happiness|
+Lerato|g|Sotho|Sotho||love|
+Palesa|g|Sotho|Sotho||flower|
+Mpho|e|Sotho|Sotho||gift|
+Naledi|g|Sotho|Sotho||star|
+Lesedi|e|Sotho|Sotho||light|
+Lethabo|e|Sotho|Sotho||joy|South Africa's most popular boys' name in recent years
+Karabo|e|Sotho|Sotho||answer|
+Tumelo|e|Sotho|Sotho||faith|
+Kagiso|e|Tswana|Tswana||peace|
+Boitumelo|e|Tswana|Tswana||joy|
+Refilwe|g|Tswana|Tswana||we have been given|
+Tshepo|b|Tswana|Tswana||hope, trust|
+Kgosi|b|Tswana|Tswana||king, chief|
+Dineo|g|Tswana|Tswana||gifts|
+Amani|e|Swahili|Swahili||peace|
+Imani|e|Swahili|Swahili||faith|
+Baraka|b|Swahili|Swahili||blessing|
+Neema|g|Swahili|Swahili||grace|
+Zawadi|g|Swahili|Swahili||gift|
+Rehema|g|Swahili|Swahili||mercy, compassion|
+Jabari|b|Swahili|Swahili||brave, fearless|
+Juma|b|Swahili|Swahili||born on Friday|
+Furaha|g|Swahili|Swahili||joy|
+Tumaini|e|Swahili|Swahili||hope|
+Upendo|g|Swahili|Swahili||love|
+Zuri|g|Swahili|Swahili||beautiful|
+Shujaa|b|Swahili|Swahili||hero|
+Jelani|b|Swahili|Swahili||mighty|
+Nia|g|Swahili|Swahili||purpose|
+Kwame|b|Akan|Akan||born on Saturday|Akan day name
+Kofi|b|Akan|Akan||born on Friday|Akan day name
+Kwabena|b|Akan|Akan||born on Tuesday|Akan day name
+Kwaku|b|Akan|Akan||born on Wednesday|Akan day name
+Yaw|b|Akan|Akan||born on Thursday|Akan day name
+Kwasi|b|Akan|Akan||born on Sunday|Akan day name
+Kojo|b|Akan|Akan||born on Monday|Akan day name
+Ama|g|Akan|Akan||born on Saturday|Akan day name
+Afua|g|Akan|Akan||born on Friday|Akan day name
+Abena|g|Akan|Akan||born on Tuesday|Akan day name
+Akua|g|Akan|Akan||born on Wednesday|Akan day name
+Yaa|g|Akan|Akan||born on Thursday|Akan day name
+Akosua|g|Akan|Akan||born on Sunday|Akan day name
+Adwoa|g|Akan|Akan||born on Monday|Akan day name
+Hodan|g|Somali|Somali||wealthy, abundant|
+Ayaan|g|Somali|Somali||lucky, blessed|
+Ubah|g|Somali|Somali||flower|
+Nimco|g|Somali|Somali||blessing|
+Hamdi|g|Somali|Somali||praise|
+Ifrah|g|Somali|Somali||joy|
+Liban|b|Somali|Somali||fortunate, successful|
+Warsame|b|Somali|Somali||bringer of good news|
+Mahad|b|Somali|Somali||thanks|
+Selam|g|Ethiopian|Amharic||peace|
+Tesfaye|b|Ethiopian|Amharic||my hope|
+Haile|b|Ethiopian|Amharic||power, might|
+Tigist|g|Ethiopian|Amharic||patience|
+Almaz|g|Ethiopian|Amharic||diamond|
+Kidist|g|Ethiopian|Amharic||holy|
+Meseret|g|Ethiopian|Amharic||foundation|
+Abebe|b|Ethiopian|Amharic||he has blossomed|
+Selamawit|g|Ethiopian|Amharic||peaceful|
+Gurpreet|e|Punjabi|Punjabi|Sikh|love of the Guru|
+Harpreet|e|Punjabi|Punjabi|Sikh|love of God|
+Manpreet|e|Punjabi|Punjabi|Sikh|love from the heart|
+Jaspreet|e|Punjabi|Punjabi|Sikh|love of praise|
+Simran|e|Punjabi|Punjabi|Sikh|remembrance (of God)|
+Amrit|e|Punjabi|Punjabi|Sikh|nectar of immortality|
+Navjot|e|Punjabi|Punjabi|Sikh|new light|
+Gurdeep|b|Punjabi|Punjabi|Sikh|lamp of the Guru|
+Kirandeep|g|Punjabi|Punjabi|Sikh|ray of the lamp|
+Jasleen|g|Punjabi|Punjabi|Sikh|absorbed in praise|
+Ekam|b|Punjabi|Punjabi|Sikh|one; oneness (of God)|
+Sana|g|Urdu|Urdu|Islamic|praise, radiance|
+Mahnoor|g|Urdu|Urdu|Islamic|moonlight|
+Hira|g|Urdu|Urdu|Islamic|diamond|
+Anam|g|Urdu|Urdu|Islamic|blessing|
+Areeba|g|Urdu|Urdu|Islamic|wise, witty|
+Kashif|b|Urdu|Urdu|Islamic|discoverer|
+Faisal|b|Urdu|Urdu|Islamic|decisive, judge|
+Shahzeb|b|Urdu|Urdu|Islamic|ornament of the king|
+Gulalai|g|Pashtun|Pashto|Islamic|flower-like|
+Zarmina|g|Pashtun|Pashto|Islamic|golden|
+Somchai|b|Thai|Thai|Buddhist|worthy man|
+Malee|g|Thai|Thai|Buddhist|jasmine flower|
+Siriporn|g|Thai|Thai|Buddhist|glorious blessing|
+Kanya|g|Thai|Thai|Buddhist|maiden|
+Anong|g|Thai|Thai|Buddhist|beautiful woman|
+Ratana|g|Thai|Thai|Buddhist|jewel|
+Niran|b|Thai|Thai|Buddhist|eternal|
+Prasert|b|Thai|Thai|Buddhist|excellent|
+Kittisak|b|Thai|Thai|Buddhist|honor and power|
+Sunee|g|Thai|Thai|Buddhist|good, kind|
+Tenzin|e|Tibetan|Tibetan|Buddhist|upholder of the teachings|
+Pema|e|Tibetan|Tibetan|Buddhist|lotus|
+Dorje|b|Tibetan|Tibetan|Buddhist|thunderbolt, indestructible|
+Sonam|e|Tibetan|Tibetan|Buddhist|merit, fortunate|
+Dolma|g|Tibetan|Tibetan|Buddhist|Tara, the savior goddess|
+Lhamo|g|Tibetan|Tibetan|Buddhist|goddess|
+Nyima|e|Tibetan|Tibetan|Buddhist|sun; born on Sunday|
+Dawa|e|Tibetan|Tibetan|Buddhist|moon; born on Monday|
+Tashi|e|Tibetan|Tibetan|Buddhist|auspicious, good fortune|
+Norbu|b|Tibetan|Tibetan|Buddhist|jewel|
+Bishal|b|Nepali|Nepali|Hindu|vast, great|
+Aayush|b|Nepali|Nepali|Hindu|long life|
+Srijana|g|Nepali|Nepali|Hindu|creation|
+Pasang|e|Nepali|Sherpa|Buddhist|born on Friday|Sherpa day name
+Mingma|e|Nepali|Sherpa|Buddhist|born on Tuesday|Sherpa day name
+Aung|b|Burmese|Burmese|Buddhist|success, victory|
+Thida|g|Burmese|Burmese|Buddhist|truth|
+Zaw|b|Burmese|Burmese|Buddhist|famous|
+Khin|g|Burmese|Burmese|Buddhist|friendly, lovable|
+Sopheap|g|Khmer|Khmer|Buddhist|gentle, polite|
+Sokha|e|Khmer|Khmer|Buddhist|health, happiness|
+Dara|b|Khmer|Khmer|Buddhist|star|
+Bopha|g|Khmer|Khmer|Buddhist|flower|
+Chantrea|g|Khmer|Khmer|Buddhist|moonlight|
+Alofa|g|Samoan|Samoan||love|
+Fetu|e|Samoan|Samoan||star|
+Manu|b|Samoan|Samoan||bird|
+Sione|b|Tongan|Tongan|Christian|John|
+Mele|g|Tongan|Tongan|Christian|Mary|
+Salote|g|Tongan|Tongan|Christian|Charlotte|name of Queen Sālote Tupou III
+Malakai|b|Tongan|Tongan|Christian|Malachi|
+Mere|g|Fijian|Fijian|Christian|Mary|
+Vilisoni|b|Fijian|Fijian|Christian|Wilson|
 `;
 
 const REAL = REAL_RAW.trim().split("\n").map(line => {
