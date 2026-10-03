@@ -451,7 +451,7 @@
   Generated names are invented by Lullabyte and have no recorded meaning. Tunes are generated from how each name sounds.
 </footer>
 
-<script src="names.js?v=9"></script>
+<script src="names.js?v=10"></script>
 <script src="generator.js?v=4"></script>
 <script src="musicbox.js?v=3"></script>
 <script>
@@ -485,9 +485,9 @@ function eastAsian(d) {
   return rows;
 }
 // …and names sorted into 120+ cultures, from Yoruba to Tamil to Māori (data/culture-names.json)
-const storied = Promise.all(["data/scripture-names.json?v=1", "data/hebrew-names.json?v=1", "data/east-asian-names.json?v=1", "data/culture-names.json?v=6"]
+const storied = Promise.all(["data/scripture-names.json?v=1", "data/hebrew-names.json?v=1", "data/east-asian-names.json?v=1", "data/culture-names.json?v=7", "data/also-cultures.json?v=1"]
   .map(u => fetch(u).then(r => r.json()).catch(() => [])))
-  .then(([a, b, c, d]) => addStoried([...a, ...b, ...eastAsian(c), ...d])).catch(e => console.error(e));
+  .then(([a, b, c, d, e]) => addStoried([...a, ...b, ...eastAsian(c), ...d, ...e])).catch(e => console.error(e));
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
   for (const [n, g, o, l, r, m, src, texts, kind, also] of rows) {
@@ -503,10 +503,12 @@ function addStoried(rows) {
     const sk = soundKey(n); SOUND_INDEX.has(sk) ? SOUND_INDEX.get(sk).push(n) : SOUND_INDEX.set(sk, [n]);
   }
   // hand-written names join their broad basket too (a Zulu name is also African)
-  const GROUP = { African: "Zulu Xhosa Sotho Tswana Swahili Akan Somali Ethiopian Yoruba Igbo Hausa", "South Asian": "Indian Punjabi Urdu Pashtun Nepali Tamil Telugu Bengali",
-    Pacific: "Hawaiian Samoan Tongan Fijian Māori", Slavic: "Slavic Russian Ukrainian Polish" };
+  const GROUP = { African: "Zulu,Xhosa,Sotho,Tswana,Swahili,Akan,Somali,Ethiopian,Yoruba,Igbo,Hausa,Congolese,Sudanese,South Sudanese,Nubian",
+    "South Asian": "Indian,Punjabi,Urdu,Pashtun,Afghan,Nepali,Tamil,Telugu,Bengali", Pacific: "Hawaiian,Samoan,Tongan,Fijian,Māori", Slavic: "Slavic,Russian,Ukrainian,Polish",
+    "Latin American": "Mexican,Nahua,Maya,Purépecha,Zapotec,Colombian,Dominican,Puerto Rican,Cuban,Taíno,Argentine,Mapuche,Guaraní,Quechua",
+    "Indigenous American": "Nahua,Maya,Purépecha,Zapotec,Taíno,Mapuche,Guaraní,Quechua", "Central Asian": "Uzbek,Afghan,Mongolian,Kazakh,Tajik" };
   for (const x of REAL) for (const [grp, list] of Object.entries(GROUP))
-    if (x.o !== grp && list.split(" ").includes(x.o) && !(x.oo || []).includes(grp)) x.oo = [...(x.oo || []), grp];
+    if (x.o !== grp && [x.o, ...(x.oo || [])].some(c => list.split(",").includes(c)) && !(x.oo || []).includes(grp)) x.oo = [...(x.oo || []), grp];
   fillSelect($("#religion"), "any faith", uniq(ALL_NAMED.flatMap(x => x.r)));
   fillSelect($("#culture"), "any", uniq(ALL_NAMED.flatMap(x => [x.o, ...(x.oo || [])])));
   fillSelect($("#lang"), "any language", uniq(ALL_NAMED.map(x => x.l)));

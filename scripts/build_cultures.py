@@ -232,8 +232,24 @@ def details(sec):
     if "from" in d: d["from"] = d["from"].split(",")[0]
     return d
 
+# names from the Bible and the Quran (and not from Hindu texts), to keep their Tamil or Telugu spellings (Philip, Musa) out of those baskets
+def abrahamic():
+    out = set()
+    for r in json.load(open(os.path.join(ROOT, "data", "scripture-names.json"), encoding="utf-8")):
+        t = r[7] or ""
+        if re.search(r"Bible|Torah|Quran|Testament", t) and not re.search(r"Mahabharata|Purana|Veda|Ramayana|Gita|Upanishad", t): out.add(r[0].lower())
+    out |= {r[0].lower() for r in json.load(open(os.path.join(ROOT, "data", "hebrew-names.json"), encoding="utf-8"))}     # Moshe, Shmuel
+    return out - {"sivan", "rani", "gita", "alli", "mati", "shashi", "adi", "unni", "antai", "ami", "shami", "haru", "sevya", "nina"}
+# Indic languages where an Arabic, Persian or European name is a borrowed spelling, not a name with those roots
+INDIC_ROOTS = {"Tamil", "Telugu", "Kannada", "Malayali"}
+BORROWED = {"andru", "kolambas", "jems", "elijabet", "habaqquq", "carles", "charlee", "itris", "julkipl", "jakariyya", "mugamadu", "ismayil", "adamu", "yesu", "mariya", "yohan", "pitar", "pal", "jan", "jon", "deyvid", "jorj", "robart", "abdulla", "ali", "amir", "khan", "sulaiman", "phatima", "stanlee", "vashingtanu", "viktoriya", "yehoshua",
+            "thamasu", "meri", "paal", "smit", "sing", "nina", "kolambas",
+            "daniyel", "dawid", "malakhi", "matityahu", "mikhael", "mikhah", "nekhemya", "noomi", "ovadya", "pavul", "peduru", "rut", "shimshon", "yhezqel",
+            "yirmya", "yoel", "yokhanan", "yosef", "yshayahu", "zkharya", "as-tir", "mutt", "jodi", "sittart"}
+
 if __name__ == "__main__":
     db = load_db()
+    abr = abrahamic()
     entries = collections.defaultdict(list)       # key → [entry]
     stats = collections.Counter()
     for path in glob.glob(os.path.join(RAW, "wikt", "*.json")):
@@ -248,6 +264,9 @@ if __name__ == "__main__":
             if groups and groups[0] in ("African", "South Asian", "Central Asian", "Pacific", "Taiwanese Indigenous", "Indigenous American") or culture in ("Vietnamese", "Thai", "Filipino", "Indonesian", "Malay", "Burmese", "Khmer", "Lao", "Tibetan", "Mongolian"):
                 if d.get("from", "").split(" ")[-1] in FOREIGN: stats[(culture, "foreign")] += 1; continue
             n = romanize(title, lang, d.get("tr", ""), db)
+            if culture in INDIC_ROOTS and n and (d.get("from", "").split(" ")[-1] in ("Arabic", "Persian", "Turkish") or (d.get("eq") and not re.search(r"Sanskrit|Dravidian|Tamil|Telugu|Kannada|Malayalam|Prakrit", d.get("from", "")))
+                                                 or re.search(r"\{\{given name\|[^{}]*\|(?:Arabic|Persian|Hebrew|English)\b", sec) or n.lower() in abr or n.lower() in BORROWED):
+                stats[(culture, "foreign")] += 1; continue
             if not n or " " in n.strip() or len(n) < 2: stats[(culture, "skipped")] += 1; continue
             if lang in ("Zulu", "Xhosa") and re.match(r"^u[A-Z]", n): n = n[1:]       # the personal prefix (uJabulani → Jabulani)
             n = n[:1].upper() + n[1:]
@@ -259,6 +278,7 @@ if __name__ == "__main__":
         info = LANG.get(lang)
         if not info or not label or not LATIN.match(label) or " " in label: continue
         culture, language, groups = info
+        if culture in INDIC_ROOTS and (label.lower() in abr or label.lower() in BORROWED): continue
         entries[label.lower()].append({"n": label, "g": g, "o": culture, "l": language, "oo": groups, "m": "", "from": "", "eq": "",
                                        "native": native if native and not LATIN.match(native) else "", "src": "wikidata"})
         stats[(culture, "wikidata")] += 1
