@@ -10,8 +10,8 @@ A crib mobile for baby names. Every name plays its own lullaby: on the first scr
 felt charm (low notes hang long, high notes short, so the melody is the mobile's shape), and every result is a garland of felt
 beads strung on a melody line.
 
-Behind the softness is a lot of data: **828,006 names** in the browser, made of 529,563 real first names from official
-government records in 18 countries, tens of thousands of names with meanings and stories from 165 cultures and sacred texts,
+Behind the softness is a lot of data: **over 820,000 names** in the browser, made of 529,563 real first names from official
+government records in 18 countries, tens of thousands of names with meanings and stories from 160+ cultures and sacred texts,
 12,105 names built from real roots, and 245,015 invented originals. There is a taste model that learns what you like, and a
 Mom + Dad compiler that shows exactly which letters came from whom. No server, no build step, no framework.
 
