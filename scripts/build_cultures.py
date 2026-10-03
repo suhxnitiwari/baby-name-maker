@@ -263,9 +263,13 @@ if __name__ == "__main__":
     # meanings found on each name's own Wiktionary page (fetch_name_meanings.py)
     mp = os.path.join(RAW, "wikt-meanings.json")
     found = json.load(open(mp, encoding="utf-8")) if os.path.exists(mp) else {}
+    # trusted only where names usually are ordinary words (Turkish Öykü "story", Yoruba, Hindi…); elsewhere the word with the
+    # same spelling is often unrelated (Polish "siara", Finnish "herkko")
+    WORD_NAMES = {"Turkish", "Azerbaijani", "Kazakh", "Kyrgyz", "Uzbek", "Turkmen", "Tatar", "Bashkir", "Persian", "Kurdish", "Tajik", "Albanian",
+                  "Indonesian", "Malay", "Javanese", "Mongolian", "Uyghur"}
     for es in entries.values():
         for e in es:
-            if not e["m"] and found.get(e["n"]): e["m"] = found[e["n"]]
+            if not e["m"] and found.get(e["n"]) and (e["o"] in WORD_NAMES or set(e["oo"]) & {"African", "South Asian"}): e["m"] = found[e["n"]]
     rows = []
     for k, es in entries.items():
         # one name, one home: the entry with a meaning first, Wiktionary before Wikidata; the other cultures are kept as "also"
