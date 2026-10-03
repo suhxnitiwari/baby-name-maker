@@ -249,6 +249,7 @@ if __name__ == "__main__":
                 if d.get("from", "").split(" ")[-1] in FOREIGN: stats[(culture, "foreign")] += 1; continue
             n = romanize(title, lang, d.get("tr", ""), db)
             if not n or " " in n.strip() or len(n) < 2: stats[(culture, "skipped")] += 1; continue
+            if lang in ("Zulu", "Xhosa") and re.match(r"^u[A-Z]", n): n = n[1:]       # the personal prefix (uJabulani → Jabulani)
             n = n[:1].upper() + n[1:]
             if n.lower() in ("shudra", "dalit", "chamar"): continue           # caste terms, not names
             entries[n.lower()].append({"n": n, "g": v["g"], "o": culture, "l": language, "oo": groups, "m": d.get("meaning", ""), "from": d.get("from", ""),

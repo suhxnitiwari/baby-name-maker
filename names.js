@@ -1025,6 +1025,143 @@ Daudi|b|Swahili|Swahili|Christian|David|
 Yohana|b|Swahili|Swahili|Christian|John|
 Salama|e|Swahili|Swahili||safety, peace|
 Bahati|e|Swahili|Swahili||good fortune, luck|
+Bheki|b|Zulu|Zulu||watch over|
+Nokubonga|g|Zulu|Zulu||mother of gratitude|
+Nokuzola|g|Zulu|Zulu||mother of calm|
+Nqobile|e|Zulu|Zulu||victorious|
+Siphesihle|e|Zulu|Zulu||a beautiful gift|
+Thuli|g|Zulu|Zulu||quiet, calm|
+Jabulani|b|Zulu|Zulu||rejoice, be happy|
+Sibusiso|b|Zulu|Zulu||blessing|
+Nomsa|g|Zulu|Zulu||mother of kindness|
+Nhlanhla|b|Zulu|Zulu||luck, good fortune|
+Nonhlanhla|g|Zulu|Zulu||mother of luck|
+Thokozani|e|Zulu|Zulu||rejoice|
+Mthunzi|b|Zulu|Zulu||shade, shelter|
+Njabulo|b|Zulu|Zulu||happiness|
+Ntokozo|e|Zulu|Zulu||joy|
+Bonginkosi|b|Zulu|Zulu||thank the Lord|
+Sibongile|g|Zulu|Zulu||we are thankful|
+Thembeka|g|Zulu|Zulu||trustworthy|
+Busisiwe|g|Zulu|Zulu||blessed|
+Khanyisile|g|Zulu|Zulu||she has brought light|
+Lungile|e|Zulu|Zulu||it is good, it is right|
+Mbali|g|Zulu|Zulu||flower|
+Nolwazi|g|Zulu|Zulu||mother of knowledge|
+Sphamandla|b|Zulu|Zulu||gift of strength|
+Sanele|e|Zulu|Zulu||we are enough|
+Langa|b|Zulu|Zulu||sun|
+Zinhle|g|Zulu|Zulu||they are beautiful|
+Nosipho|g|Zulu|Zulu||mother of gifts|
+Simphiwe|e|Zulu|Zulu||we have been given|
+Wandile|b|Zulu|Zulu||increased, grown|
+Mpumelelo|b|Zulu|Zulu||success|
+Nkosinathi|b|Zulu|Zulu||the Lord is with us|
+Nkosana|b|Zulu|Zulu||prince|
+Lindokuhle|e|Zulu|Zulu||waiting for good things|
+Zandile|g|Zulu|Zulu||they have increased|
+Nomthandazo|g|Zulu|Zulu||mother of prayer|
+Sinethemba|e|Zulu|Zulu||we have hope|
+Lwandle|e|Zulu|Zulu||ocean|
+Philani|b|Zulu|Zulu||be well, live|
+Sifiso|b|Zulu|Zulu||wish|
+Abidemi|e|Yoruba|Yoruba||born while father was away|
+Abimbola|g|Yoruba|Yoruba||born with wealth|
+Abisola|g|Yoruba|Yoruba||born into wealth|
+Abosede|g|Yoruba|Yoruba||born on a holy day|
+Adeola|e|Yoruba|Yoruba||crown of honor|
+Ajoke|g|Yoruba|Yoruba||one cherished by all|
+Arike|g|Yoruba|Yoruba||one seen and cherished|
+Arinola|g|Yoruba|Yoruba||one who walks with honor|
+Atinuke|g|Yoruba|Yoruba||cared for from the womb|
+Ayodeji|b|Yoruba|Yoruba||joy has doubled|
+Ayoka|g|Yoruba|Yoruba||one who brings joy all around|
+Ayoyinka|e|Yoruba|Yoruba||joy surrounds me|
+Bayo|b|Yoruba|Yoruba||joy is found|
+Biodun|e|Yoruba|Yoruba||born in a festive season|
+Bisola|g|Yoruba|Yoruba||born into wealth|
+Bolaji|b|Yoruba|Yoruba||wakes up with wealth|
+Bolanle|g|Yoruba|Yoruba||finds wealth at home|
+Bukola|g|Yoruba|Yoruba||adds to wealth|
+Damilare|b|Yoruba|Yoruba||justify me, vindicate me|
+Dupe|g|Yoruba|Yoruba||thanks|
+Durodola|b|Yoruba|Yoruba||wait and become wealthy|
+Ebunoluwa|e|Yoruba|Yoruba||gift of God|
+Eniola|e|Yoruba|Yoruba||person of wealth|
+Ewatomi|g|Yoruba|Yoruba||my beauty is enough|
+Eyitayo|e|Yoruba|Yoruba||this one surpasses joy|
+Folake|g|Yoruba|Yoruba||pampered with wealth|
+Folakemi|g|Yoruba|Yoruba||pamper me with wealth|
+Folasade|g|Yoruba|Yoruba||honor makes a crown|
+Funmilayo|g|Yoruba|Yoruba||give me joy|
+Idowu|e|Yoruba|Yoruba||the child born after twins|
+Ikeoluwa|e|Yoruba|Yoruba||God's care|
+Iretioluwa|e|Yoruba|Yoruba||God's goodness|
+Iyabo|g|Yoruba|Yoruba||mother has returned|
+Kehinde|e|Yoruba|Yoruba||the second-born twin|
+Kikelomo|g|Yoruba|Yoruba||to be pampered and loved|
+Kolade|b|Yoruba|Yoruba||brings honor home|
+Lanre|b|Yoruba|Yoruba||short for Olanrewaju, wealth keeps moving forward|
+Mobolaji|e|Yoruba|Yoruba||I woke up with wealth|
+Mojisola|g|Yoruba|Yoruba||I woke up in wealth|
+Morenike|g|Yoruba|Yoruba||I have found someone to cherish|
+Mosunmola|g|Yoruba|Yoruba||I draw close to wealth|
+Moyinoluwa|e|Yoruba|Yoruba||I praise God|
+Niniola|g|Yoruba|Yoruba||one who has wealth|
+Odunayo|e|Yoruba|Yoruba||a year of joy|
+Olaide|e|Yoruba|Yoruba||wealth has come|
+Olaitan|e|Yoruba|Yoruba||wealth never ends|
+Olajide|b|Yoruba|Yoruba||wealth arises|
+Olajumoke|g|Yoruba|Yoruba||everyone gathers to cherish her|
+Olakitan|e|Yoruba|Yoruba||wealth does not end|
+Olamide|e|Yoruba|Yoruba||my wealth has come|
+Olatunbosun|b|Yoruba|Yoruba||wealth returns again|
+Olawale|b|Yoruba|Yoruba||wealth has come home|
+Olawunmi|g|Yoruba|Yoruba||wealth pleases me|
+Olubunmi|g|Yoruba|Yoruba||God gave me this|
+Olufunke|g|Yoruba|Yoruba||God gave me to cherish|
+Olurotimi|b|Yoruba|Yoruba||God stays with me|
+Oluwafemi|b|Yoruba|Yoruba||God loves me|
+Oluwasanmi|b|Yoruba|Yoruba||God benefits me|
+Oluwasegun|b|Yoruba|Yoruba||God is victorious|
+Oluwaseyi|e|Yoruba|Yoruba||God made this|
+Oluyemi|e|Yoruba|Yoruba||God befits me|
+Omolade|g|Yoruba|Yoruba||a child is a crown|
+Omolara|g|Yoruba|Yoruba||children are family|
+Omolayo|g|Yoruba|Yoruba||a child is joy|
+Opeyemi|e|Yoruba|Yoruba||gratitude befits me|
+Oreoluwa|e|Yoruba|Yoruba||gift of God|
+Oyeyemi|g|Yoruba|Yoruba||a title befits me|
+Oyindamola|g|Yoruba|Yoruba||honey mixed with wealth|
+Oyinkansola|g|Yoruba|Yoruba||honey drops into wealth|
+Seyi|e|Yoruba|Yoruba||made this (short for Oluwaseyi)|
+Temilayo|g|Yoruba|Yoruba||mine is joy|
+Temiloluwa|e|Yoruba|Yoruba||I belong to God|
+Titilayo|g|Yoruba|Yoruba||eternal joy|
+Titilope|g|Yoruba|Yoruba||eternal gratitude|
+Tiwalola|g|Yoruba|Yoruba||ours is wealth|
+Tolani|g|Yoruba|Yoruba||worthy of wealth|
+Tolulope|e|Yoruba|Yoruba||thanks belong to God|
+Toluwanimi|e|Yoruba|Yoruba||I belong to God|
+Tosin|e|Yoruba|Yoruba||worthy of serving (God)|
+Toyin|e|Yoruba|Yoruba||worthy of praise|
+Tunde|b|Yoruba|Yoruba||has returned|
+Wuraola|g|Yoruba|Yoruba||gold of wealth|
+Yemi|e|Yoruba|Yoruba||befits me|
+Yemisi|g|Yoruba|Yoruba||honor me|
+Yetunde|g|Yoruba|Yoruba||mother has returned|
+Yewande|g|Yoruba|Yoruba||mother came back for me|
+Yinka|e|Yoruba|Yoruba||surrounds me|
+Iyiola|e|Yoruba|Yoruba||honor of wealth|
+Oladunni|g|Yoruba|Yoruba||wealth is sweet to have|
+Olajuwon|b|Yoruba|Yoruba||wealth surpasses them|
+Jimoh|b|Yoruba|Yoruba|Islamic|born on Friday|
+Kafayat|g|Yoruba|Yoruba|Islamic|sufficiency|
+Kudirat|g|Yoruba|Yoruba|Islamic|power|
+Ganiyu|b|Yoruba|Yoruba|Islamic|rich, self-sufficient|
+Lamidi|b|Yoruba|Yoruba|Islamic|one who praises|
+Bilkisu|g|Yoruba|Yoruba|Islamic|Bilqis, the Queen of Sheba|
+Aliyu|b|Yoruba|Yoruba|Islamic|exalted|
 `;
 
 const REAL = REAL_RAW.trim().split("\n").map(line => {
