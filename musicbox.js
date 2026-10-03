@@ -183,10 +183,13 @@ const MB = (() => {
     if (defsDone || typeof document === "undefined" || !document.body) return;
     defsDone = true;
     const d = document.createElement("div");
+    // felt beads: muted rainbow by pitch (low notes earthy, high notes airy), rose for Mom, blue for Dad, oat for family
+    const felts = [["p0", "#b9a596", "#9c8576", "#7e6858"], ["p1", "#e08a76", "#c8644f", "#a44c3a"], ["p2", "#ecc06a", "#d9a441", "#b5832a"], ["p3", "#f0c4bc", "#e3a9a0", "#c4867c"],
+      ["p4", "#b8cbad", "#9bb08f", "#7c9271"], ["p5", "#a6c4d2", "#7fa6b8", "#5f8698"], ["p6", "#bcaad3", "#9c86b5", "#7d6896"], ["p7", "#fbf5ea", "#efe4d3", "#d6c6ae"],
+      ["mom", "#ef9aae", "#d26a83", "#a94c64"], ["dad", "#9cc3e0", "#5f8fb6", "#43708f"], ["fam", "#f0d59a", "#d9b46a", "#b48d43"], ["hole", "#f0d6b4", "#d1a87c", "#a87a4f"]];
     d.innerHTML = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${
-      [["hole", "#fffaf0", "#ffd98a", "#d99a45"], ["mom", "#fff3f6", "#ffb3c4", "#d9607e"], ["dad", "#f3f9ff", "#b3d6f5", "#5b8fc0"], ["fam", "#fffaf0", "#f0d59a", "#b8913f"]]
-        .map(([id, a, b, c]) => `<radialGradient id="mb-${id}" cx=".4" cy=".36" r=".72"><stop offset="0" stop-color="${a}"/><stop offset=".5" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></radialGradient>
-          <radialGradient id="mb-${id}-halo"><stop offset="0" stop-color="${b}" stop-opacity=".5"/><stop offset=".4" stop-color="${b}" stop-opacity=".16"/><stop offset="1" stop-color="${b}" stop-opacity="0"/></radialGradient>`).join("")
+      felts.map(([id, a, b, c]) => `<radialGradient id="mb-${id}" cx=".38" cy=".34" r=".75"><stop offset="0" stop-color="${a}"/><stop offset=".6" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></radialGradient>
+          <radialGradient id="mb-${id}-halo"><stop offset="0" stop-color="#ffd98a" stop-opacity=".55"/><stop offset=".45" stop-color="#ffd98a" stop-opacity=".15"/><stop offset="1" stop-color="#ffd98a" stop-opacity="0"/></radialGradient>`).join("")
     }</defs></svg>`;
     document.body.prepend(d.firstElementChild);
   }
@@ -206,13 +209,13 @@ const MB = (() => {
     const cw = o.cw || 28, rh = o.rh || 7, pad = o.pad ?? rh, H = rh * 15 + pad * 2;
     const W = Math.ceil((m.steps + 1) * cw);
     const X = e => cw * .9 + e.t * cw + (e.kind === "home" ? cw * .3 : 0), Y = e => pad + (14 - e.i) * rh + rh / 2;
-    const r = Math.min(rh * .66, cw * .3);
+    const r = Math.min(rh * 1.3, cw * .34);
     const thread = curve(m.ev.filter(e => e.kind === "main" || e.kind === "home").sort((a, b) => a.t - b.t).map(e => [X(e), Y(e)]));
     const notes = m.ev.map((e, k) => {
-      const x = X(e).toFixed(1), y = Y(e).toFixed(1), f = FILL[e.own] || "hole", own = e.own ? " o-" + e.own : "";
+      const x = X(e).toFixed(1), y = Y(e).toFixed(1), f = FILL[e.own] || "p" + Math.min(7, Math.round(e.i / 2)), own = e.own ? " o-" + e.own : "";
       if (e.kind === "home") return `<g class="n home" data-k="${k}"><circle class="halo" cx="${x}" cy="${y}" r="${r * 2.4}" fill="url(#mb-hole-halo)"/><circle class="ring" cx="${x}" cy="${y}" r="${r * .85}"/><circle class="core" cx="${x}" cy="${y}" r="${r * .26}" fill="url(#mb-hole)"/></g>`;
       if (e.kind !== "main") return `<g class="n ${e.kind}${own}" data-k="${k}"><circle class="core" cx="${x}" cy="${y}" r="${r * .4}" fill="url(#mb-${f})"/></g>`;
-      return `<g class="n main${own}" data-k="${k}"><circle class="halo" cx="${x}" cy="${y}" r="${r * 2.7}" fill="url(#mb-${f}-halo)"/><circle class="core" cx="${x}" cy="${y}" r="${r}" fill="url(#mb-${f})"/></g>`;
+      return `<g class="n main${own}" data-k="${k}"><circle class="halo" cx="${x}" cy="${y}" r="${r * 2.7}" fill="url(#mb-${f}-halo)"/><ellipse class="shadow" cx="${(+x + r * .18).toFixed(1)}" cy="${(+y + r * .55).toFixed(1)}" rx="${r * .9}" ry="${r * .55}"/><circle class="core" cx="${x}" cy="${y}" r="${r}" fill="url(#mb-${f})"/><circle class="stitch" cx="${x}" cy="${y}" r="${r * .62}"/></g>`;
     }).join("");
     return { svg: `<svg class="holes" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true"><path class="thread" d="${thread}"/>${notes}</svg>`, W, H, cw };
   }

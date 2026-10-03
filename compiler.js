@@ -176,11 +176,17 @@ function blend() {
   log.push(["checking official records & name list", `${attestedN} are real names`]);
 
   // filters
-  const before = cands.length;
+  const before = cands.length, unfiltered = cands;
   cands = cands.filter(x => lenOk(x.n, f.len) && (!f.vibe || vibeMatch(x, f.vibe)) &&
     (!locks.start || fold(x.n).startsWith(fold(locks.start))) && (!locks.end || fold(x.n).endsWith(fold(locks.end))) &&
     (!(f.theme || f.religion || f.culture || f.lang) || x.type !== "invented" && matches(x, f, false)));
   if (before !== cands.length) log.push(["applying your filters & locks", `−${(before - cands.length).toLocaleString()}`]);
+  // every duet gets an answer: if nothing fits every blank, keep the locks and let the other filters go
+  if (!cands.length && before) {
+    cands = unfiltered.filter(x => (!locks.start || fold(x.n).startsWith(fold(locks.start))) && (!locks.end || fold(x.n).endsWith(fold(locks.end))));
+    if (!cands.length) cands = unfiltered;
+    log.push(["nothing fit every blank, so the closest are shown", `${cands.length.toLocaleString()} kept`]);
+  }
   if (last) {
     const flagged = cands.filter(x => !flowCheck(x.n, last).ok).length;
     log.push([`testing with surname ${last}`, `${flagged} flagged`]);

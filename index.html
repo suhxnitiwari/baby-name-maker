@@ -11,14 +11,14 @@
 <style>
   :root {
     --page: #f6efe2; --ink: #2a1b1f; --muted: #8a7466; --rule: #e3d6c1; --rose: #a23d55; --brass: #c99a4c; --glow: #ffd98a;
-    --night: #160b10; --band: #1e1016; --band-line: rgba(255,217,138,.075); --ivory: #fbf3e4;
+    --night: #3a2a24; --band: #f0e6d7; --band-line: rgba(120,90,60,.07); --ivory: #fbf3e4; --sand: #ece1cf;
     --mom: #ff9db3; --dad: #9cc8f0; --fam: #f0d59a; --ok: #5e8a4c; --warn: #b9682f;
     --serif: "Instrument Serif", Georgia, serif; --sans: Inter, system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
     color-scheme: light;
   }
   @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-    --page: #120a0e; --ink: #f2e6d6; --muted: #a8907e; --rule: #2f2026; --rose: #e48aa0; --band: #1d0f15; --ok: #9cc58a; --warn: #e3a06a; color-scheme: dark; } }
-  :root[data-theme="dark"] { --page: #120a0e; --ink: #f2e6d6; --muted: #a8907e; --rule: #2f2026; --rose: #e48aa0; --band: #1d0f15; --ok: #9cc58a; --warn: #e3a06a; color-scheme: dark; }
+    --page: #120a0e; --ink: #f2e6d6; --muted: #a8907e; --rule: #2f2026; --rose: #e48aa0; --band: #2a1f1a; --ok: #9cc58a; --warn: #e3a06a; color-scheme: dark; } }
+  :root[data-theme="dark"] { --page: #120a0e; --ink: #f2e6d6; --muted: #a8907e; --rule: #2f2026; --rose: #e48aa0; --band: #2a1f1a; --ok: #9cc58a; --warn: #e3a06a; color-scheme: dark; }
 
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -29,51 +29,53 @@
 
   /* ── top bar ── */
   .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; justify-content: space-between; align-items: center; padding: 18px 32px;
-    color: var(--ivory); transition: background .35s, color .35s, box-shadow .35s; }
+    color: var(--ink); transition: background .35s, color .35s, box-shadow .35s; }
   .topbar.solid { background: color-mix(in srgb, var(--page) 88%, transparent); color: var(--ink); backdrop-filter: blur(12px); box-shadow: 0 1px 0 var(--rule); }
   .brand { font: 400 1.45rem var(--serif); letter-spacing: .01em; text-decoration: none; color: inherit; }
-  .brand span { color: var(--brass); font-style: italic; }
+  .brand span { color: var(--rose); font-style: italic; }
   .topbar.solid .brand span { color: var(--rose); }
   .tb-r { display: flex; gap: 30px; align-items: center; }
   .tb-r button { all: unset; cursor: pointer; font: 500 .7rem var(--mono); letter-spacing: .18em; text-transform: uppercase; }
   .tb-r button:focus-visible { outline: 1px solid currentColor; outline-offset: 4px; }
-  .snd i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 8px; vertical-align: 1px; background: var(--brass); box-shadow: 0 0 10px var(--glow); transition: .3s; }
+  .snd i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 8px; vertical-align: 1px; background: var(--rose); box-shadow: 0 0 0 3px rgba(162,61,85,.15); transition: .3s; }
   .snd.off i { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
-  .nudge { position: absolute; right: 32px; top: 52px; font: italic 400 1rem var(--serif); color: var(--glow); opacity: 0; transition: opacity .8s; pointer-events: none; }
+  .nudge { position: absolute; right: 32px; top: 52px; font: italic 400 1rem var(--serif); color: var(--rose); opacity: 0; transition: opacity .8s; pointer-events: none; }
   .nudge.on { opacity: .9; }
   .topbar.solid .nudge { opacity: 0; }
 
   /* ── 01 the stage ── */
-  #stage { position: relative; height: 100svh; min-height: 680px; overflow: hidden; color: var(--ivory);
-    background: radial-gradient(ellipse 90% 70% at 50% 62%, #2c141b 0%, var(--night) 70%); }
-  #stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .14; mix-blend-mode: overlay;
+  #stage { position: relative; height: 100svh; min-height: 680px; overflow: hidden; color: var(--ink);
+    background: radial-gradient(ellipse 60% 55% at 62% 30%, #fffaf2 0%, rgba(255,250,242,0) 70%), linear-gradient(180deg, #f6efe4 0%, #efe5d6 100%); }
+  #stage::before { content: ""; position: absolute; inset: 0; pointer-events: none;   /* window light falling across the wall */
+    background: linear-gradient(115deg, transparent 0 38%, rgba(255,255,255,.35) 38% 46%, transparent 46% 52%, rgba(255,255,255,.25) 52% 57%, transparent 57%); }
+  #stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .08; mix-blend-mode: multiply;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
-  #drum { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #mobile { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; cursor: grab; z-index: 1; }
   .grip { position: absolute; z-index: 2; cursor: grab; touch-action: none; }
   .grip.grabbing { cursor: grabbing; }
   .hero-copy { position: absolute; left: 32px; top: 92px; z-index: 3; pointer-events: none; }
-  .kick { font: 500 .7rem var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--brass); }
+  .kick { font: 500 .7rem var(--mono); letter-spacing: .18em; text-transform: uppercase; color: #a8865c; }
   .hero-copy h1 { font: 400 clamp(3rem, min(8.6vw, 11.5vh), 8rem)/.86 var(--serif); letter-spacing: -.02em; margin: 14px 0 0; }
-  .hero-copy h1 i { color: var(--glow); }
+  .hero-copy h1 i { color: var(--rose); }
   .hero-play { position: absolute; z-index: 3; left: 0; right: 0; top: var(--drum-bottom, 72%); display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 0 16px; }
   .hp-row { display: flex; align-items: center; gap: 16px; }
-  #heroName { all: unset; font: 400 clamp(2.4rem, 5vw, 3.6rem)/1.1 var(--serif); text-align: center; color: var(--ivory); width: 9ch; min-width: 4ch; max-width: 70vw;
-    border-bottom: 1px solid rgba(255,217,138,.35); padding: 0 6px 2px; caret-color: var(--glow); transition: border-color .3s; }
-  #heroName:focus { border-color: var(--glow); }
-  #heroName::placeholder { color: rgba(251,243,228,.42); font-style: italic; }
+  #heroName { all: unset; font: 400 clamp(2.4rem, 5vw, 3.6rem)/1.1 var(--serif); text-align: center; color: var(--ink); width: 9ch; min-width: 4ch; max-width: 70vw;
+    border-bottom: 1px solid rgba(120,90,60,.3); padding: 0 6px 2px; caret-color: var(--rose); transition: border-color .3s; }
+  #heroName:focus { border-color: var(--rose); }
+  #heroName::placeholder { color: rgba(90,65,50,.45); font-style: italic; }
   .play-btn { width: 52px; height: 52px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center; flex: none;
-    background: radial-gradient(circle at 35% 30%, #f6dda0, #c99a4c 55%, #7a5822); box-shadow: 0 0 0 1px rgba(255,236,190,.4) inset, 0 8px 24px -6px rgba(255,190,90,.45); transition: transform .2s; }
+    background: radial-gradient(circle at 35% 30%, #f3dcbc, #d1a87c 55%, #a87a4f); box-shadow: 0 0 0 1px rgba(255,255,255,.5) inset, 0 10px 24px -10px rgba(120,80,40,.55); transition: transform .2s; }
   .play-btn:hover { transform: scale(1.06); } .play-btn:active { transform: scale(.96); }
   .play-btn svg { width: 18px; height: 18px; fill: #3a2410; margin-left: 3px; }
-  .readout { font: .7rem/1.6 var(--mono); letter-spacing: .12em; color: #bba38a; text-align: center; min-height: 1.6em; }
-  .readout b { color: var(--glow); font-weight: 500; }
-  .hint { font: .66rem var(--mono); letter-spacing: .16em; text-transform: uppercase; color: rgba(251,243,228,.45); }
-  .hint button { all: unset; cursor: pointer; color: var(--brass); border-bottom: 1px solid rgba(201,154,76,.4); }
-  .micro { font: italic 400 1.15rem var(--serif); color: var(--glow); margin: 0; }
+  .readout { font: .7rem/1.6 var(--mono); letter-spacing: .12em; color: #9a8270; text-align: center; min-height: 1.6em; }
+  .readout b { color: var(--rose); font-weight: 500; }
+  .hint { font: .66rem var(--mono); letter-spacing: .16em; text-transform: uppercase; color: rgba(90,65,50,.55); }
+  .hint button { all: unset; cursor: pointer; color: var(--rose); border-bottom: 1px solid currentColor; }
+  .micro { font: italic 400 1.15rem var(--serif); color: var(--rose); margin: 0; }
   .micro:empty { display: none; }
   .scroll-cue { all: unset; cursor: pointer; position: absolute; z-index: 3; bottom: 22px; left: 50%; transform: translateX(-50%);
-    font: 500 .66rem var(--mono); letter-spacing: .22em; color: rgba(251,243,228,.5); }
-  .scroll-cue:hover { color: var(--glow); }
+    font: 500 .66rem var(--mono); letter-spacing: .22em; color: rgba(90,65,50,.55); }
+  .scroll-cue:hover { color: var(--rose); }
   @media (max-height: 820px) { .scroll-cue { display: none; } }
 
   /* ── explore: the index ── */
@@ -135,6 +137,8 @@
   .count::after { content: ""; display: block; clear: both; }
   .count b { color: var(--ink); font-weight: 500; }
   .roll-head { font: 500 .68rem var(--mono); letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin: 44px 0 0; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+  .relax-note { font: italic 400 1.5rem/1.35 var(--serif); color: var(--muted); margin: 26px 0 6px; max-width: 900px; }
+  .relax-note b { color: var(--rose); font-weight: 400; }
   .empty { padding: 60px 0; text-align: center; font: italic 400 1.6rem var(--serif); color: var(--muted); }
 
   .strip { display: grid; grid-template-columns: 270px 1fr; gap: 0 30px; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--rule); cursor: pointer; animation: rise .5s cubic-bezier(.2,.8,.2,1) both; }
@@ -149,27 +153,28 @@
   .score em { font: .6rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-style: normal; }
 
   /* the band: night-velvet paper with lit holes */
-  .band { position: relative; overflow: hidden; border-radius: 3px; background-color: var(--band);
-    background-image: radial-gradient(ellipse 60% 120% at 12% 50%, rgba(255,190,110,.07), transparent 70%),
+  .band { position: relative; overflow: hidden; border-radius: 14px; background-color: var(--band);
+    background-image: radial-gradient(ellipse 60% 120% at 12% 50%, rgba(255,255,255,.45), transparent 70%),
       repeating-linear-gradient(180deg, var(--band-line) 0 1px, transparent 1px var(--rh));
     background-position: 0 0, 0 calc(var(--pad) + var(--rh) / 2);
-    clip-path: polygon(12px 0, 100% 0, 100% 100%, 0 100%, 0 12px);
-    box-shadow: inset 0 0 0 1px rgba(255,217,138,.06), inset 0 -18px 30px -24px rgba(0,0,0,.6); }
+    box-shadow: inset 0 0 0 1px rgba(120,90,60,.08), inset 0 -14px 24px -22px rgba(120,90,60,.35); }
   .band .holes { display: block; position: relative; }
-  .thread { fill: none; stroke: var(--glow); stroke-opacity: .32; stroke-width: 1.2; stroke-linecap: round; transition: stroke-opacity .4s; }
-  .n .halo { opacity: .55; transition: opacity .4s; }
+  .thread { fill: none; stroke: #c4ab88; stroke-opacity: .85; stroke-width: 2; stroke-linecap: round; transition: stroke-opacity .4s; }
+  .n .shadow { fill: rgba(110,80,50,.16); }
+  .n .stitch { fill: none; stroke: rgba(255,255,255,.35); stroke-width: .8; stroke-dasharray: 1.5 2; }
+  .n .halo { opacity: 0; transition: opacity .4s; }
   .n .core, .n .halo, .n .ring { transform-box: fill-box; transform-origin: center; transition: transform .35s cubic-bezier(.2,1.6,.4,1), opacity .4s; }
   .n.pluck .core, .n.spark .core { opacity: .62; }
-  .n .ring { fill: none; stroke: var(--glow); stroke-width: 1.2; opacity: .8; }
-  .strip:hover .n .halo, .strip.open .n .halo { opacity: .9; }
+  .n .ring { fill: none; stroke: #b48d43; stroke-width: 1.4; opacity: .9; }
+  .strip:hover .n .core, .strip.open .n .core { transform: scale(1.06); }
   .strip:hover .thread, .playing .thread, .strip.open .thread { stroke-opacity: .6; }
-  .n.lit .core { transform: scale(1.7); }
+  .n.lit .core, .n.lit .stitch { transform: scale(1.45) translateY(-2px); }
   .n.lit .halo { opacity: 1; transform: scale(1.5); }
   .n.lit .ring { transform: scale(1.4); }
   .beam { position: absolute; top: 0; bottom: 0; left: -40px; width: 80px; pointer-events: none; opacity: 0; transition: opacity .3s;
-    background: linear-gradient(90deg, transparent, rgba(255,217,138,.16) 50%, transparent); }
+    background: linear-gradient(90deg, transparent, rgba(255,214,140,.28) 50%, transparent); }
   .playing .beam { opacity: 1; }
-  .band-label { position: absolute; right: 16px; bottom: 8px; font: italic 400 1rem var(--serif); color: rgba(255,217,138,.22); pointer-events: none; white-space: nowrap; }
+  .band-label { position: absolute; right: 16px; bottom: 8px; font: italic 400 1rem var(--serif); color: rgba(110,80,50,.3); pointer-events: none; white-space: nowrap; }
 
   /* the drawer: the information is the reward */
   .drawer { grid-column: 2; display: none; grid-template-columns: 1.25fr 1fr 1.1fr; gap: 34px; padding: 22px 0 6px; cursor: auto; }
@@ -205,27 +210,29 @@
   .chip.text { color: var(--ink); border-color: var(--brass); background: color-mix(in srgb, var(--brass) 14%, transparent); }
 
   /* Mom + Dad: the duet */
-  .duet-in { display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: end; background: var(--night); color: var(--ivory); padding: 34px 34px 10px; border-radius: 16px 16px 0 0; margin-top: 10px; }
+  .duet-in { display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: end; background: var(--sand); color: var(--ink); padding: 34px 34px 10px; border-radius: 16px 16px 0 0; margin-top: 10px; }
   .parent { cursor: pointer; min-width: 0; }
   .parent small { font: 500 .62rem var(--mono); letter-spacing: .18em; text-transform: uppercase; }
-  .parent.a small { color: var(--mom); } .parent.b small { color: var(--dad); }
+  .parent.a small { color: #c0546f; } .parent.b small { color: #43708f; }
   .parent h4 { font: 400 2.4rem/1 var(--serif); margin: 4px 0 10px; font-weight: 400; }
   .parent .band { width: 100%; }
   .plus { font: italic 400 3rem/1 var(--serif); color: var(--brass); padding-bottom: 40px; }
-  .strip.featured { grid-template-columns: 1fr; text-align: center; background: var(--night); color: var(--ivory); border-radius: 0 0 16px 16px; padding: 26px 34px 34px; border: 0; cursor: default; }
-  .strip.featured .who small { color: var(--brass); }
-  .strip.featured .name { font-size: clamp(4.4rem, 13vw, 10rem); line-height: .9; margin: 8px 0 6px; color: var(--ivory); font-style: normal; }
-  .strip.featured .name .o-a { color: var(--mom); } .strip.featured .name .o-b { color: var(--dad); } .strip.featured .name .o-f { color: var(--fam); }
-  .strip.featured .where { color: #bba38a; }
+  .strip.featured { grid-template-columns: 1fr; text-align: center; background: var(--sand); color: var(--ink); border-radius: 0 0 16px 16px; padding: 26px 34px 34px; border: 0; cursor: default; }
+  .strip.featured .who small { color: #a8865c; }
+  .strip.featured .name { font-size: clamp(4.4rem, 13vw, 10rem); line-height: .9; margin: 8px 0 6px; color: var(--ink); font-style: normal; }
+  .strip.featured .name .o-a { color: #c0546f; } .strip.featured .name .o-b { color: #43708f; } .strip.featured .name .o-f { color: #b48d43; }
+  .strip.featured .where { color: var(--muted); }
   .strip.featured .band { margin: 18px auto 0; width: fit-content; max-width: 100%; cursor: pointer; }
-  .strip.featured .drawer { grid-column: 1; text-align: left; color: var(--ivory); --rule: #3b2830; --muted: #bba38a; --rose: var(--glow); --page: var(--night); }
+  .strip.featured .drawer { grid-column: 1; text-align: left; color: var(--ink); --page: var(--sand); }
+  .strip.featured .band { --band: #f7f0e4; }
+  .duet-in .band { --band: #f7f0e4; }
   .strip.featured .pick { margin-bottom: 4px; }
   .prov { font: .74rem/1.8 var(--mono); }
   .prow { display: grid; grid-template-columns: 54px 1fr 40px; gap: 8px; align-items: baseline; }
   .prow .pl { font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
   .prow .pw { font: 400 1.15rem var(--serif); }
   .prow mark { background: none; color: var(--rose); font-style: italic; }
-  .prov .prow:nth-child(1) mark { color: var(--mom); } .prov .prow:nth-child(2) mark { color: var(--dad); }
+  .prov .prow:nth-child(1) mark { color: #c0546f; } .prov .prow:nth-child(2) mark { color: #43708f; }
   .prow b { text-align: right; font-weight: 500; }
   .pmethod { font-size: .64rem; color: var(--muted); margin-top: 4px; }
   .locks { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
@@ -333,7 +340,7 @@
 
 <!-- 01 · the box -->
 <section id="stage" aria-label="Play any name">
-  <canvas id="drum" aria-hidden="true"></canvas>
+  <canvas id="mobile" aria-hidden="true"></canvas>
   <div class="hero-copy">
     <div class="kick" id="totalLine">every name plays its own song</div>
     <h1>Every name<br>is a <i>lullaby.</i></h1>
@@ -345,7 +352,7 @@
     </div>
     <div class="readout" id="readout"></div>
     <p class="micro" id="heroMicro"></p>
-    <div class="hint">type any name · grab the drum and spin it · <button id="heroSpell">hear its spellings</button></div>
+    <div class="hint">type any name · tap the mobile to play it · drag to spin it · <button id="heroSpell">hear its spellings</button></div>
   </div>
   <button class="scroll-cue" id="scrollCue">FIND A NAME ↓</button>
 </section>
@@ -435,7 +442,7 @@
   Office for National Statistics, England &amp; Wales (Open Government Licence v3.0) · NISRA, Northern Ireland (Open Government Licence) · Central Statistics Office Ireland (CC BY 4.0) ·
   INSEE France (Licence Ouverte) · INE Spain · Swiss Federal Statistical Office (FSO) · Stadt Zürich (CC0) · Statistik Austria (CC BY 4.0) · German municipal open-data portals via GovData.de ·
   Statistics Norway (NLOD) · PESEL register, Poland (dane.gov.pl) · IRN, Portugal (dados.gov.pt) · RNPP Luxembourg (data.public.lu) ·
-  NSW, Victoria, Queensland, South Australia &amp; Tasmania birth registries (CC BY) · RENAPER Argentina · Registro Civil de Chile (via the guaguas dataset, CC0) · IBGE Census 2010, Brazil (via Brasil.io).
+  NSW, Victoria, Queensland, South Australia &amp; Tasmania birth registries (CC BY) · Central Bureau of Statistics, Israel (via babynamesIL; Latin spellings checked against Wikidata, CC0) · RENAPER Argentina · Registro Civil de Chile (via the guaguas dataset, CC0) · IBGE Census 2010, Brazil (via Brasil.io).
   Names from sacred texts: STEPBible TIPNR, Tyndale House (CC BY 4.0) · Hitchcock's Bible Names Dictionary (1869, public domain) ·
   Cologne Digital Sanskrit Dictionaries, The Sanskrit Library: Sørensen's Index to the Names in the Mahābhārata, Dikshitar's Purāṇa Index, Vettam Mani's Purāṇic Encyclopaedia,
   Macdonell &amp; Keith's Vedic Index, Mehendale's Mahābhārata Cultural Index (CC BY-NC-SA 3.0) · Bhagavad Gita text, gita/gita (public domain) · Quranic Arabic Corpus, Kais Dukes (GPL), text by Tanzil.
@@ -444,7 +451,7 @@
 
 <script src="names.js?v=3"></script>
 <script src="generator.js?v=4"></script>
-<script src="musicbox.js?v=1"></script>
+<script src="musicbox.js?v=3"></script>
 <script>
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -455,20 +462,22 @@ if ("scrollRestoration" in history) history.scrollRestoration = "manual"; // alw
 const ROOT_NAMES = buildRootNames();
 const TAKEN = new Set([...REAL, ...ROOT_NAMES].map(x => x.n.toLowerCase()));
 
-// ── Official names database: every real first name from government registries in 17 countries (data/names-db.tsv) ──
+// ── Official names database: every real first name from government registries in 18 countries (data/names-db.tsv) ──
 // name <TAB> gender (f / m / u = both / ? = registry has no sex) <TAB> countries <TAB> people recorded
 let DB = [], DB_READY = false;
 const DB_KEYS = new Map();
 const DB_G = { f: "girl", m: "boy", u: "either", "?": null };
 const CC_LABEL = { us: "US", ca: "Canada", qc: "Québec", au: "Australia", uk: "Eng & Wales", nir: "N. Ireland", ie: "Ireland", fr: "France", es: "Spain", ch: "Switzerland",
-  ar: "Argentina", br: "Brazil", cl: "Chile", pl: "Poland", de: "Germany", at: "Austria", no: "Norway", lu: "Luxembourg", pt: "Portugal", fi: "Finland", be: "Belgium", sct: "Scotland", nz: "New Zealand" };
+  ar: "Argentina", br: "Brazil", cl: "Chile", pl: "Poland", de: "Germany", at: "Austria", no: "Norway", lu: "Luxembourg", pt: "Portugal", il: "Israel", fi: "Finland", be: "Belgium", sct: "Scotland", nz: "New Zealand" };
 // Names from sacred texts (Bible & Torah, Hindu epics, Puranas, Vedas & the Gita, the Quran), with their stories: data/scripture-names.json
-const storied = fetch("data/scripture-names.json?v=1").then(r => r.json()).then(addStoried).catch(() => {});
+// …and Hebrew names from Israel's birth records (data/hebrew-names.json), with their Hebrew spelling
+const storied = Promise.all(["data/scripture-names.json?v=1", "data/hebrew-names.json?v=1"].map(u => fetch(u).then(r => r.json()).catch(() => [])))
+  .then(([a, b]) => addStoried([...a, ...b])).catch(() => {});
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
   for (const [n, g, o, l, r, m, src, texts] of rows) {
-    const x = texts.split(","), k = fold(n), cur = have.get(k);
-    if (cur) { cur.x = [...new Set([...(cur.x || []), ...x])]; cur.m ||= m; cur.src ||= src; continue; }   // keep our hand-written entry, add where it's named
+    const x = texts ? texts.split(",") : [], k = fold(n), cur = have.get(k);
+    if (cur) { cur.x = [...new Set([...(cur.x || []), ...x])]; cur.m ||= m; cur.src = cur.src ? (src && !cur.src.includes(src) && src.startsWith("Given to") ? `${cur.src} ${src}` : cur.src) : src; continue; }   // keep our hand-written entry, add where it's named
     const e = { n, g: { g: "girl", b: "boy", e: "either" }[g], o, l, r: r ? r.split(",") : [], m, src, type: "real", x };
     REAL.push(e); ALL_NAMED.push(e); have.set(k, e); TAKEN.add(k);
     BY_NAME.has(k) ? BY_NAME.get(k).push(e) : BY_NAME.set(k, [e]);
@@ -478,24 +487,26 @@ function addStoried(rows) {
   fillSelect($("#culture"), "any", uniq(ALL_NAMED.map(x => x.o)));
   fillSelect($("#lang"), "any language", uniq(ALL_NAMED.map(x => x.l)));
 }
-const dbReady = Promise.all([fetch("data/names-db.tsv?v=2").then(r => r.text()), storied]).then(([t]) => {
+const dbReady = Promise.all([fetch("data/names-db.tsv?v=3").then(r => r.text()), storied]).then(([t]) => {
   const ours = new Set([...REAL, ...ROOT_NAMES].map(x => fold(x.n)));
   for (const line of t.split("\n")) {
     if (!line) continue;
     const [n, g, cc, cnt] = line.split("\t"), k = fold(n);
-    const e = { n, g: DB_G[g], cc: cc.split(","), cnt: +cnt, o: "", l: "", r: [], m: "", src: "", type: "attested" };
+    const ccs = cc.split(",");
+    const e = { n, g: DB_G[g], cc: ccs, cnt: +cnt, o: ccs.includes("il") ? "Israeli" : "", l: "", r: [], m: "", src: "", type: "attested" };
     if (!DB_KEYS.has(k)) DB_KEYS.set(k, e);
     TAKEN.add(k);
     if (!ours.has(k)) DB.push(e);
   }
   for (const g in INVENTED) delete INVENTED[g]; // rebuild invented names without any real ones
+  fillSelect($("#culture"), "any", uniq([...ALL_NAMED.map(x => x.o), "Israeli"]));
   DB_READY = true;
   dispatchEvent(new Event("namesdb"));
 }).catch(() => {});
 const dbEntry = n => DB_KEYS.get(fold(n));
 // once the database is in, refresh whatever view is open so it includes real names
 addEventListener("namesdb", () => {
-  if (tab === "find") { seen = new Set(); buildPools(); render(draw(BATCH), "No names match all of that. Try loosening one blank."); $("#more").classList.toggle("hidden", !left()); }
+  if (tab === "find") find();
   else if (tab === "blend" && $("#mom").value.trim() && $("#dad").value.trim()) blend();
   else if (tab === "taste") showTaste();
   // spellings: index every real name by how it sounds
@@ -584,7 +595,8 @@ function buildPools() {
     real: shuffle(REAL.filter(x => matches(x, f))),
     root: shuffle(ROOT_NAMES.filter(x => matches(x, f))),
     // real names from official records: weighted toward names more people actually have
-    db: !needsMeaning ? DB.filter(x => matches(x, f)).map(x => [Math.random() ** (1 / (1 + Math.log10(x.cnt))), x]).sort((a, b) => b[0] - a[0]).map(p => p[1]) : [],
+    // official records have no meanings, but they do know where a name is given (Israeli)
+    db: !needsMeaning || (f.culture && !f.theme && !f.religion && !f.lang && !f.text) ? DB.filter(x => matches(x, f)).map(x => [Math.random() ** (1 / (1 + Math.log10(x.cnt))), x]).sort((a, b) => b[0] - a[0]).map(p => p[1]) : [],
     invented: !needsMeaning ? shuffle(invented(gender).filter(x => matches(x, f))) : [],
   };
   pools.ptr = { real: 0, db: 0, root: 0, invented: 0 };
@@ -770,9 +782,10 @@ let duetTimers = [];
 function render(items, emptyMsg) {
   shown = items;
   duetTimers.forEach(clearTimeout); duetTimers = [];
-  if (!items.some(x => !x.heading && !x.formula && !x.share && !x.pipeline)) { $("#results").innerHTML = `<div class="empty">${emptyMsg}</div>`; return; }
+  if (!items.some(x => !x.heading && !x.formula && !x.share && !x.pipeline && !x.note)) { $("#results").innerHTML = `<div class="empty">${emptyMsg}</div>`; return; }
   $("#results").innerHTML = items.map((x, i) =>
     x.heading ? `<h3 class="roll-head">${esc(x.heading)}</h3>` :
+    x.note ? `<p class="relax-note">${x.note}</p>` :
     x.pipeline ? pipelineHTML(x.pipeline) :
     x.share ? `<div class="share-row"><button class="linkish" data-share>⧉ copy a link to this duet</button></div>` :
     x.formula ? duetHTML(x.formula) :
@@ -781,7 +794,86 @@ function render(items, emptyMsg) {
 
 function find() {
   seen = new Set(); buildPools();
+  if (!left()) return findClosest();
   render(draw(BATCH), "No names match all of that. Try loosening one blank.");
+  $("#more").classList.toggle("hidden", !left());
+}
+
+// ── Every query gets an answer ──
+// When no name fits every blank: loosen the fewest, least important blanks (feel and length first, letters last),
+// say which ones, and compose new names that keep every letter, length and feel asked for.
+const optText = sel => { const o = $(sel).selectedOptions[0]; return o && o.value ? o.text.toLowerCase() : ""; };
+const RELAX = [ // filter, cost of loosening it, how to say it
+  ["vibe", 1, () => `the ${optText("#vibeSel")} feel`],
+  ["len", 1, () => optText("#len")],
+  ["lang", 2, () => `the ${optText("#lang")} language`],
+  ["culture", 2, () => `${optText("#culture")} roots`],
+  ["text", 3, () => `being named in ${optText("#scripture")}`],
+  ["religion", 3, () => `the ${optText("#religion")} faith`],
+  ["theme", 3, () => `meaning ${optText("#theme")}`],
+  ["ends", 5, () => `ending in “${$("#ends").value.trim()}”`],
+  ["start", 6, () => `starting with “${$("#first2").value.trim()}”`],
+];
+const CHECK = {
+  vibe: (x, f) => vibeMatch(x, f.vibe), len: (x, f) => lenOk(x.n, f.len), lang: (x, f) => x.l === f.lang, culture: (x, f) => x.o === f.culture,
+  text: (x, f) => (x.x || []).includes(f.text), religion: (x, f) => x.r.includes(f.religion), theme: (x, f) => themesOf(x).includes(f.theme),
+  ends: (x, f) => fold(x.n).endsWith(f.ends), start: (x, f) => fold(x.n).startsWith(f.first2 || f.first),
+};
+const isSet = (k, f) => k === "start" ? !!(f.first2 || f.first) : !!f[k];
+function closest(f) {
+  const active = RELAX.filter(([k]) => isSet(k, f));
+  const byMask = new Map();
+  for (const x of [...REAL, ...ROOT_NAMES, ...DB, ...invented(gender)]) {
+    if (!genderOk(x)) continue;
+    let m = 0;
+    active.forEach(([k], i) => { if (!CHECK[k](x, f)) m |= 1 << i; });
+    byMask.has(m) ? byMask.get(m).push(x) : byMask.set(m, [x]);
+  }
+  // the cheapest set of blanks to loosen that leaves at least one real name
+  let best = null;
+  for (let R = 1; R < 1 << active.length; R++) {
+    let cost = 0, n = 0;
+    active.forEach(([, c], i) => { if (R & (1 << i)) cost += c; });
+    if (best && cost > best.cost) continue;
+    for (const [m, xs] of byMask) if ((m & ~R) === 0) n += xs.filter(x => x.type !== "invented").length;
+    if (n && (!best || cost < best.cost || n > best.n)) best = { R, cost, n };
+  }
+  if (!best) return { loosened: active.map(([, , say]) => say()), items: [...byMask.values()].flat() };
+  const items = [];
+  for (const [m, xs] of byMask) if ((m & ~best.R) === 0) items.push(...xs);
+  return { loosened: active.filter((_, i) => best.R & (1 << i)).map(([, , say]) => say()), items };
+}
+// New names that keep the letters, length and feel exactly (meanings are left to the parents).
+function compose(f, want = 6) {
+  const P = PARTS[gender], split = t => [...new Set(t.trim().split(/\s+/))];
+  const pre = f.first2 || f.first, cap = t => t.charAt(0).toUpperCase() + t.slice(1);
+  const fits = n => sayable(n) && !TAKEN.has(fold(n)) && (!pre || fold(n).startsWith(pre)) && (!f.ends || fold(n).endsWith(f.ends)) &&
+    lenOk(n, f.len) && (!f.vibe || vibeMatch({ n, g: gender, o: "", l: "", r: [], m: "", src: "", type: "invented" }, f.vibe));
+  const starts = split(P.start).filter(t => !pre || t.toLowerCase().startsWith(pre) || pre.startsWith(t.toLowerCase()));
+  const starters = starts.length ? starts : [cap(pre)];
+  const enders = f.ends ? [f.ends] : split(P.end), mids = split(P.mid);
+  const out = new Set(), pick = a => a[Math.random() * a.length | 0];
+  for (let i = 0; i < 6000 && out.size < want; i++) {
+    let st = pick(starters);
+    if (pre && pre.length > st.length) st = cap(pre);
+    const parts = [st, ...Array.from({ length: Math.random() * 3 | 0 }, () => pick(mids)), pick(enders)];
+    const n = cap(join(parts).toLowerCase());
+    if (fits(n)) out.add(n);
+  }
+  return [...out].map(n => ({ n, g: gender, o: "", l: "", r: [], m: vibe(n), src: "", type: "invented", badge: "Composed for you" }));
+}
+function findClosest() {
+  const f = filters(), c = closest(f), made = compose(f);
+  const of = t => shuffle(c.items.filter(x => (x.type === "attested" ? "db" : x.type === "real" ? "real" : x.type === "root" ? "root" : "invented") === t));
+  pools = { real: of("real"), db: of("db"), root: of("root"), invented: of("invented") };
+  pools.ptr = { real: 0, db: 0, root: 0, invented: 0 };
+  const list = c.loosened.length > 1 ? c.loosened.slice(0, -1).join(", ") + " and " + c.loosened.slice(-1) : c.loosened[0];
+  $("#count").innerHTML = `<span>No name fits every blank · here are the closest</span><span>loosened: ${esc(list || "nothing")}</span>`;
+  render([
+    { note: `Nothing fits every blank at once, so the box let go of <b>${esc(list)}</b> and kept the rest.` },
+    ...draw(BATCH),
+    ...(made.length ? [{ heading: "Composed for you · new names that keep every letter, length and feel you asked for" }, ...made] : []),
+  ], "");
   $("#more").classList.toggle("hidden", !left());
 }
 function more() {
@@ -1021,8 +1113,8 @@ addEventListener("DOMContentLoaded", function openShared() {
 document.fonts && document.fonts.ready.then(fitAll);
 </script>
 <script src="taste.js?v=4"></script>
-<script src="compiler.js?v=6"></script>
-<script src="drum.js?v=1"></script>
+<script src="compiler.js?v=7"></script>
+<script src="mobile.js?v=1"></script>
 <script>
 // ── the box: type a name, it gets pinned to the drum ──
 if (typeof Drum !== "undefined" && Drum) {

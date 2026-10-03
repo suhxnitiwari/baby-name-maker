@@ -4,7 +4,7 @@
 
 **→ [suhxnitiwari.github.io/baby-name-maker](https://suhxnitiwari.github.io/baby-name-maker/)**
 
-A music box for baby names. Every name is punched into a strip and played: the first screen is a brass music-box drum you can spin, and every result is a strip of night-velvet paper whose lit holes are the name's notes. **777,000+ names**: 529,000 real first names from government records in 17 countries, plus 249,000 generated, including hundreds of real ones with meanings and stories from many cultures and faiths.
+A crib mobile for baby names. Every name plays its own lullaby: on the first screen each note hangs from a wooden mobile as a felt charm (low notes hang long, high notes short, so the melody is the mobile's shape), and every result is a garland of felt beads strung on a melody line. **777,000+ names**: 529,000 real first names from government records in 18 countries, plus 249,000 generated, including hundreds of real ones with meanings and stories from many cultures and faiths.
 
 ## How a name becomes a tune
 `musicbox.js` turns any name into a melody, the same way every time:
@@ -18,7 +18,9 @@ A music box for baby names. Every name is punched into a strip and played: the f
 | Rhythm | the first syllable is held longest; an open ending (-a, -i) rings out |
 | The ring ○ | every tune comes home to the same low C: the Lullabyte signature |
 
-Notes sit on a two-octave pentatonic ladder on a 15-tooth comb, so no name can sound wrong. Spellings that sound alike punch the same holes (Layla, Leila and Laila play one song; Lila is a different tune). The sound is synthesized in the browser with Web Audio: each pluck is a stack of sine partials with a long ring and a small generated room. `drum.js` draws the drum on a canvas.
+When no name fits every blank of a search, the page never comes back empty: it loosens the fewest, least important blanks (feel and length first, letters last), says which, and composes new names that keep every letter, length and feel asked for.
+
+Notes sit on a two-octave pentatonic ladder, so no name can sound wrong. Spellings that sound alike make the same tune (Layla, Leila and Laila play one song; Lila is a different tune). The sound is synthesized in the browser with Web Audio: each note is a music-box chime, a stack of sine partials with a long ring and a small generated room. `mobile.js` draws the mobile on a canvas.
 
 ## Where the names come from
 | Type | How many | What it is |
@@ -43,7 +45,7 @@ Notes sit on a two-octave pentatonic ladder on a 15-tooth comb, so no name can s
 - **Popularity badges:** each card and spelling shows its real rank, like #3 US 2024
 
 ## Real names database
-`data/names-db.tsv` holds **529,534 real first names** from official government records in **17 countries**: the US, Canada (national, Québec, BC, Alberta, Ontario), the UK (England & Wales, Northern Ireland), Ireland, France, Spain, Switzerland (national, Zürich), Germany (~1,000 city open-data files), Austria, Norway, Poland (the PESEL register), Portugal, Luxembourg, Australia (NSW, SA, Victoria, Queensland, Tasmania), Argentina, Chile and Brazil. Columns: name, gender (f / m / u = used for both / ? = registry has no sex), countries, people recorded.
+`data/names-db.tsv` holds **529,563 real first names** from official government records in **18 countries**: the US, Canada (national, Québec, BC, Alberta, Ontario), the UK (England & Wales, Northern Ireland), Ireland, France, Spain, Switzerland (national, Zürich), Germany (~1,000 city open-data files), Austria, Norway, Poland (the PESEL register), Portugal, Luxembourg, Australia (NSW, SA, Victoria, Queensland, Tasmania), Argentina, Chile, Brazil and Israel (Hebrew-script names turned into verified Latin spellings by `scripts/hebrew_names.py`). Columns: name, gender (f / m / u = used for both / ? = registry has no sex), countries, people recorded.
 
 ```
 python3 scripts/fetch_world.py     # download every reachable source into raw/ (not committed)

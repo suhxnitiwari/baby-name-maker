@@ -47,6 +47,10 @@ FILES = [
     ("pt", "pt-m.csv", "https://dados.justica.gov.pt/dataset/825b6dc1-2bcd-4ccb-a6d6-98bb8c8a4781/resource/65175021-c8ca-4618-a04e-595c34ba15f6/download/nomesmasculino.csv"),
     # Luxembourg: national register, most-given first names
     ("lu", "lu.csv", "https://download.data.public.lu/resources/prenoms-les-plus-donnes-au-luxembourg/20201014-124908/rnrpp-prenoms-les-plus-utilises-2020.csv"),
+    # Israel: Wikidata given names with Hebrew labels (CC0), to turn Hebrew-script names into Latin spellings (hebrew_names.py)
+    *[("israel", f"wd-he-{k}.tsv", "https://query.wikidata.org/sparql?query=" + urllib.parse.quote(
+        f'SELECT ?t ?he ?en WHERE {{ VALUES ?t {{ wd:Q202444 wd:Q11879590 wd:Q3409032 }} ?i wdt:P31 ?t . ?i {p} ?he . FILTER(lang(?he)="he") ?i rdfs:label ?en . FILTER(lang(?en)="en") }}')
+        + "&format=tsv") for k, p in (("native", "wdt:P1705"), ("label", "rdfs:label"), ("alias", "skos:altLabel"))],
     # ── sacred texts (read by build_scriptures.py) ──
     # Bible: every person named (STEPBible TIPNR, Tyndale House, CC BY 4.0) and name meanings (Hitchcock, 1869, public domain)
     ("bible", "tipnr.txt", "https://raw.githubusercontent.com/STEPBible/STEPBible-Data/master/Proper%20Nouns/TIPNR%20-%20Translators%20Individualised%20Proper%20Names%20with%20all%20References%20-%20STEPBible.org%20CC%20BY.txt"),
