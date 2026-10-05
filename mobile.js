@@ -31,12 +31,12 @@ const Mobile = (() => {
     dpr = Math.min(devicePixelRatio || 1, 2); W = r.width; H = r.height;
     cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     narrow = W < 760;
-    hx = narrow ? W * .5 : W * .575;                          // the ring reaches back toward the headline
-    rx = narrow ? Math.min(W * .36, 190) : Math.min(W * .285, H * .52, 480);
+    hx = narrow ? W * .5 : W * .665;                          // the mobile lives on the right; only the hoop's edge reaches toward the headline
+    rx = narrow ? Math.min(W * .36, 190) : Math.min(W * .215, H * .4, 360);
     S = rx / 300;
     ry = rx * .18;
-    hookY = narrow ? 8 : 0;
-    ringY = narrow ? H * .22 : H * .25;
+    hookY = narrow ? 8 : 62;                                  // below the nav
+    ringY = narrow ? H * .22 : Math.max(H * .33, hookY + 150 * S);
     for (const s of strands) if (!s.dying) s.lenT = lenFor(s.i, s.rest);
     if (pendant.lenT) pendant.lenT = pendantLen();
   }
@@ -191,10 +191,10 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
     // the cot arm comes in from the right: a beech pole and a long arm up to the hook
-    const box = hookY + 64 * S, prx = 40 * S, pry = 48 * S;
+    const box = hookY + 56 * S, prx = 30 * S, pry = 36 * S;
     if (!narrow) {
-      const jx = Math.min(W - 46, hx + rx + 150 * S), jy = ringY + 70 * S, tx = hx + 30 * S, ty = Math.max(14, hookY + 12 * S);
-      woodStroke(jx, H + 40, jx, jy, 22 * S); woodStroke(jx, jy, tx, ty, 15 * S); ball(jx, jy, 25 * S); ball(tx, ty, 16 * S);
+      const jx = Math.min(W - 40, hx + rx + 120 * S), jy = ringY + 70 * S, tx = hx + 30 * S, ty = Math.max(14, hookY + 12 * S);
+      woodStroke(jx, H + 40, jx, jy, 13 * S); woodStroke(jx, jy, tx, ty, 9 * S); ball(jx, jy, 13 * S); ball(tx, ty, 9 * S);
       ctx.strokeStyle = "#8d8f93"; ctx.lineWidth = 1.6 * S; ctx.beginPath(); ctx.moveTo(tx, ty + 6 * S); ctx.quadraticCurveTo(hx + 10 * S, box - pry - 14 * S, hx, box - pry); ctx.stroke();
     } else { ctx.strokeStyle = "rgba(205,188,160,.9)"; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(hx, 0); ctx.lineTo(hx, box - pry); ctx.stroke(); }
     // the wooden music box, with a winding key that turns while it plays
@@ -210,14 +210,14 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
     // strings from the box to the hoop
     const knotY = box + pry + 24 * S;
     ctx.strokeStyle = "#e9dcc6"; ctx.lineWidth = 2 * S; ctx.beginPath(); ctx.moveTo(hx, box + pry); ctx.lineTo(hx, knotY); ctx.stroke();
-    ctx.strokeStyle = "rgba(225,210,185,.85)"; ctx.lineWidth = 1.1;
+    ctx.strokeStyle = "rgba(150,118,92,.55)"; ctx.lineWidth = 1.1;
     for (const a of [0, TAU / 4, TAU / 2, TAU * .75]) { const p = onRing(a); ctx.beginPath(); ctx.moveTo(hx, knotY); ctx.lineTo(p.x, p.y); ctx.stroke(); }
 
     const ring = (a0, a1) => {
       ctx.save(); ctx.translate(hx, ringY); ctx.rotate(tilt);
-      ctx.strokeStyle = WOOD[2]; ctx.lineWidth = 14 * S; ctx.beginPath(); ctx.ellipse(0, 3 * S, rx, ry, 0, a0, a1); ctx.stroke();
-      ctx.strokeStyle = WOOD[1]; ctx.lineWidth = 11 * S; ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, a0, a1); ctx.stroke();
-      ctx.strokeStyle = "rgba(255,240,215,.75)"; ctx.lineWidth = 2.5 * S; ctx.beginPath(); ctx.ellipse(0, -4 * S, rx, ry, 0, a0, a1); ctx.stroke();
+      ctx.strokeStyle = WOOD[2]; ctx.lineWidth = 8 * S; ctx.beginPath(); ctx.ellipse(0, 3 * S, rx, ry, 0, a0, a1); ctx.stroke();
+      ctx.strokeStyle = WOOD[1]; ctx.lineWidth = 6 * S; ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, a0, a1); ctx.stroke();
+      ctx.strokeStyle = "rgba(255,240,215,.75)"; ctx.lineWidth = 1.6 * S; ctx.beginPath(); ctx.ellipse(0, -2.2 * S, rx, ry, 0, a0, a1); ctx.stroke();
       ctx.restore();
     };
     // what hangs from the hoop, sorted back to front: strands, the garland, the pendant in the middle
@@ -242,7 +242,7 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
     if (L < 1) return;
     const ex = p.x + Math.sin(s.swing) * L, ey = p.y + Math.cos(s.swing) * L;
     ctx.globalAlpha = Math.max(0, s.alpha) * (.6 + .4 * depth);
-    ctx.strokeStyle = "rgba(205,188,160,.95)"; ctx.lineWidth = 1.1; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(ex, ey); ctx.stroke();
+    ctx.strokeStyle = "rgba(140,108,84,.6)"; ctx.lineWidth = 1.15; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(ex, ey); ctx.stroke();
     const nb = s.beads.length;
     s.beads.forEach((b, k) => {
       const slot = .16 + (k + .5) / Math.max(nb, 1) * .5, f = b.y * slot;                 // b.y runs from above the hoop (<0) to its slot (1)
@@ -263,7 +263,7 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
   function drawPendant() {
     if (pendant.len < 2) return;
     const top = ringY - 40 * S, L = pendant.len + pendant.bob + 40 * S, cy = top + L + 14 * S;
-    ctx.strokeStyle = "rgba(205,188,160,.9)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(hx, top); ctx.lineTo(hx, top + L); ctx.stroke();
+    ctx.strokeStyle = "rgba(162,61,85,.7)"; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(hx, top); ctx.lineTo(hx, top + L); ctx.stroke();
     if (pendant.glow > .02) { const gl = ctx.createRadialGradient(hx, cy, 0, hx, cy, 60 * S); gl.addColorStop(0, `rgba(255,226,170,${.6 * pendant.glow})`); gl.addColorStop(1, "rgba(255,226,170,0)"); ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(hx, cy, 60 * S, 0, TAU); ctx.fill(); }
     ctx.fillStyle = felt("#d6ad80", hx, cy, 16 * S); starPath(hx, cy, 16 * S, .44); ctx.fill();
   }

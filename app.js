@@ -550,19 +550,33 @@ function fillRows(el, items, next) {
 // ─────────────────────────────────────────────────────────────
 const Hero = (() => {
   const inp = $("#heroName"), typed = $("#typed"), field = $(".field");
-  let auto = null, touched = store.get("lullabyte-typed", false), lastStrip = "";
+  let auto = null, touched = store.get("lullabyte-typed", false), lastStrip = "", lastPlayed = "";
+  // the name's card: where it's from (and how it's written there), what it means, how it charts
+  function cardFor(v) {
+    const box = $("#heroCard"), k = v && fold(v);
+    const x = k && ((BY_NAME.get(k) || [])[0] || dbEntry(v));
+    if (!x) { box.innerHTML = ""; return; }
+    const nonLatin = t => t && !/^[\p{Script=Latin}\s'-]+$/u.test(t);
+    const nat = (sacredOf(x).find(r => nonLatin(r.orig)) || {}).orig || [(x.src || "").match(/Written ([^\s.,(]+)/)?.[1]].find(nonLatin);
+    const pop = popRanks(x.n, x.g).slice(0, 2).map(([c, r, , yr]) => `#${r} in ${c}, ${yr}`).join(" · ");
+    const m = x.m || (MEAN[k] || {}).m || "";
+    box.innerHTML = `<span class="hc-where">${nat ? `<span class="nat">${esc(nat)}</span>` : ""}${esc(whereOf(x))}</span>` +
+      (m ? `<span class="hc-mean">“${esc(m)}”</span>` : "") + (pop ? `<span class="hc-chart">${esc(pop)}</span>` : "");
+  }
   if (touched) $("#typeHint").classList.add("gone");
   function show(v, user) {
     typed.textContent = v;
     field.classList.toggle("empty", !v);
     Mobile.set(v);
     const parts = v ? MB.explain(v) : [];
-    $("#heroPlay").innerHTML = `<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg><span>${v ? "Play " + esc(v) : "Play"}</span>`;
+    $("#heroPlay").innerHTML = `<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg><span>${v && v === lastPlayed ? "Play again" : "Hear it ♪"}</span>`;
+    cardFor(v);
     $("#heroPlay").disabled = !v;
     $("#sylRow").innerHTML = parts.map((p, k) => `<button class="cell${p.stress === 1 ? " stress" : ""}" data-k="${k}" data-why="${esc(p.text + " · " + p.why + " → " + p.notes.join("–"))}"><b>${esc(p.text)}</b><code>${p.notes.join("–") || "·"}</code></button>`).join(`<i class="sep">·</i>`);
-    $("#why").textContent = parts.length ? "point at a syllable to see why it plays that note" : "";
+    $("#why").textContent = "";
     sayLine(v);
     $("#heroActs").classList.toggle("hidden", !v || !user);
+    $("#stage").classList.toggle("named", !!v && !!user);
     $("#heroKeep").classList.toggle("tied", !!v && Cradle.has(v)); $("#heroKeep").dataset.heart = v;
     if (v !== lastStrip) $("#tape").classList.remove("out");
   }
@@ -635,6 +649,7 @@ const Hero = (() => {
     }
     Mobile.play();
     MB.playPaper($("#tapePaper"), m, 1, { silent: true });
+    lastPlayed = v; $("#heroPlay span").textContent = "Play again";
     $("#heroActs").classList.remove("hidden");
   }
   Mobile.onNote(e => {
@@ -643,6 +658,7 @@ const Hero = (() => {
   });
   Mobile.onDone(() => $$("#sylRow .cell.on, #tapePaper .syl.on").forEach(c => c.classList.remove("on")));
   $("#sylRow").addEventListener("pointerover", e => { const c = e.target.closest(".cell"); if (c) $("#why").textContent = c.dataset.why; });
+  $("#sylRow").addEventListener("pointerleave", () => { $("#why").textContent = ""; });
   $("#sylRow").addEventListener("click", e => { const c = e.target.closest(".cell"); if (c) { const p = MB.explain(typed.textContent)[+c.dataset.k]; $("#why").textContent = c.dataset.why; const ev = MB.melody(typed.textContent).ev.filter(x => x.kind === "main" && x.syl === +c.dataset.k); ev.forEach((x, g) => MB.pluck(x.i, .9, 0)); } });
   $("#heroPlay").onclick = play;
   $("#heroSpell").onclick = () => Spell.open(typed.textContent.trim());
@@ -994,7 +1010,7 @@ function bindExplore() { $$(".ex-charm").forEach((el, k) => {
 // ─────────────────────────────────────────────────────────────
 // SOUND: the first thing the site asks
 // ─────────────────────────────────────────────────────────────
-function soundUI() { $("#soundBtn").classList.toggle("off", !MB.on); $("#soundBtn").setAttribute("aria-pressed", MB.on); }
+function soundUI() { $("#soundBtn").classList.toggle("off", !MB.on); $("#soundBtn").setAttribute("aria-pressed", MB.on); $("#soundBtn .snd-l").textContent = MB.on ? "Sound on" : "Sound off"; }
 $("#soundBtn").onclick = () => { MB.setOn(!MB.on); soundUI(); if (MB.on) MB.pluck(7, .6); };
 function enter(withSound) {
   MB.setOn(withSound); soundUI();
@@ -1013,7 +1029,7 @@ new IntersectionObserver(([en]) => $("#topbar").classList.toggle("solid", !en.is
 $("#cradleBtn").onclick = () => $("#cradle").scrollIntoView({ behavior: "smooth" });
 addEventListener("namesdb", () => {
   const gen = ROOT_NAMES.length + ["girl", "boy", "either"].reduce((s, g) => s + invented(g).length, 0);
-  $("#totalLine").textContent = `${(REAL.length + DB.length + gen).toLocaleString()} names · every one plays its own song`;
+  $("#totalLine").textContent = `${(REAL.length + DB.length + gen).toLocaleString()} names`;
 });
 
 // shared link: ?mom=Priya&dad=Daniel&g=girl opens straight into the duet

@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --page: #f6efe2; --paper: #fbf5e8; --ink: #2a1b1f; --muted: #8a7466; --rule: #e3d6c1; --rose: #a23d55; --brass: #c99a4c; --glow: #ffd98a;
+    --page: #f6efe2; --paper: #fbf5e8; --ink: #241417; --muted: #6e594b; --rule: #e3d6c1; --rose: #a23d55; --brass: #c99a4c; --glow: #ffd98a;
     --night: #3a2a24; --walnut: #5a3a28; --sand: #efe5d4; --mom: #b4566e; --dad: #4f7c9e; --ok: #5e8a4c; --warn: #b9682f;
     --serif: "Instrument Serif", Georgia, serif; --sans: Inter, system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
     --ease: cubic-bezier(.2,.8,.2,1); --drop: cubic-bezier(.3,1.35,.45,1);
@@ -22,7 +22,17 @@
   button { font: inherit; color: inherit; }
   [hidden], .hidden { display: none !important; }
   ::selection { background: var(--glow); color: var(--night); }
-  .kick { font: 500 .7rem var(--mono); letter-spacing: .18em; text-transform: uppercase; color: #a8865c; margin: 0; }
+  .kick { font: 500 .74rem var(--mono); letter-spacing: .16em; text-transform: uppercase; color: #8a6a40; margin: 0; }
+  .hero-kick { display: grid; gap: 4px; }
+  .hero-kick b { font: 500 .9rem var(--mono); letter-spacing: .12em; color: var(--rose); }
+  .hero-kick span { color: var(--muted); font-size: .72rem; }
+  /* what the typed name is: where it's from, what it means, how it charts */
+  .hero-card { display: grid; gap: 2px; min-height: 0; }
+  .hero-card:empty { display: none; }
+  .hero-card .hc-where { font: 500 .74rem var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .hero-card .hc-where .nat { font: 400 1.05rem var(--serif); letter-spacing: 0; text-transform: none; color: var(--ink); margin-right: 8px; }
+  .hero-card .hc-mean { font: italic 400 1.35rem/1.25 var(--serif); color: var(--ink); }
+  .hero-card .hc-chart { font: .72rem var(--mono); letter-spacing: .06em; color: var(--muted); }
   .link { all: unset; cursor: pointer; font: 500 .68rem var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--rule); padding-bottom: 1px; transition: color .25s, border-color .25s; }
   .link:hover, .link:focus-visible { color: var(--rose); border-color: var(--rose); }
   .go { border: 0; cursor: pointer; border-radius: 999px; padding: 15px 26px 14px; background: var(--night); color: var(--glow); font: 500 .74rem var(--mono); letter-spacing: .16em; text-transform: uppercase;
@@ -44,11 +54,14 @@
   /* ── top bar ── */
   .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; display: flex; justify-content: space-between; align-items: center; padding: 18px 40px; transition: background .35s, box-shadow .35s; }
   .topbar.solid { background: color-mix(in srgb, var(--page) 90%, transparent); backdrop-filter: blur(12px); box-shadow: 0 1px 0 var(--rule); }
-  .brand { font: 400 1.45rem var(--serif); letter-spacing: .01em; text-decoration: none; color: inherit; }
+  .brand { font: 400 1.95rem var(--serif); letter-spacing: .01em; text-decoration: none; color: inherit; }
   .brand span { color: var(--rose); font-style: italic; }
-  .tb-r { display: flex; gap: 28px; align-items: center; }
-  .tb-r button { all: unset; cursor: pointer; font: 500 .7rem var(--mono); letter-spacing: .18em; text-transform: uppercase; }
-  .tb-r button:hover { color: var(--rose); }
+  .tb-r { display: flex; gap: 10px; align-items: center; }
+  .tb-r button { all: unset; cursor: pointer; font: 500 .74rem var(--mono); letter-spacing: .12em; text-transform: uppercase; padding: 8px 15px; border-radius: 999px;
+    box-shadow: inset 0 0 0 1px rgba(110,89,75,.28); transition: color .25s, box-shadow .25s, background .25s; }
+  .tb-r button:hover, .tb-r button[aria-expanded="true"] { color: var(--rose); box-shadow: inset 0 0 0 1px var(--rose); }
+  .tb-r .snd { color: var(--rose); box-shadow: inset 0 0 0 1px rgba(162,61,85,.45); background: rgba(162,61,85,.06); }
+  .tb-r .snd.off { color: var(--muted); box-shadow: inset 0 0 0 1px rgba(110,89,75,.28); background: none; }
   [data-cradle-count]:not(:empty)::before { content: "· "; }
   .snd i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 8px; vertical-align: 1px; background: var(--rose); box-shadow: 0 0 0 3px rgba(162,61,85,.15); transition: .3s; }
   .snd.off i { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
@@ -57,9 +70,11 @@
   #stage { position: relative; height: 100svh; min-height: 720px; overflow: hidden;
     background: radial-gradient(ellipse 55% 60% at 66% 30%, #fffaf2 0%, rgba(255,250,242,0) 70%), linear-gradient(180deg, #f6efe4 0%, #efe5d6 100%); }
   /* window light: two beams across the wall, and one broad one falling behind the name toward the floor */
+  /* morning light through a sheer curtain: soft folds, brightest at the top right, fading toward the floor */
   #stage::before { content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(115deg, transparent 0 40%, rgba(255,255,255,.42) 40% 48%, transparent 48% 54%, rgba(255,255,255,.3) 54% 59%, transparent 59%),
-      linear-gradient(62deg, transparent 0 8%, rgba(255,250,240,.5) 8% 30%, transparent 30%); }
+    background: repeating-linear-gradient(90deg, rgba(255,253,248,0) 0, rgba(255,253,248,.34) 46px, rgba(255,253,248,0) 92px, rgba(236,222,200,.18) 128px, rgba(255,253,248,0) 170px),
+      radial-gradient(ellipse 60% 70% at 85% 0%, rgba(255,246,226,.85), rgba(255,246,226,0) 70%);
+    -webkit-mask-image: linear-gradient(200deg, #000 0%, rgba(0,0,0,.55) 45%, transparent 85%); mask-image: linear-gradient(200deg, #000 0%, rgba(0,0,0,.55) 45%, transparent 85%); }
   #stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .08; mix-blend-mode: multiply;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
   #mobile { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; cursor: grab; z-index: 1; }
@@ -68,29 +83,31 @@
   .hero-copy h1 { font: 400 clamp(3rem, min(7.2vw, 10.4vh), 7.6rem)/.86 var(--serif); letter-spacing: -.02em; margin: 14px 0 0; }
   .hero-copy h1 i { color: var(--rose); }
   .hero-lede { font: italic 400 clamp(1.2rem, 1.7vw, 1.55rem) var(--serif); color: var(--muted); margin: 14px 0 0; }
-  .namer { position: relative; margin-top: clamp(28px, 8vh, 100px); display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+  .namer { position: relative; margin-top: clamp(26px, 5.5vh, 64px); display: flex; flex-direction: column; align-items: flex-start; gap: 9px; }
   /* a soft glow of wall behind the name, so charms can swing behind it and the words stay clear */
   .namer::before { content: ""; position: absolute; inset: -40px -60px -30px -48px; z-index: -1; pointer-events: none;
     background: radial-gradient(ellipse 70% 65% at 35% 45%, rgba(246,239,228,.92), rgba(246,239,228,.6) 55%, rgba(246,239,228,0) 80%); }
   .name-row { display: flex; align-items: flex-end; gap: 22px; width: 92%; }
   .field { position: relative; flex: 1; display: inline-flex; align-items: baseline; font: 400 clamp(3.1rem, 6.2vw, 5.3rem)/1.05 var(--serif); min-width: 4ch; max-width: 100%;
-    padding: 0 4px 4px; border-bottom: 1px solid rgba(120,90,60,.35); cursor: text; transition: border-color .3s; }
+    padding: 0 4px 6px; border-bottom: 1.5px solid rgba(70,45,40,.45); cursor: text; transition: border-color .3s, font-size .45s var(--ease); }
+  .field.empty { font-size: clamp(1.7rem, 2.3vw, 2.2rem); }
+  .field-label { font: 500 .78rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--rose); margin-bottom: -4px; }
   .field:focus-within { border-color: var(--rose); }
   .field #typed { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
-  .field .ph { display: none; color: rgba(90,65,50,.42); font-style: italic; order: 2; }
+  .field .ph { display: none; color: rgba(70,50,42,.55); font-style: italic; order: 2; }
   .field.empty .ph { display: inline; }
   .caret { order: 1; display: inline-block; width: 2px; height: .82em; margin: 0 2px 0 3px; background: var(--rose); align-self: center; animation: blink 1.05s steps(1) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
   #heroName { position: absolute; inset: 0; width: 100%; opacity: 0; font-size: 16px; border: 0; cursor: text; }
   .name-row .play { margin-bottom: 10px; flex: none; }
-  .type-hint { font: 500 .68rem var(--mono); letter-spacing: .2em; color: var(--rose); margin-top: -4px; transition: opacity .8s, height .6s; }
+  .type-hint { display: none; font: 500 .68rem var(--mono); letter-spacing: .2em; color: var(--rose); margin-top: -4px; transition: opacity .8s, height .6s; }
   .type-hint.gone { opacity: 0; height: 0; overflow: hidden; margin: -6px 0 0; }
   .play { border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 12px; padding: 13px 24px 12px 18px; border-radius: 999px;
-    background: radial-gradient(circle at 30% 25%, #f3dcbc, #d1a87c 60%, #b88b5c); color: #3a2410; font: 500 .74rem var(--mono); letter-spacing: .16em; text-transform: uppercase;
-    box-shadow: 0 0 0 1px rgba(255,255,255,.5) inset, 0 10px 24px -10px rgba(120,80,40,.55); transition: transform .3s var(--ease), opacity .3s; max-width: 100%; }
-  .play svg { width: 14px; height: 14px; fill: #3a2410; flex: none; }
+    background: var(--rose); color: #fff7ee; font: 500 .78rem var(--mono); letter-spacing: .14em; text-transform: uppercase;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.18) inset, 0 12px 26px -12px rgba(120,30,50,.6); transition: transform .3s var(--ease), opacity .3s; max-width: 100%; }
+  .play svg { width: 14px; height: 14px; fill: #fff7ee; flex: none; }
   .play span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .play:hover { transform: translateY(-1px); } .play:active { transform: scale(.97); } .play:disabled { opacity: .45; cursor: default; transform: none; }
+  .play:hover { transform: translateY(-1px); } .play:active { transform: scale(.97); } .play:disabled { opacity: .55; cursor: default; transform: none; }
   .syl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; min-height: 48px; }
   .cell { all: unset; cursor: help; display: grid; justify-items: center; gap: 1px; padding: 2px 4px; border-radius: 6px; transition: transform .35s var(--drop), color .3s; }
   .cell b { font: 400 1.55rem/1 var(--serif); letter-spacing: .04em; }
@@ -116,10 +133,15 @@
   .why { font: .66rem/1.5 var(--mono); color: var(--muted); letter-spacing: .04em; min-height: 1.5em; margin-top: -4px; max-width: 520px; }
   .tape { max-width: 100%; overflow-x: auto; clip-path: inset(0 100% 0 0); transition: clip-path 1.3s var(--ease); scrollbar-width: none; filter: drop-shadow(0 8px 12px rgba(120,90,60,.16)); }
   .tape.out { clip-path: inset(0 0 0 0); }
-  .anchor { position: absolute; z-index: 3; bottom: 24px; font: 500 .66rem var(--mono); letter-spacing: .22em; text-transform: uppercase; color: rgba(90,65,50,.6); }
-  button.anchor { all: unset; position: absolute; z-index: 3; bottom: 24px; left: 48px; cursor: pointer; font: 500 .66rem var(--mono); letter-spacing: .22em; text-transform: uppercase; color: rgba(90,65,50,.6); }
+  .anchor { position: absolute; z-index: 3; bottom: 28px; font: 500 .8rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  button.anchor { all: unset; position: absolute; z-index: 3; bottom: 28px; left: 48px; cursor: pointer; font: 500 .8rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--rose);
+    border-bottom: 1px solid rgba(162,61,85,.4); padding-bottom: 2px; }
   button.anchor:hover { color: var(--rose); }
-  .anchor.spin { left: 57.5%; transform: translateX(-50%); pointer-events: none; }
+  /* once a name is playing, its own "Find another" takes over from the anchor */
+  #stage.named button.anchor { opacity: 0; pointer-events: none; transition: opacity .4s; }
+  .anchor.spin { left: auto; right: 48px; pointer-events: none; display: inline-flex; gap: 10px; align-items: center; }
+  .anchor.spin b { display: inline-block; color: var(--rose); font-weight: 500; animation: nudge 2.6s var(--ease) infinite; }
+  @keyframes nudge { 0%, 60%, 100% { transform: rotate(0); } 20% { transform: rotate(-35deg); } 40% { transform: rotate(25deg); } }
   @media (max-height: 760px) { .anchor { display: none; } }
   .hero-acts { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
   .hero-acts .tied { color: var(--rose); border-color: var(--rose); }
@@ -455,7 +477,10 @@
     .charm { min-width: 0; padding: 10px 9px 9px; } .charm span { font-size: 1.08rem; } .charm em { display: none; }
     #chMobile .hc:nth-child(n+6) { display: none; }
     #cradleMobile .hang-row { flex-wrap: wrap; row-gap: 10px; } #cradleMobile .hc { flex: 0 0 33%; }
-    #mobile { height: 56svh; }
+    #mobile { height: 42svh; }
+    .tb-r { gap: 6px; } .tb-r button { padding: 7px 10px; font-size: .66rem; letter-spacing: .08em; }
+    .tb-r .wide, .tb-r .snd-l { display: none; } .tb-r .snd i { margin-left: 0; }
+    .brand { font-size: 1.5rem; }
     .ex-mobile svg { width: 100%; max-width: 360px; } .ex-charm .lbl { font-size: 22px; opacity: 1; fill: var(--ink); }
   }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } html { scroll-behavior: auto; } .tape, .sp-paper { clip-path: none; } }
@@ -476,9 +501,9 @@
 <header class="topbar" id="topbar">
   <a class="brand" href="#stage">Lulla<span>byte</span></a>
   <div class="tb-r">
-    <button id="exploreBtn" aria-expanded="false" aria-controls="explore">Explore +</button>
-    <button id="cradleBtn">Cradle <span data-cradle-count></span></button>
-    <button class="snd" id="soundBtn" aria-pressed="true">Sound<i></i></button>
+    <button id="exploreBtn" aria-expanded="false" aria-controls="explore">Explore<span class="wide"> names</span></button>
+    <button id="cradleBtn"><span class="wide">My </span>cradle <span data-cradle-count></span></button>
+    <button class="snd" id="soundBtn" aria-pressed="true"><span class="snd-l">Sound on</span><i></i></button>
   </div>
 </header>
 
@@ -487,11 +512,12 @@
   <canvas id="mobile" aria-hidden="true"></canvas>
   <div class="hero-left">
     <div class="hero-copy">
-      <p class="kick" id="totalLine">every name plays its own song</p>
+      <p class="kick hero-kick"><b id="totalLine">832,000+ names</b><span>An archive of names from around the world</span></p>
       <h1>Every name<br>is a <i>lullaby.</i></h1>
       <p class="hero-lede">Type one to hear it.</p>
     </div>
     <div class="namer">
+      <p class="field-label">Type a name</p>
       <div class="name-row">
         <label class="field empty">
           <input id="heroName" spellcheck="false" autocomplete="off" autocapitalize="words" maxlength="24" aria-label="Type a name to hear it">
@@ -500,20 +526,21 @@
         <button class="play" id="heroPlay" disabled></button>
       </div>
       <div class="type-hint" id="typeHint">Type your name ↑</div>
+      <div class="hero-card" id="heroCard" aria-live="polite"></div>
       <div class="syl-row" id="sylRow" aria-live="polite"></div>
       <p class="why" id="why"></p>
       <div class="say" id="say" aria-live="polite"></div>
       <div class="shape" id="shape"></div>
-      <div class="tape" id="tape"><div id="tapePaper"></div></div>
       <div class="hero-acts hidden" id="heroActs">
         <button class="link" id="heroSpell">Hear other spellings →</button>
-        <button class="link" id="heroKeep" data-heart="">♡ Keep the tune</button>
+        <button class="link" id="heroKeep" data-heart="">♡ Save to cradle</button>
         <button class="link" id="heroFind">Find another ↓</button>
       </div>
+      <div class="tape" id="tape"><div id="tapePaper"></div></div>
     </div>
   </div>
   <button class="anchor" id="toFind">Find your lullaby ↓</button>
-  <span class="anchor spin" aria-hidden="true">Drag the mobile to spin</span>
+  <span class="anchor spin" aria-hidden="true"><b>↻</b> Drag the mobile to spin</span>
 </section>
 
 <!-- same song, different letters -->
@@ -662,11 +689,11 @@
 <script src="generator.js?v=4"></script>
 <script src="phonetics.js?v=7"></script>
 <script src="musicbox.js?v=6"></script>
-<script src="mobile.js?v=9"></script>
+<script src="mobile.js?v=10"></script>
 <script src="piano.js?v=3"></script>
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=22"></script>
+<script src="app.js?v=24"></script>
 </body>
 </html>
