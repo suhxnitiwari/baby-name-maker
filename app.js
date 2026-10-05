@@ -522,8 +522,10 @@ const BASKETS = new Set(["African", "South Asian", "Pacific", "Slavic", "Latin A
 // where a name comes from, not everywhere it's given: the hand-written origin (Ali: Arabic), else its etymology (Elias: Greek, from
 // Hebrew), else the first culture that lists it. The other lists record where families who moved use it, so they stay out of this line.
 const ETY_LANG = /\b(?:from|of)\s+(?:the\s+)?(?:Ancient |Classical |Biblical |Koine |Old |Middle |Late |Medieval |Modern )?(Greek|Hebrew|Latin|Arabic|Sanskrit|Persian|Aramaic|Old Norse|Germanic|Celtic|Irish|Welsh|Slavic|Turkish|Hindi|Tamil|Swahili|Yoruba|Igbo|Akan|Japanese|Chinese|Korean)\b/gi;
-let ORIGINS = {}, NATIVE_ALL = {};
+let ORIGINS = {}, NATIVE_ALL = {}, ARABIC = {};
 fetch("data/name-origins.json?v=2").then(r => r.json()).then(d => ORIGINS = d).catch(() => {});
+// Latin spellings of Arabic names (Wikidata): Yousif, Hussain, Fatema → their Arabic, used only for a name with no other origin on record
+fetch("data/arabic-forms.json?v=1").then(r => r.json()).then(d => ARABIC = d).catch(() => {});
 function originOf(x) {
   const k = fold(x.n);
   // 1. the name's own etymology on Wiktionary (Omar, Ali, Aisha: borrowed from Arabic)
@@ -537,6 +539,10 @@ function originOf(x) {
   const NATIONAL = new Set(["Argentine", "Mexican", "Colombian", "Dominican", "Puerto Rican", "Cuban", "Chilean", "Peruvian", "Venezuelan", "Brazilian",
     "Filipino", "American", "Canadian", "Australian", "Israeli", "Latin American", "Spanish American"]);
   const c = [x.o, ...(x.oo || [])].find(c => c && !BASKETS.has(c) && !NATIONAL.has(c)) || (x.l && !NATIONAL.has(x.l) ? x.l : "");
+  if (!c && ARABIC[k]) return "Arabic";
+  const MUSLIM_USE = new Set(["Bengali", "Urdu", "Pashtun", "Afghan", "Persian", "Turkish", "Malay", "Indonesian", "Somali", "Hausa", "Swahili", "Kazakh", "Uzbek",
+    "Tajik", "Kyrgyz", "Azerbaijani", "Tatar", "Bashkir", "Chechen", "Avar", "Bosnian", "Albanian", "Maldivian", "Sudanese", "Filipino", "Gujarati", "Punjabi"]);
+  if (ARABIC[k] && (x.r || []).concat([x.o, ...(x.oo || [])]).some(c => c === "Islamic" || MUSLIM_USE.has(c))) return "Arabic";
   return c ? [c, x.l && x.l !== c ? x.l : ""].filter(Boolean).join(" · ") : "";
 }
 function whereOf(x) {
@@ -679,15 +685,21 @@ const Hero = (() => {
     Greek: "Greek", Russian: "Russian", Slavic: "Russian Ukrainian Bulgarian Serbian", Ukrainian: "Ukrainian", Armenian: "Armenian", Georgian: "Georgian",
     Bengali: "Bengali", Punjabi: "Punjabi", Tamil: "Tamil", Telugu: "Telugu", Urdu: "Urdu", Pashtun: "Pashto", Afghan: "Pashto Persian", Thai: "Thai",
     Kazakh: "Kazakh", Tatar: "Tatar", Bashkir: "Bashkir", Turkish: "Ottoman Turkish", Ethiopian: "Amharic", Nepali: "Nepali" };
+  // the Arab world writes in Arabic
+  for (const c of "Sudanese Egyptian Moroccan Algerian Tunisian Libyan Iraqi Syrian Lebanese Jordanian Palestinian Saudi Emirati Kuwaiti Bahraini Qatari Omani Yemeni Gulf Levantine Maghrebi Islamic".split(" ")) LANG_OF[c] = "Arabic";
   function nativeFor(x) {
     const langs = new Set([x.o, ...(x.oo || []), x.l].filter(Boolean).flatMap(c => [c, ...(LANG_OF[c] || "").split(" ")]).filter(Boolean));
-    const own = NATIVE[fold(x.n)] || [], forms = [...own, ...soundAlikes(x.n).map(fold).flatMap(k => NATIVE[k] || [])], seen = new Set(), out = [];
+    // same-sounding spellings share their script only when they're nearly the same word (Fatima ← Fatimah, never Hussain ← Hassan)
+    const k0 = fold(x.n), near = soundAlikes(x.n).map(fold).filter(k => k !== k0 && lev(k0, k) <= 2);
+    const own = NATIVE[k0] || [], forms = [...own, ...near.flatMap(k => NATIVE[k] || [])], seen = new Set(), out = [];
+    if (ARABIC[k0] && (langs.has("Arabic") || originOf(x).startsWith("Arabic"))) forms.unshift([ARABIC[k0], "Arabic"]);
     // Chinese, Japanese and Korean characters only for a name from there (Japan writes the borrowed Sofia 麻日亜; that's not Sofia's own script)
     const CJK = { Japanese: "Japanese", Chinese: "Chinese", Korean: "Korean" }, origin = x.o;
     const from = originOf(x).split(" · ")[0];
     if (from) langs.add(from);
     forms.sort((a, b) => (b[1] === from) - (a[1] === from));
     for (const [f, lang] of forms) if (langs.has(lang) && !(CJK[lang] && origin !== lang) && !seen.has(lang) && !seen.has(f)) { seen.add(lang); seen.add(f); out.push([f, lang]); }
+    if (!out.length && !x.o && !(x.oo || []).length && ARABIC[fold(x.n)]) out.push([ARABIC[fold(x.n)], "Arabic"]);
     if (out.length) return out.slice(0, 3);
     // a name already in its own (Latin) letters shows its root instead (Nikodem ← Greek Νικόδημος), only when its own etymology names that language
     const ROOT = ["Greek", "Hebrew", "Arabic", "Sanskrit", "Persian", "Aramaic"], root = own.find(([, l]) => ROOT.includes(l) && new RegExp(`\\b${l}\\b`).test(x.ety || x.src || ""));
