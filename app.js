@@ -81,7 +81,7 @@ const PERSONLIKE = new Set(["human", "prophet", "sage", "saint", "disciple", "ro
 const SACRED = new Map(), SACRED_SEX = new Map(); // folded name → cited references; the sex of the people the text gives that name
 let SACRED_FIG = {};
 const FIG_FORMS = new Map(); // figure → every name form it carries, across traditions (Abraham, Avraham, Ibrahim)
-const sacredReady = Promise.all([fetch("data/sacred.json?v=5").then(r => r.ok ? r.json() : null).catch(() => null), storied]).then(([d]) => {
+const sacredReady = Promise.all([fetch("data/sacred.json?v=6").then(r => r.ok ? r.json() : null).catch(() => null), storied]).then(([d]) => {
   if (!d) return;
   SACRED_FIG = d.f;
   const have = new Map(ALL_NAMED.map(x => [fold(x.n), x]));
