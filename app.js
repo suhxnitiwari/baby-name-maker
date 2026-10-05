@@ -1225,12 +1225,16 @@ const Count = (() => {
     goal = n; from = Math.max(1, shown); t0 = performance.now(); dur = shown ? 1600 : 3600;
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) { shown = n; el.textContent = `${n.toLocaleString()} names`; return; }
     if (!raf) raf = requestAnimationFrame(tick);
+    // a tab in the background gets no animation frames: still land on the right number
+    setTimeout(() => { if (shown < goal) { shown = goal; el.textContent = `${goal.toLocaleString()} names`; } }, dur + 600);
   };
 })();
-addEventListener("namesdb", () => {
-  const gen = ROOT_NAMES.length + ["girl", "boy", "either"].reduce((s, g) => s + invented(g).length, 0);
-  Count(REAL.length + DB.length + gen);
-});
+// each distinct name once: a name listed for girls and boys, or made for both, counts one time (José and Jose are two spellings)
+addEventListener("namesdb", () => setTimeout(() => {
+  const seen = new Set();
+  for (const list of [REAL, DB, ROOT_NAMES, ...["girl", "boy", "either"].map(g => invented(g))]) for (const x of list) seen.add(x.n.toLowerCase());
+  Count(seen.size);
+}, 0));
 
 // shared link: ?mom=Priya&dad=Daniel&g=girl opens straight into the duet
 (() => {
