@@ -204,6 +204,31 @@ def load_corpora():
 # ─────────────────────────────────────────────────────────────
 WORK_LS = {"MBh.": {"Mahabharata"}, "Nal.": {"Mahabharata"}, "R.": {"Valmiki Ramayana"},
            "Bhag.": {"Bhagavad Gita", "Mahabharata"}}
+# Monier-Williams citation abbreviations → work keys of the later corpora (see JOBS); generic Br./Up./Pur. tie the whole genre
+_BR = {"SB", "AB", "KB", "TB", "JB", "PB", "GB", "SadvB", "JUB"}
+_UP = {"BAU", "ChU", "TU", "AU", "KathU", "MundU", "SvetU", "KausU", "KenaU", "IsaU", "PrasnaU", "MandU", "MaitrU"}
+_PUR = {"BhP", "UG", "VP", "DM", "DBhP", "SivaP", "BrahmaP", "GarP", "AgniP", "KurmaP", "LingaP", "MatsyaP", "SkP", "SkRkh",
+        "VarP", "NarasP", "KalP", "HV"}
+WORK_LS.update({
+    "RV.": {"RV"}, "AV.": {"AV"}, "AV.Paipp.": {"AVP"}, "Paipp.": {"AVP"}, "VS.": {"VS"}, "TS.": {"TS"}, "MaitrS.": {"MS"},
+    "Kāṭh.": {"KS"}, "ŚBr.": {"SB"}, "AitBr.": {"AB"}, "KauṣBr.": {"KB"}, "ŚāṅkhBr.": {"KB"}, "TBr.": {"TB"}, "JaimBr.": {"JB"},
+    "PañcavBr.": {"PB"}, "TāṇḍyaBr.": {"PB"}, "TāṇḍBr.": {"PB"}, "GopBr.": {"GB"}, "ṢaḍvBr.": {"SadvB"}, "JaimUp.": {"JUB"},
+    "Br.": _BR, "AitĀr.": {"AA"}, "TĀr.": {"TA"}, "ŚāṅkhĀr.": {"SA"}, "KauṣĀr.": {"SA"},
+    "BṛĀrUp.": {"BAU"}, "ChUp.": {"ChU"}, "TUp.": {"TU"}, "AitUp.": {"AU"}, "KaṭhUp.": {"KathU"}, "MuṇḍUp.": {"MundU"},
+    "ŚvetUp.": {"SvetU"}, "KauṣUp.": {"KausU"}, "KenUp.": {"KenaU"}, "ĪśUp.": {"IsaU"}, "PraśnUp.": {"PrasnaU"},
+    "MāṇḍUp.": {"MandU"}, "MaitrUp.": {"MaitrU"}, "Up.": _UP,
+    "Hariv.": {"HV"}, "BhP.": {"BhP", "UG"}, "VP.": {"VP"}, "MārkP.": {"DM"}, "Devīm.": {"DM"}, "ŚivaP.": {"SivaP"},
+    "BrahmaP.": {"BrahmaP"}, "AgniP.": {"AgniP"}, "KūrmaP.": {"KurmaP"}, "LiṅgaP.": {"LingaP"}, "MatsyaP.": {"MatsyaP"},
+    "SkandaP.": {"SkP", "SkRkh"}, "VarP.": {"VarP"}, "NarasP.": {"NarasP"}, "KālP.": {"KalP"}, "KālikāP.": {"KalP"},
+    "Pur.": _PUR, "Gīt.": {"GG"}, "Yogas.": {"YS"}, "Mn.": {"Manu"}, "Yājñ.": {"Yajn"}, "Nār.": {"Narada"},
+    "AṣṭāvS.": {"Ashtav"}, "Aṣṭāv.": {"Ashtav"}, "Pañcar.": {"Satvata"},
+})
+
+def ls_works(t):
+    out = set()
+    for ab, ws in WORK_LS.items():
+        if t == ab or t.startswith(ab + " ") or re.match(re.escape(ab) + r"\s*[ivxlc\d]", t): out |= ws
+    return out
 SKIP_SENSE = re.compile(r"\b(work|treatise|hymn|S[āa]man|metre|Upaniṣad|Tantra|Purāṇa|drama|poem|commentary|lexicon|grammar|"
                         r"plant|tree|shrub|grass|flower|fruit|medicinal|disease|fever|mantra|formula|verse|rite|ceremony|"
                         r"sacrifice|Ekāha|Ahīna|Sattra|chapter|section|Adhyāya|Parvan|book|school|Śākhā|text|prayer|"
@@ -270,9 +295,14 @@ def load_mw():
             for ls in re.findall(r'<ls(?: n="([^"]*)")?>([^<]*)</ls>', body):
                 t = (ls[0] + " " + ls[1]).strip()
                 if t == "ib." or t.startswith("ib. "): works |= prev_works        # ibidem: the previous citation
-                for ab, ws in WORK_LS.items():
-                    if t == ab or t.startswith(ab + " ") or (ab == "R." and re.match(r"R\.\s*[ivx]", t)): works |= ws
+                works |= ls_works(t)
             if re.search(r"<ls", body): prev_works = set(works)
+            # "(personified as the daughter of heaven …)": Uṣas, Rātri — a deity the lexicon does not mark "N. of"
+            if not is_n and cur_lex in ("m", "f") and re.search(r"personified|<ab>personif\.</ab>", body) and lx != "inh":
+                senses.append({"txt": strip_tags(body), "works": works, "kind": "name", "targets": [], "esp": None, "qual": "",
+                               "mentions": [], "lex": cur_lex, "type": "deity", "plural": False, "personified": True})
+                nonname += 1                       # the word itself is an ordinary noun
+                continue
             if gm:
                 tg = re.findall(r"<s1>([^<]+)</s1>", gm.group(1))
                 senses.append({"txt": strip_tags(body), "works": works, "kind": "epithet", "targets": tg, "esp": None, "qual": "",
@@ -609,12 +639,48 @@ GENERIC = re.compile(r"^(Muni|Ṛṣi|Rākṣasa|Rākṣasī|Brahman|Brāhman|Da
                      r"Piśāca|Kṣatriya|Vaiśya|Śūdra|Rāja|Rājan|Ṛṣis|Munis|Tīrtha|Tirtha|Rakṣas|Rākṣasas|Daityas|Dānavas|Asuras)$")
 VERBISH = re.compile(r"(ati|anti|asi|āmi|āmaḥ|ate|ante|āte|māna|mānā|amāna|tvā|itvā|iṣyati|tavya|anīya)$")
 
-def hindu(hints):
+def ls_works_ok(wkey, sn):
+    return wkey in sn["works"]
+
+def scan_dcs(verses, name_ids, personified):
+    """Lemma counts from DCS: a token counts if its LemmaId carries a 'name of' gloss, or the lemma is a personified deity."""
+    hits = collections.defaultdict(lambda: {"n": 0, "verses": [], "free": 0, "vc": collections.Counter(), "pure": True})
+    per_verse = []
+    for vi, v in enumerate(verses):
+        seen = set()
+        for lem, lid, cpd in v[4]:
+            kind = name_ids.get(lid)
+            if not kind and lem not in personified: continue
+            h = hits[lem]; h["n"] += 1; h["vc"][vi] += 1
+            if not cpd: h["free"] += 1
+            if kind != "pure": h["pure"] = False
+            if lem not in seen: h["verses"].append(vi); seen.add(lem)
+        per_verse.append(seen)
+    return hits, per_verse
+
+def hindu(hints, later=True):
     C = load_corpora()
     mw, common = load_mw()
     figs, wd_by_key = load_wikidata()
     print(f"MW proper-name headwords: {len(mw)}; Wikidata epic figures: {len(figs)}", file=sys.stderr)
     for c, vs in C.items(): print(f"  {c}: {len(vs)} verses", file=sys.stderr)
+    JOBS = [{"corpus": c, "text": "", "wkey": c, "verses": C[c], "scan": "matcher", "era": "epic", "split": False, "new": False,
+             "src": {"Mahabharata": SRC_GRETIL_MBH, "Bhagavad Gita": SRC_GRETIL_MBH, "Valmiki Ramayana": SRC_GRETIL_R}[c]}
+            for c in ("Mahabharata", "Bhagavad Gita", "Valmiki Ramayana")]
+    name_ids, personified = {}, set()
+    if later:
+        JOBS += later_jobs()
+        dcsd = load_dcs_dictionary()
+        name_ids = {i: v[3] for i, v in dcsd.items() if v[3]}
+        # DCS names the lexicon lacks as "N. of" get an entry from the DCS gloss
+        for i, (w, gr, gloss, kind) in dcsd.items():
+            if not kind: continue
+            L = w.strip()
+            if not L or L in mw: continue
+            mw[L] = {"key": "", "ambiguous": kind == "mixed", "senses": [{
+                "txt": gloss, "works": set(), "kind": "name", "targets": [], "esp": None, "qual": "", "mentions": [],
+                "lex": {"m": "m", "f": "f", "n": "n"}.get(gr.strip()[:1], ""), "type": sense_type(gloss), "plural": False}]}
+        personified = {norm_word(L) for L, d in mw.items() if any(sn.get("personified") for sn in d["senses"])}
 
     cand = {}
     for L, d in mw.items():
@@ -684,14 +750,40 @@ def hindu(hints):
     stats = collections.Counter()
     mbh_epithets = {}                                 # (lemma, figure_id) accepted in the MBh → trusted in the Gita
     mbh_accepted = set()                              # lemmas accepted in the MBh (the Gita has too few names for its own context test)
-    for corpus in ("Mahabharata", "Bhagavad Gita", "Valmiki Ramayana"):
-        verses = C[corpus]
+    # phase 1: scan every job
+    for job in JOBS:
         t0 = time.time()
-        hits, per_verse = scan(verses, matcher)
-        print(f"  scanned {corpus} in {time.time() - t0:.0f}s, {len(hits)} lemmas found", file=sys.stderr)
-        src = {"Mahabharata": SRC_GRETIL_MBH, "Bhagavad Gita": SRC_GRETIL_MBH, "Valmiki Ramayana": SRC_GRETIL_R}[corpus]
+        if job["scan"] == "dcs":
+            hits, per_verse = scan_dcs(job["verses"], name_ids, personified)
+            for k2 in list(hits):
+                if k2 not in cand:                     # DCS lemma spelled differently from MW: give it a candidate entry
+                    L2 = next((L for L in mw if norm_word(L) == k2), None)
+                    if not L2: hits.pop(k2); continue
+                    cand[k2] = {"lex": next((x["lex"] for x in mw[L2]["senses"] if x["lex"]), "m"), "safe_compound": False, "mw": L2, "prio": 0}
+        else:
+            hits, per_verse = scan(job["verses"], matcher)
+        job["hits"], job["per_verse"] = hits, per_verse
+        print(f"  scanned {job['corpus']} / {job['text'] or job['corpus']} in {time.time() - t0:.0f}s, {len(hits)} lemmas", file=sys.stderr)
+    # phase 2: Wikidata items for names of the later corpora (label match + Hindu-context description)
+    if later:
+        keys = {k for job in JOBS if job["new"] for k, h in job["hits"].items()
+                if h["free"] and (any(ls_works_ok(job["wkey"], sn) for sn in mw[cand[k]["mw"]]["senses"]) or h.get("pure"))}
+        keys -= {k for k in keys if any(v == "label" for f, v in wd_by_key.get(k, []))}
+        found = wd_label_figs(sorted(keys))
+        for k2, f in found.items(): wd_by_key[k2].append((f, "label"))
+        print(f"  Wikidata label matches for later corpora: {len(found)} of {len(keys)} names", file=sys.stderr)
+    # phase 3: decide
+    for job in JOBS:
+        corpus, verses, src = job["wkey"], job["verses"], job["src"]
+        hits, per_verse = job["hits"], job["per_verse"]
+        def fig_ok(f):
+            if corpus in f["works"]: return True
+            if not job["new"]: return False
+            if "*" in f["works"]: return True
+            return job["era"] != "vedic" or f["type"] in ("deity", "sage", "mythological_being", "demon")
         # context = figures Wikidata places in this work, found in the same verse
-        anchor = {k for k in hits if any(v == "label" and corpus in f["works"] for f, v in wd_by_key.get(k, []))}
+        anchor = {k for k in hits if any(v == "label" and fig_ok(f) for f, v in wd_by_key.get(k, []))}
+        if job["scan"] == "dcs": anchor |= {k for k, h in hits.items() if h.get("pure")}
         ctx = [vs & anchor for vs in per_verse]
         base = sum(1 for x in ctx if x) / max(1, len(ctx))
         occ_sets = {k: set(h["verses"]) for k, h in hits.items()}
@@ -700,13 +792,17 @@ def hindu(hints):
             return any((vi + dd) in occ_sets.get(k, ()) for dd in range(-w, w + 1))
 
         def wd_in(k, via=None):
-            return [f for f, v in wd_by_key.get(k, []) if corpus in f["works"] and (via is None or v == via)]
+            return [f for f, v in wd_by_key.get(k, []) if fig_ok(f) and (via is None or v == via)]
 
         for k, h in hits.items():
             L = cand[k]["mw"]; d = mw[L]; senses = d["senses"]
-            amb = is_amb(k, d)
+            amb = is_amb(k, d) and not h.get("pure")
+            if job["scan"] == "dcs" and h.get("pure") and not h["free"]: continue
             ts = [s for s in senses if corpus in s["works"]]
             ts_ext = ts or ([s for s in senses if "Mahabharata" in s["works"]] if corpus == "Bhagavad Gita" else [])
+            dcs_only = False
+            if not ts_ext and job["scan"] == "dcs" and h.get("pure"):     # the DCS annotator lemmatized it as this name
+                ts_ext = [s for s in senses if s["kind"] in ("name", "epithet")][:1]; dcs_only = True
             lab, ali = wd_in(k, "label"), wd_in(k, "alias")
             cverses = [vi for vi in h["verses"] if ctx[vi] - {k}]
             ratio = len(cverses) / max(1, len(h["verses"]))
@@ -776,7 +872,8 @@ def hindu(hints):
             if lab:
                 f = lab[0]; figure_id, figure, sex, etype = f["qid"], label_of(f), f["sex"], f["type"]
                 if not sex and etype in ("human", "royal", "sage", "deity", "demon", "mythological_being"): sex = lexsex(personal_sense)
-                conf = 0.95 if ts_ext else 0.9
+                conf = 0.95 if ts_ext and not dcs_only else 0.9
+                if job["new"] and "*" in f["works"]: conf = min(conf, 0.85)
                 if amb:
                     if lift >= 0.9: conf = 0.85
                     else: conf = 0.55; reasons.append(f"also a common word and its occurrences are not concentrated near other names (lift {lift:.2f})")
@@ -846,6 +943,7 @@ def hindu(hints):
                     conf = 0.5; reasons.append(f"reads as an ordinary compound of two common words (lift {lift:.2f})")
                 elif corpus == "Bhagavad Gita" and k not in mbh_accepted:
                     conf = 0.5; reasons.append("not accepted for the Mahabharata as a whole, of which the Gita is part")
+                elif dcs_only: conf = 0.65
                 elif lift >= 1.2 or (len(h["verses"]) <= 2 and ratio == 1): conf = 0.7
                 else: conf = 0.5; reasons.append(f"occurrences not concentrated near other names (lift {lift:.2f}); may be a homograph")
             else:
@@ -867,21 +965,459 @@ def hindu(hints):
             translit = L[:1].upper() + L[1:]
             for rx, rep in ((r"ṃ(?=[cj])", "ñ"), (r"ṃ(?=[kg])", "ṅ"), (r"ṃ(?=[td])", "n"), (r"ṃ(?=[ṭḍ])", "ṇ"), (r"ṃ(?=[pb])", "m")):
                 translit = re.sub(rx, rep, translit)
+            if any(sn.get("personified") for sn in senses) and role == "personal" and etype == "deity" and amb:
+                relation = (relation + "; " if relation else "") + "also the ordinary word; the text does not separate deity and word"
             row = {"name": modern_name(translit, hints), "figure_id": figure_id, "figure": figure, "sex": sex,
                    "original": deva(translit), "translit": translit, "language": "Sanskrit", "tradition": "Hindu",
-                   "subtradition": "", "corpus": corpus, "text": section, "passage": cite, "url": url,
+                   "subtradition": "", "corpus": job["corpus"], "text": job["text"] or section, "passage": cite, "url": url,
                    "occurrences": str(occ), "entity_type": etype, "name_role": role, "status": "attested",
                    "relation": relation, "source": f"{src}; {SRC_MW}" + (f"; {SRC_WD}" if figure_id.startswith("Q") else ""),
                    "confidence": f"{conf:.2f}"}
+            row["_split"] = job["split"]
+            label = job["corpus"] + (f" / {job['text']}" if job["split"] else "")
             if conf < 0.6:
-                row["relation"] = (relation + "; " if relation else "") + "review: " + "; ".join(reasons)
-                review.append(row); stats[(corpus, "review")] += 1
+                row["relation"] = (row["relation"] + "; " if row["relation"] else "") + "review: " + "; ".join(reasons)
+                review.append(row); stats[(label, "review")] += 1
             else:
                 rows.append(row)
                 if role == "epithet" and corpus == "Mahabharata": mbh_epithets[(k, figure_id)] = True
                 if corpus == "Mahabharata": mbh_accepted.add(k)
-                stats[(corpus, "epithet" if role == "epithet" else ("place" if etype in ("place", "tribe") else "name"))] += 1
+                stats[(label, "epithet" if role == "epithet" else ("place" if etype in ("place", "tribe") else "name"))] += 1
     return rows, review, stats
+
+
+# ─────────────────────────────────────────────────────────────
+# Later waves: Vedic Śruti, Purāṇas, smṛti/sūtra/tantra texts.
+# Sources: the Digital Corpus of Sanskrit (O. Hellwig, CC BY 4.0) in CoNLL-U — lemmatized by its annotators, so a name is
+# counted by lemma, not by guessed inflection; and, where DCS lacks a text or has only part of it, the volunteer e-texts
+# of sanskritdocuments.org (ITRANS), read with the same inflection matcher as the epics.
+# ─────────────────────────────────────────────────────────────
+DCS_GIT = "https://github.com/OliverHellwig/sanskrit.git"
+DCS_DIR = os.path.join(RAW, "dcs", "dcs", "data", "conllu")
+DCS_BLOB = "https://github.com/OliverHellwig/sanskrit/blob/master/dcs/data/conllu/files/"
+SRC_DCS = "Digital Corpus of Sanskrit (O. Hellwig, CC BY 4.0)"
+SD_URL = "https://sanskritdocuments.org/"
+SRC_SD = "sanskritdocuments.org volunteer e-text"
+
+def get_dcs():
+    if not os.path.isdir(os.path.join(DCS_DIR, "files")):
+        import subprocess
+        d = os.path.join(RAW, "dcs")
+        subprocess.run(["git", "clone", "-q", "--filter=blob:none", "--no-checkout", "--depth", "1", DCS_GIT, d], check=True)
+        subprocess.run(["git", "-C", d, "sparse-checkout", "init", "--cone"], check=True)
+        subprocess.run(["git", "-C", d, "sparse-checkout", "set", "dcs/data/conllu/files", "dcs/data/conllu/lookup"], check=True)
+        subprocess.run(["git", "-C", d, "checkout", "-q"], check=True)
+
+NAME_GLOSS = re.compile(r"^\s*(name of|N\. of|patronymic|metronymic|epithet of|a name of)", re.I)
+
+def load_dcs_dictionary():
+    """→ {LemmaId: (lemma, grammar, gloss, name_kind)} with name_kind '' | 'pure' | 'mixed'."""
+    out = {}
+    with open(os.path.join(DCS_DIR, "lookup", "dictionary.csv"), encoding="utf-8") as f:
+        next(f)
+        for line in f:
+            p = line.rstrip("\n").split("\t")
+            if len(p) < 5: continue
+            items = [x.strip() for x in p[4].split(";") if x.strip()]
+            named = [x for x in items if NAME_GLOSS.match(x)]
+            kind = "" if not named else ("pure" if len(named) == len(items) else "mixed")
+            out[p[0]] = (p[1], p[2], "; ".join(named) or p[4][:120], kind)
+    return out
+
+def load_dcs_text(folder, prefix, text, chapters=None):
+    """DCS folder → verses [(cite, section, url, text, tokens)], tokens = [(lemma, LemmaId, is_compound_member)]."""
+    d = os.path.join(DCS_DIR, "files", folder)
+    files = sorted(f for f in os.listdir(d) if f.endswith(".conllu"))
+    have = {f for f in files}
+    files += sorted(f for f in os.listdir(d) if f.endswith(".conllu_parsed") and f[:-7] not in have)
+    def order(f):
+        m = re.match(r".*-(\d{4})-", f); return int(m.group(1)) if m else 0
+    out = []
+    for fn in sorted(files, key=order):
+        m = re.match(r".*?-\d{4}-(.*)-\d+\.conllu(?:_parsed)?$", fn)
+        chap = m.group(1) if m else fn
+        parts = [x.strip() for x in chap.split(",")]
+        nums = [x for x in parts[1:]]
+        if chapters and not chapters(nums): continue
+        url = DCS_BLOB + urllib.parse.quote(f"{folder}/{fn}")
+        cur_key, cur_txt, cur_tok = None, [], []
+        def flush():
+            if cur_key is not None:
+                out.append((f"{prefix} {'.'.join(nums)}.{cur_key}".replace(" .", " "), text, url, " ".join(cur_txt), list(cur_tok)))
+        with open(os.path.join(d, fn), encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("# text = "): txt = line[9:].strip(); continue
+                if line.startswith("# sent_counter = "):
+                    sc = line.split("=", 1)[1].strip()
+                    if sc != cur_key:
+                        flush(); cur_key, cur_txt, cur_tok = sc, [], []
+                    cur_txt.append(txt); continue
+                if not line[:1].isdigit(): continue
+                c = line.rstrip("\n").split("\t")
+                if "-" in c[0] or len(c) < 10: continue
+                lid = re.search(r"LemmaId=(\d+)", c[9])
+                cur_tok.append((norm_word(c[2]), lid.group(1) if lid else "", "Case=Cpd" in c[5]))
+        flush()
+    return out
+
+# ITRANS (sanskritdocuments.org) → IAST
+_ITX = sorted([("RRi", "ṛ"), ("R^i", "ṛ"), ("RRI", "ṝ"), ("R^I", "ṝ"), ("LLi", "ḷ"), ("L^i", "ḷ"), ("kSh", "kṣ"), ("chh", "ch"),
+               ("shh", "ṣ"), ("Ch", "ch"), ("ch", "c"), ("Sh", "ṣ"), ("sh", "ś"), ("GY", "jñ"), ("j~n", "jñ"), ("~N", "ṅ"),
+               ("~n", "ñ"), ("JN", "ñ"), ("aa", "ā"), ("ii", "ī"), ("uu", "ū"), ("A", "ā"), ("I", "ī"), ("U", "ū"), (".n", "ṃ"),
+               (".m", "ṃ"), ("M", "ṃ"), (".N", "ṃ"), ("H", "ḥ"), (".a", "'"), (".h", ""), ("T", "ṭ"), ("D", "ḍ"), ("N", "ṇ"),
+               ("x", "kṣ"), ("w", "v"), ("L", "ḷ"), ("E", "e"), ("O", "o")], key=lambda x: -len(x[0]))
+
+def itrans2iast(s):
+    s = re.sub(r"\{\\m\+\}", "ṃ", s)
+    s = re.sub(r"\\[a-zA-Z]+\{[^}]*\}|\\[-,.]|[{}#]|\\[a-zA-Z]+", " ", s)
+    out, i = [], 0
+    while i < len(s):
+        for a, b in _ITX:
+            if s.startswith(a, i): out.append(b); i += len(a); break
+        else: out.append(s[i]); i += 1
+    return "".join(out)
+
+ORD = {"prathama": 1, "dvitīya": 2, "tṛtīya": 3, "caturtha": 4, "pañcama": 5, "ṣaṣṭha": 6, "saptama": 7, "aṣṭama": 8,
+       "navama": 9, "daśama": 10}
+
+def load_itx(files, prefix, text, book=None, keep=None, mark_url=None):
+    """sanskritdocuments ITRANS files → verses [(cite, section, url, iast_text)]. Verse ends at '|| n||'; a chapter
+    boundary is a \\section with adhyāya/khaṇḍa/praśna, or an 'iti … ḥ' colophon. Explicit refs (|| 3\\.2||) are kept."""
+    out = []
+    for fn, bk in files:
+        path = os.path.join(RAW, "sd", fn)
+        url = SD_URL + (mark_url or "") + fn
+        ch, in_ch, buf, started = 0, 0, [], False
+        src_text = open(path, encoding="utf-8", errors="replace").read()
+        has_ch = bool(re.search(r"\\(?:section|chapter)\{[^}]*(adhyAy|khaNDa|prashna|vallI|prapAThaka)", src_text))
+        for raw in src_text.split("\n"):
+            if raw.startswith("%") or raw.startswith("\\documentstyle") or raw.startswith("#"): continue
+            if "\\begin{document}" in raw: started = True; continue
+            if not started: continue
+            line = re.sub(r"^\\EN\{[^}]*\}", "", raw.strip())
+            sutra = re.search(r"\|\s*\d+\s*\\-\s*(\d+)\\\.(\d+)\s*$", line)      # Nārada Bhakti Sūtra: "… | 3 \- 1\.03"
+            if sutra:
+                out.append((f"{prefix} {int(sutra.group(1))}.{int(sutra.group(2))}", text, url, itrans2iast(line[:sutra.start()])))
+                continue
+            sec = re.match(r"\\(?:section|chapter)\{(.*)\}", line)
+            if sec or re.match(r"\|*\s*iti\b.*(khaNDaH|adhyAyaH|prashnaH|vallI|prapAThakaH)", line):
+                head = sec.group(1) if sec else ""
+                if sec and not re.search(r"adhyAy|khaNDa|prashna|vallI|prapAThaka", head):
+                    if has_ch and ch and re.search(r"stotra|sUkta|kavach|nyAsa|dhyAna|Arati|kShamA|rahasya|upasaMhAra", head):
+                        ch, in_ch = -1, 0                  # appended hymns after the last chapter
+                    continue
+                n = re.search(r"\\-\s*(\d+)", head) or re.search(r"^\|*\s*(\d+)\\\.", head)
+                if ch == -1: continue
+                if in_ch or ch == 0: ch = int(n.group(1)) if n else ch + 1; in_ch = 0
+                elif n: ch = int(n.group(1))
+                buf = []; continue
+            if line.startswith("\\") or not line: continue
+            m = re.search(r"\|\|\s*([\d\\.,\s]+?)\s*\|\|", line)
+            buf.append(re.sub(r"\|\|.*$", "", line) if m else line)
+            if m:
+                ref = re.sub(r"[\\\s]", "", m.group(1)).replace(",", ".")
+                if line.lower().startswith("iti") or "adhyAyaH" in line: buf = []; continue
+                if ch == -1 or (has_ch and ch == 0): buf = []; continue        # front and back matter outside the chapters
+                ch_use = ch or 1
+                cite = ref if "." in ref else f"{ch_use}.{ref}"
+                if bk is not None and cite.count(".") < 2: cite = f"{bk}.{cite}"
+                if keep and not keep(cite): buf = []; continue
+                out.append((f"{prefix} {cite}", text, url, itrans2iast(" ".join(buf)).replace("|", " ")))
+                in_ch += 1; buf = []
+        if buf and not out:            # texts without verse numbers (Maitrī): one passage per paragraph
+            pass
+    return out
+
+def load_itx_paragraphs(fn, prefix, text):
+    out, n = [], 0
+    started = False
+    for raw in open(os.path.join(RAW, "sd", fn), encoding="utf-8", errors="replace"):
+        if "\\begin{document}" in raw: started = True; continue
+        if not started or raw.startswith(("%", "\\")): continue
+        for seg in re.split(r"\.\.", raw):
+            seg = seg.strip()
+            if len(seg) > 20:
+                n += 1; out.append((f"{prefix} ¶{n}", text, SD_URL + "doc_upanishhat/" + fn, itrans2iast(seg)))
+    return out
+
+SD_FILES = {
+    "iisha": "doc_upanishhat/iisha.itx", "kena": "doc_upanishhat/kena.itx", "prashna": "doc_upanishhat/prashna.itx",
+    "maandu": "doc_upanishhat/maandu.itx", "maitri": "doc_upanishhat/maitri.itx", "durga700": "doc_devii/durga700.itx",
+    "avadhutagiitaa": "doc_giitaa/avadhutagiitaa.itx", "nAradabhaktisUtra": "doc_z_misc_major_works/nAradabhaktisUtra.itx",
+    "brahmapur": "doc_purana/brahmapur.itx", "garuDapurANa": "doc_purana/garuDapurANa.itx",
+    **{f"bhagpur-{b}": f"doc_purana/bhagpur-{b}.itx" for b in ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10a", "10b", "11", "12"]},
+    **{f"devIbhAgavatam{b:02d}": f"doc_purana/devIbhAgavatam{b:02d}.itx" for b in range(1, 13)},
+    **{f: f"doc_purana/{f}.itx" for f in ["shivapurANam1vidyeshvarasaMhitA", "shivapurANam2rudrasaMhitA1sRRiShTikhaNDaH",
+       "shivapurANam2rudrasaMhitA2satIkhaNDaH", "shivapurANam2rudrasaMhitA3pArvatIkhaNDaH", "shivapurANam2rudrasaMhitA4kumArakhaNDaH",
+       "shivapurANam2rudrasaMhitA5yuddhakhaNDaH", "shivapurANam3shatarudrasaMhitA", "shivapurANam4koTirudrasaMhitA",
+       "shivapurANam5umAsaMhitA", "shivapurANam6kailAsasaMhitA", "shivapurANam7vAyavIyasaMhitA"]},
+}
+
+def get_sd():
+    for f, p in SD_FILES.items():
+        path = os.path.join(RAW, "sd", f + ".itx")
+        if not os.path.exists(path):
+            fetch(SD_URL + p, path, headers={"User-Agent": "Mozilla/5.0 (Macintosh) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+                                             "Accept": "*/*"})
+            time.sleep(0.5)
+
+def sd_dir(f): return SD_FILES[f].rsplit("/", 1)[0] + "/"
+
+def dcs_cov(folder):
+    d = os.path.join(DCS_DIR, "files", folder)
+    return len({re.sub(r"\.conllu(_parsed)?$", "", f) for f in os.listdir(d) if ".conllu" in f})
+
+def later_jobs():
+    """Every later corpus as a scan job. 'era' decides which epic figures may stand for a name (Vedic: only gods/sages)."""
+    get_dcs(); get_sd()
+    J = []
+    def dcs(corpus, text, wkey, folder, prefix, era, note="", split=False, chapters=None):
+        vs = load_dcs_text(folder, prefix, text, chapters)
+        cov = f"{dcs_cov(folder)} chapters annotated" + (f"; {note}" if note else "")
+        J.append({"corpus": corpus, "text": text, "wkey": wkey, "verses": vs, "scan": "dcs", "era": era, "split": split,
+                  "src": f"{SRC_DCS}, {text} ({cov})", "new": True})
+    def itx(corpus, text, wkey, verses, era, note, split=False):
+        J.append({"corpus": corpus, "text": text, "wkey": wkey, "verses": verses, "scan": "matcher", "era": era, "split": split,
+                  "src": f"{SRC_SD}, {text} ({note})", "new": True})
+    # Śruti
+    dcs("Rigveda", "Rigveda", "RV", "Ṛgveda", "RV", "vedic")
+    dcs("Atharvaveda", "Shaunaka", "AV", "Atharvaveda (Śaunaka)", "AVŚ", "vedic", split=True)
+    dcs("Atharvaveda", "Paippalada", "AVP", "Atharvaveda (Paippalāda)", "AVP", "vedic", split=True)
+    dcs("Shukla Yajurveda", "Vajasaneyi Samhita", "VS", "Vājasaneyisaṃhitā (Mādhyandina)", "VS", "vedic", "Mādhyandina, partial")
+    dcs("Krishna Yajurveda", "Taittiriya Samhita", "TS", "Taittirīyasaṃhitā", "TS", "vedic", split=True)
+    dcs("Krishna Yajurveda", "Maitrayani Samhita", "MS", "Maitrāyaṇīsaṃhitā", "MS", "vedic", split=True)
+    dcs("Krishna Yajurveda", "Kathaka Samhita", "KS", "Kāṭhakasaṃhitā", "KS", "vedic", split=True)
+    for text, wkey, folder, pre in [("Shatapatha Brahmana", "SB", "Śatapathabrāhmaṇa", "ŚB"), ("Aitareya Brahmana", "AB", "Aitareyabrāhmaṇa", "AB"),
+                                    ("Kaushitaki Brahmana", "KB", "Kauṣītakibrāhmaṇa", "KB"), ("Taittiriya Brahmana", "TB", "Taittirīyabrāhmaṇa", "TB"),
+                                    ("Jaiminiya Brahmana", "JB", "Jaiminīyabrāhmaṇa", "JB"), ("Panchavimsha Brahmana", "PB", "Pañcaviṃśabrāhmaṇa", "PB"),
+                                    ("Gopatha Brahmana", "GB", "Gopathabrāhmaṇa", "GB"), ("Shadvimsha Brahmana", "SadvB", "Ṣaḍviṃśabrāhmaṇa", "ṢB"),
+                                    ("Jaiminiya Upanishad Brahmana", "JUB", "Jaiminīya-Upaniṣad-Brāhmaṇa", "JUB")]:
+        dcs("Brahmanas", text, wkey, folder, pre, "vedic", split=True)
+    for text, wkey, folder, pre in [("Aitareya Aranyaka", "AA", "Aitareya-Āraṇyaka", "AĀ"), ("Taittiriya Aranyaka", "TA", "Taittirīyāraṇyaka", "TĀ"),
+                                    ("Shankhayana Aranyaka", "SA", "Śāṅkhāyanāraṇyaka", "ŚĀ")]:
+        dcs("Aranyakas", text, wkey, folder, pre, "vedic", split=True)
+    for text, wkey, folder, pre in [("Brihadaranyaka Upanishad", "BAU", "Bṛhadāraṇyakopaniṣad", "BĀU"), ("Chandogya Upanishad", "ChU", "Chāndogyopaniṣad", "ChU"),
+                                    ("Taittiriya Upanishad", "TU", "Taittirīyopaniṣad", "TU"), ("Aitareya Upanishad", "AU", "Aitareyopaniṣad", "AU"),
+                                    ("Katha Upanishad", "KathU", "Kaṭhopaniṣad", "KaṭhU"), ("Mundaka Upanishad", "MundU", "Muṇḍakopaniṣad", "MuṇḍU"),
+                                    ("Shvetashvatara Upanishad", "SvetU", "Śvetāśvataropaniṣad", "ŚvetU"), ("Kaushitaki Upanishad", "KausU", "Kauṣītakyupaniṣad", "KauṣU")]:
+        dcs("Upanishads", text, wkey, folder, pre, "vedic", split=True)
+    for text, wkey, fn, pre in [("Isha Upanishad", "IsaU", "iisha", "ĪU"), ("Kena Upanishad", "KenaU", "kena", "KenaU"),
+                                ("Prashna Upanishad", "PrasnaU", "prashna", "PrU"), ("Mandukya Upanishad", "MandU", "maandu", "MāṇḍU")]:
+        itx("Upanishads", text, wkey, load_itx([(fn + ".itx", None)], pre, text, mark_url=sd_dir(fn)), "vedic", "complete", split=True)
+    itx("Upanishads", "Maitri Upanishad", "MaitrU", load_itx_paragraphs("maitri.itx", "MaitrU", "Maitri Upanishad"), "vedic",
+        "complete; e-text has no verse numbers, cited by paragraph of the e-text", split=True)
+    # Itihāsa / Purāṇa
+    dcs("Harivamsha", "Harivamsha", "HV", "Harivaṃśa", "HV", "puranic", "critical-edition numbering")
+    bh = [(f"bhagpur-{b}.itx", int(b[:2])) for b in ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10a", "10b", "11", "12"]]
+    itx("Bhagavata Purana", "Bhagavata Purana", "BhP", load_itx(bh, "BhP", "Bhagavata Purana", mark_url="doc_purana/"), "puranic", "complete, 12 skandhas")
+    itx("Uddhava Gita", "Uddhava Gita", "UG",
+        load_itx([("bhagpur-11.itx", 11)], "BhP", "Uddhava Gita", keep=lambda c: 6 <= int(c.split(".")[1]) <= 29, mark_url="doc_purana/"),
+        "puranic", "Bhagavata Purana 11.6-29")
+    dcs("Vishnu Purana", "Vishnu Purana", "VP", "Viṣṇupurāṇa", "ViP", "puranic")
+    itx("Devi Mahatmya", "Devi Mahatmya", "DM",
+        [(f"DM {c.split()[1]} (chapter.Saptashati verse; Markandeya Purana ch. {80 + int(c.split()[1].split('.')[0])})", s, u, t)
+         for c, s, u, t in load_itx([("durga700.itx", None)], "DM", "Devi Mahatmya", mark_url="doc_devii/",
+                                    keep=lambda c: c.split(".")[0].isdigit() and 1 <= int(c.split(".")[0]) <= 13)],
+        "puranic", "chapters 1-13 = Markandeya Purana 81-93; the e-text's added hymns are left out")
+    itx("Devi Bhagavata Purana", "Devi Bhagavata Purana", "DBhP",
+        load_itx([(f"devIbhAgavatam{b:02d}.itx", None) for b in range(1, 13)], "DBhP", "Devi Bhagavata Purana", mark_url="doc_purana/"),
+        "puranic", "complete, 12 skandhas")
+    shiva = ["shivapurANam1vidyeshvarasaMhitA", "shivapurANam2rudrasaMhitA1sRRiShTikhaNDaH", "shivapurANam2rudrasaMhitA2satIkhaNDaH",
+             "shivapurANam2rudrasaMhitA3pArvatIkhaNDaH", "shivapurANam2rudrasaMhitA4kumArakhaNDaH", "shivapurANam2rudrasaMhitA5yuddhakhaNDaH",
+             "shivapurANam3shatarudrasaMhitA", "shivapurANam4koTirudrasaMhitA", "shivapurANam5umAsaMhitA", "shivapurANam6kailAsasaMhitA",
+             "shivapurANam7vAyavIyasaMhitA"]
+    itx("Shiva Purana", "Shiva Purana", "SivaP", load_itx([(f + ".itx", None) for f in shiva], "ŚivaP", "Shiva Purana", mark_url="doc_purana/"),
+        "puranic", "all seven saṃhitās of the vulgate (GRETIL has only books 1 and 7)")
+    itx("Brahma Purana", "Brahma Purana", "BrahmaP", load_itx([("brahmapur.itx", None)], "BrP", "Brahma Purana", mark_url="doc_purana/"),
+        "puranic", "complete")
+    itx("Garuda Purana", "Garuda Purana", "GarP", load_itx([("garuDapurANa.itx", None)], "GarP", "Garuda Purana", mark_url="doc_purana/"),
+        "puranic", "e-text of the vulgate")
+    for corpus, wkey, folder, pre, note in [("Agni Purana", "AgniP", "Agnipurāṇa", "AgniP", "25 of 383 chapters"),
+                                            ("Kurma Purana", "KurmaP", "Kūrmapurāṇa", "KūP", ""), ("Linga Purana", "LingaP", "Liṅgapurāṇa", "LiP", ""),
+                                            ("Matsya Purana", "MatsyaP", "Matsyapurāṇa", "MPur", "chapters 1-176 of 291"),
+                                            ("Varaha Purana", "VarP", "Varāhapurāṇa", "VarP", "one chapter only"),
+                                            ("Narasimha Purana", "NarasP", "Narasiṃhapurāṇa", "NarasP", "one chapter only"),
+                                            ("Kalika Purana", "KalP", "Kālikāpurāṇa", "KālP", "chapters 52-56 only")]:
+        dcs(corpus, corpus, wkey, folder, pre, "puranic", note)
+    dcs("Skanda Purana", "Skandapurana (early recension)", "SkP", "Skandapurāṇa", "SkP", "puranic", "Bakker et al. early Skandapurāṇa", split=True)
+    dcs("Skanda Purana", "Revakhanda", "SkRkh", "Skandapurāṇa (Revākhaṇḍa)", "SkP Rkh", "puranic", split=True)
+    # Kāvya, darśana, smṛti, tantra
+    dcs("Gita Govinda", "Gita Govinda", "GG", "Gītagovinda", "GītGov", "puranic", "complete")
+    dcs("Yoga Sutras", "Yoga Sutras", "YS", "Yogasūtra", "YS", "other", "complete")
+    for corpus, wkey, folder, pre, note in [("Manusmriti", "Manu", "Manusmṛti", "Manu", "complete"), ("Yajnavalkya Smriti", "Yajn", "Yājñavalkyasmṛti", "YāSmṛ", "complete"),
+                                            ("Narada Smriti", "Narada", "Nāradasmṛti", "NāSmṛ", ""), ("Arthashastra", "Artha", "Arthaśāstra", "ArthaŚ", "partial"),
+                                            ("Ashtavakra Gita", "Ashtav", "Aṣṭāvakragīta", "AṣṭGī", "complete"),
+                                            ("Satvata Tantra", "Satvata", "Sātvatatantra", "SātT", "Pāñcarātra"),
+                                            ("Mrigendra Tantra", "Mrgendra", "Mṛgendratantra", "MṛgT", "Śaiva Āgama, Vidyāpāda"),
+                                            ("Devikalottara Agama", "DeviKal", "Devīkālottarāgama", "DevīĀg", "Śaiva Āgama"),
+                                            ("Todala Tantra", "Todala", "Toḍalatantra", "ToḍalT", "Śākta"), ("Matrikabheda Tantra", "Matrka", "Mātṛkābhedatantra", "MBhT", "Śākta"),
+                                            ("Mahachina Tantra", "Mahacina", "Mahācīnatantra", "MCT", "Śākta, one chapter"),
+                                            ("Vaikhanasa Dharmasutra", "VaikhDh", "Vaikhānasadharmasūtra", "VaikhDhS", "Vaikhānasa")]:
+        dcs(corpus, corpus, wkey, folder, pre, "other", note)
+    itx("Avadhuta Gita", "Avadhuta Gita", "Avadh", load_itx([("avadhutagiitaa.itx", None)], "AvG", "Avadhuta Gita", mark_url="doc_giitaa/"), "other", "complete")
+    itx("Narada Bhakti Sutras", "Narada Bhakti Sutras", "NBS", load_itx([("nAradabhaktisUtra.itx", None)], "NBS", "Narada Bhakti Sutras",
+        mark_url="doc_z_misc_major_works/"), "other", "complete")
+    for j in J: print(f"  {j['corpus']} / {j['text']}: {len(j['verses'])} passages", file=sys.stderr)
+    return J
+
+# Not found as an open machine-readable edition (reported, no rows): Samaveda; Jaiminīya/Kauthuma Saṃhitā; Brahmāṇḍa,
+# Brahmavaivarta, Mārkaṇḍeya (beyond the Devī Māhātmya), Vāmana, Padma, Nārada, Bhaviṣya Purāṇas; Brahma Sūtras (mūla only);
+# Yoga Vāsiṣṭha (complete); Jayākhya and Ahirbudhnya Saṃhitās; Kulārṇava and Mahānirvāṇa Tantras.
+
+WDL_CACHE = os.path.join(RAW, "wd_labels.json")
+WD_OK = re.compile(r"hindu|vedic|\bveda|rigved|ṛgved|upanishad|upaniṣad|brahmana|purana|purāṇa|mahabharata|ramayana|\bsage\b|rishi|"
+                   r"ṛṣi|\bseer\b|deity|goddess|\bgod\b|mytholog|asura|demon|apsara|gandharva|rakshasa|avatar|sanskrit|\bepic\b|"
+                   r"legendary|daitya|\bnaga\b|tirthankara|jain|indian king|ancient india", re.I)
+WD_BAD = re.compile(r"\bfilm\b|album|\bsong\b|single|village|town in|city in|district|given name|family name|surname|asteroid|"
+                    r"\bship\b|company|\bband\b|actor|actress|politician|cricket|football|television|\bnovel\b|journal|crater|genus|"
+                    r"species|disambiguation|temple|river in|mountain in|newspaper|software|painting|magazine|school|college|"
+                    r"university|book by|poem by|sculpture|railway|station|constituency|neighbourhood|locality|lake in|beetle|moth|"
+                    r"plant|scholar|writer|poet\b|singer|musician|scientist|astronomer|mathematician|philosopher \(|journalist", re.I)
+WD_TEXT = re.compile(r"literary work|religious text|\btext\b|upanishad|book|scripture|written work|hymn", re.I)
+
+def wd_label_figs(keys):
+    """Wikidata items whose English label or alias equals the name (IAST or everyday spelling) and whose description places
+    them in Hindu tradition. A name matching two or more such items gets none (no guessing)."""
+    try: cache = json.load(open(WDL_CACHE, encoding="utf-8"))
+    except Exception: cache = {}
+    labels_of = {}
+    for k in keys:
+        L = re.sub(r"ṃ(?=[cj])", "ñ", re.sub(r"ṃ(?=[kg])", "ṅ", re.sub(r"ṃ(?=[td])", "n", k)))
+        cand = {roman(L), L[:1].upper() + L[1:], modern_name(L[:1].upper() + L[1:], {})}
+        if roman(L).endswith("a") and len(L) > 4: cand.add(roman(L)[:-1])
+        labels_of[k] = {c for c in cand if len(c) > 2}
+    need = sorted({l for v in labels_of.values() for l in v} - set(cache))
+    for i in range(0, len(need), 120):
+        chunk = need[i:i + 120]
+        vals = " ".join(json.dumps(l, ensure_ascii=False) + "@en" for l in chunk)
+        q = f"""SELECT ?l ?item ?desc ?sex (GROUP_CONCAT(DISTINCT ?il; separator="|") AS ?insts) WHERE {{
+          VALUES ?l {{ {vals} }} ?item rdfs:label|skos:altLabel ?l .
+          OPTIONAL {{ ?item schema:description ?desc FILTER(lang(?desc)="en") }}
+          OPTIONAL {{ ?item wdt:P21 ?sex }}
+          OPTIONAL {{ ?item wdt:P31 ?i . ?i rdfs:label ?il FILTER(lang(?il)="en") }} }} GROUP BY ?l ?item ?desc ?sex"""
+        res = None
+        for attempt in range(5):
+            try:
+                req = urllib.request.Request("https://query.wikidata.org/sparql?" + urllib.parse.urlencode({"query": q}),
+                                             headers={"User-Agent": UA, "Accept": "application/sparql-results+json"})
+                with urllib.request.urlopen(req, timeout=120) as r: res = json.loads(r.read())
+                break
+            except Exception as e:
+                time.sleep(65 if "429" in str(e) else 5 + 5 * attempt)
+        if res is None: continue
+        for l in chunk: cache[l] = []
+        for b in res["results"]["bindings"]:
+            g = lambda x: b.get(x, {}).get("value", "")
+            sx = g("sex").rsplit("/", 1)[-1]
+            cache[g("l")].append({"qid": g("item").rsplit("/", 1)[-1], "desc": g("desc"), "insts": g("insts"),
+                                  "sex": "boy" if sx == "Q6581097" else ("girl" if sx == "Q6581072" else "")})
+        if i % 1200 == 0: json.dump(cache, open(WDL_CACHE, "w", encoding="utf-8"), ensure_ascii=False)
+        time.sleep(0.3)
+    json.dump(cache, open(WDL_CACHE, "w", encoding="utf-8"), ensure_ascii=False)
+    out = {}
+    for k, labs in labels_of.items():
+        hits = {}
+        for l in labs:
+            for c in cache.get(l, []):
+                blob = c["desc"] + " | " + c["insts"]
+                if WD_OK.search(blob) and not WD_BAD.search(c["desc"]) and not WD_TEXT.search(c["insts"]):
+                    hits.setdefault(c["qid"], (l, c))
+        if len(hits) == 1:
+            qid, (l, c) = next(iter(hits.items()))
+            out[k] = {"qid": qid, "en": l, "works": {"*"}, "sex": c["sex"], "keys": {k}, "akeys": set(), "confirm": set(),
+                      "desc": c["desc"], "type": wd_type(c["insts"], c["desc"])}
+    return out
+
+
+# ─────────────────────────────────────────────────────────────
+# Rāmcaritmānas (Awadhi; GRETIL romanized e-text): the Vālmīki figures, in Awadhi spellings derived by sound rules
+# ─────────────────────────────────────────────────────────────
+RCM_URL = GRETIL + "3_nia/hindi/tulrcm{}u.htm"
+SRC_RCM = "GRETIL Tulasidasa, Ramacaritamanasa (romanized e-text)"
+RCM_KANDA = ["Bala Kanda", "Ayodhya Kanda", "Aranya Kanda", "Kishkindha Kanda", "Sundara Kanda", "Lanka Kanda", "Uttara Kanda"]
+
+def awadhi_forms(iast):
+    """Sanskrit name → the spellings Tulsidas uses (ś/ṣ → s, ṇ → n, v → b, y- → j-, kṣ → kh/ch, ṛ → ri)."""
+    base = {iast.lower()}
+    rules = [("ś", "s"), ("ṣ", "s"), ("ṇ", "n"), ("ṃ", "ṃ"), ("ṛ", "ri")]
+    for a, b in rules: base = {x.replace(a, b) for x in base} | base
+    base |= {x.replace("v", "b") for x in base} | {("j" + x[1:]) if x.startswith("y") else x for x in base}
+    base |= {x.replace("kṣ", "kh") for x in base} | {x.replace("kṣm", "chim") for x in base} | {x.replace("kṣ", "ch") for x in base}
+    return {x for x in base if not re.search(r"[śṣṇṛ]", x)}
+
+def ramcharitmanas(valmiki_rows, hints):
+    texts = []
+    for i in range(1, 8):
+        p = fetch(RCM_URL.format(i), os.path.join(RAW, "rcm", f"tulrcm{i}u.htm"))
+        h = open(p, encoding="utf-8", errors="replace").read()
+        body = h.split("<hr>", 1)[-1]
+        body = re.sub(r"<[^>]+>", "\n", body)
+        texts.append(body)
+    # passages: kāṇḍa.dohā — lines up to and including each dohā/soraṭhā
+    passages = []
+    for ki, body in enumerate(texts, 1):
+        buf = []
+        for line in body.split("\n"):
+            line = line.strip()
+            if not line: continue
+            buf.append(line)
+            m = re.match(r"(do|so|chaṃ)\.\s", line)
+            n = re.search(r"//\s*(\d+)\s*(?:\((?:[a-z]|ka|kha|ga)\))?\s*//", line)
+            if m and n and m.group(1) == "do":
+                passages.append((f"RCM {ki}.{n.group(1)}", RCM_KANDA[ki - 1], RCM_URL.format(ki), " ".join(buf))); buf = []
+        if buf: passages.append((f"RCM {ki}.end", RCM_KANDA[ki - 1], RCM_URL.format(ki), " ".join(buf)))
+    toks = [(c, s, u, re.findall(r"[a-zāīūṛṃṅñṭḍṇśṣḷẽãĩõũ̃_]+", t.lower())) for c, s, u, t in passages]
+    ENDS = ["", "u", "ū", "hi", "hiṃ", "hī", "hu", "ā", "i", "e", "ī", "jī"]
+    rows, review = [], []
+    seen = set()
+    for r in valmiki_rows:
+        if r["entity_type"] in ("place", "tribe", "concept"): continue
+        tr = r["translit"]
+        lem = re.sub(r"([mv])at$", r"\1āna", tr.lower())
+        forms = awadhi_forms(lem)
+        if lem.endswith("a"): forms |= {f[:-1] for f in forms if len(f) > 4}
+        forms = {f for f in forms if len(f) >= 4}
+        if not forms: continue
+        key = (r["figure_id"], tr)
+        if key in seen: continue
+        seen.add(key)
+        n, first = 0, None
+        for c, s, u, ws in toks:
+            k = sum(1 for w in ws for f in forms if w == f or (w.startswith(f) and w[len(f):] in ENDS))
+            if k and first is None: first = (c, s, u)
+            n += k
+        if not n: continue
+        short = min(len(f) for f in forms) <= 4
+        conf = 0.6 if short else 0.75
+        out = dict(r)
+        word = sorted(forms, key=len)[0]
+        out.update({"name": r["name"], "original": deva(word), "translit": word.capitalize(), "language": "Awadhi",
+                    "corpus": "Ramcharitmanas", "text": first[1], "passage": first[0], "url": first[2], "occurrences": str(n),
+                    "source": SRC_RCM + "; figure from the Valmiki Ramayana rows" + ("; " + SRC_WD if r["figure_id"].startswith("Q") else ""),
+                    "confidence": f"{min(conf, float(r['confidence'])):.2f}"})
+        if short or float(r["confidence"]) < 0.7:
+            out["relation"] = (r["relation"] + "; " if r["relation"] else "") + "review: short form, may be an ordinary Awadhi word"
+            review.append(out)
+        else: rows.append(out)
+    return rows, review
+
+# Tirukkuṟaḷ (Project Madurai): it names almost no one. Only Indra (Kural 25) is a name in the text.
+TK_URL = "https://www.projectmadurai.org/pm_etexts/utf8/pmuni0001.html"
+def tirukkural():
+    p = fetch(TK_URL, os.path.join(RAW, "tamil", "pmuni0001.html"))
+    t = re.sub(r"<[^>]+>", "\n", open(p, encoding="utf-8", errors="replace").read()).replace("&nbsp;", " ")
+    rows = []
+    kurals = re.findall(r"([^\n]+)\n([^\n]+?)\s+(\d{1,4})\s*\n", t)
+    q = wd_resolve({"indra": ("Indra", r"deity|god|Hindu|Vedic")})["indra"]
+    for name, forms, fid, fig, rel in [("Indra", ("இந்திரன்", "இந்திரனே"), q["qid"] or "slug:hindu:indra", "Indra, king of the gods", "")]:
+        hits = [int(n) for a, b, n in kurals if any(f in a + " " + b for f in forms)]
+        if not hits: continue
+        rows.append({"name": name, "figure_id": fid, "figure": fig, "sex": "boy", "original": "இந்திரன்", "translit": "Intiraṉ",
+                     "language": "Tamil", "tradition": "Hindu", "subtradition": "", "corpus": "Tirukkural", "text": "Arattuppal",
+                     "passage": f"Kural {hits[0]}", "url": TK_URL, "occurrences": str(len(hits)), "entity_type": "deity",
+                     "name_role": "personal", "status": "attested", "relation": "",
+                     "source": "Project Madurai, Tirukkural e-text; Wikidata (CC0)", "confidence": "0.85"})
+    return rows
 
 
 # ─────────────────────────────────────────────────────────────
@@ -1189,28 +1725,56 @@ def jain():
     return rows
 
 
+def yoga_sutra_fix(rows, review):
+    """Yoga Sūtra 1.23-26: īśvara is 'the Lord', a special puruṣa — a title, not a personal name or another god's epithet.
+    Patañjali is named only in colophons, not in the sūtras."""
+    rows = [r for r in rows if not (r["corpus"] == "Yoga Sutras" and r["translit"] in ("Īśvara", "Iśvara"))]
+    review = [r for r in review if not (r["corpus"] == "Yoga Sutras" and r["translit"] in ("Īśvara", "Iśvara"))]
+    vs = load_dcs_text("Yogasūtra", "YS", "Yoga Sutras")
+    hit = [v for v in vs if any(t[0] == "īśvara" for t in v[4])]
+    if hit:
+        rows.append({"name": "Ishvar", "figure_id": "slug:hindu:ishvara-yoga", "figure": "Ishvara, the Lord of the Yoga Sutras (a special purusha)",
+                     "sex": "", "original": "ईश्वर", "translit": "Īśvara", "language": "Sanskrit", "tradition": "Hindu", "subtradition": "",
+                     "corpus": "Yoga Sutras", "text": "Yoga Sutras", "passage": hit[0][0], "url": hit[0][2],
+                     "occurrences": str(sum(1 for v in vs for t in v[4] if t[0] == "īśvara")), "entity_type": "deity",
+                     "name_role": "title", "status": "attested", "relation": "‘the Lord’ (YS 1.24); a title, not a personal name",
+                     "source": f"{SRC_DCS}, Yoga Sutras (complete)", "confidence": "0.80"})
+    q = wd_resolve({"patanjali": ("Patanjali", r"yoga|sage|author|grammarian")})["patanjali"]
+    rows.append({"name": "Patanjali", "figure_id": q["qid"] or "slug:hindu:patanjali", "figure": "Patañjali, compiler of the Yoga Sutras", "sex": "boy",
+                 "original": "पतञ्जलि", "translit": "Patañjali", "language": "Sanskrit", "tradition": "Hindu", "subtradition": "",
+                 "corpus": "Yoga Sutras", "text": "Yoga Sutras", "passage": "", "url": "", "occurrences": "",
+                 "entity_type": "sage", "name_role": "personal", "status": "association",
+                 "relation": "traditional author; not named in the sutras themselves", "source": "Wikidata (CC0)" if q["qid"] else "", "confidence": "0.90"})
+    return rows, review
+
 def write(path, rows):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         f.write("\t".join(COLS) + "\n")
         for r in rows:
-            f.write("\t".join(str(r.get(c, "")).replace("\t", " ").replace("\n", " ") for c in COLS) + "\n")
+            f.write("\t".join(str(r.get(c, "")).replace("\t", " ").replace("\n", " ") for c in COLS) + "\n")   # _split etc. not written
 
 def main():
     hints = scripture_hints()
     order = {"Bhagavad Gita": 0, "Valmiki Ramayana": 1, "Mahabharata": 2, "Guru Granth Sahib": 3, "Kalpa Sutra": 4}
     rows, review, stats = hindu(hints)
+    rows, review = yoga_sutra_fix(rows, review)
+    rr, rv = ramcharitmanas([r for r in rows if r["corpus"] == "Valmiki Ramayana"], hints)
+    rows += rr; review += rv; stats[("Ramcharitmanas", "name")] += len(rr); stats[("Ramcharitmanas", "review")] += len(rv)
+    tk = tirukkural(); rows += tk; stats[("Tirukkural", "name")] += len(tk)
     rows += sikh(); rows += jain()
-    key = lambda r: (order.get(r["corpus"], 9), -float(r["confidence"]), -int(r["occurrences"] or 0), r["name"])
+    key = lambda r: (order.get(r["corpus"], 9), r["corpus"], r["text"] if r.get("_split") else "",
+                     -float(r["confidence"]), -int(r["occurrences"] or 0), r["name"])
+    kkey = lambda r: (r["corpus"], r["text"] if r.get("_split") else "", r["name"], r["figure_id"])
     def dedupe(rs):
         best = {}
         for r in rs:
-            kk = (r["corpus"], r["name"], r["figure_id"])
+            kk = kkey(r)
             if kk not in best or int(r["occurrences"] or 0) > int(best[kk]["occurrences"] or 0): best[kk] = r
         return list(best.values())
     rows, review = dedupe(rows), dedupe(review)
-    seen = {(r["corpus"], r["name"], r["figure_id"]) for r in rows}
-    review = [r for r in review if (r["corpus"], r["name"], r["figure_id"]) not in seen]
+    seen = {kkey(r) for r in rows}
+    review = [r for r in review if kkey(r) not in seen]
     rows.sort(key=key); review.sort(key=key)
     write(OUT, rows); write(REVIEW, review)
     print(f"wrote {len(rows)} rows → {OUT}; {len(review)} → {REVIEW}", file=sys.stderr)
