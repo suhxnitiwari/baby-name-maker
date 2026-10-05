@@ -34,6 +34,10 @@
 #        (raw/za-P0305-*.pdf) into raw/za-top10-2014-2024.tsv
 #   ba-fbih  Federal Statistical Office of the Federation of BiH, top 100 newborn names 2012-2025 (one PDF per sex and year,
 #        raw/ba-fbih-YYYY-top100-[fm].pdf), read into raw/ba-fbih-fzs-top100-2012-2025.tsv
+#   ba-rs  Republika Srpska Institute of Statistics, top 10 newborn names (ranks only; 2024 press-conference slide, 2025 articles
+#        7635/7636 on rzs.rs.ba): raw/ba-rs-rzs-*.pdf|html, read into raw/ba-rs-rzs-top10-2024-2025.tsv (Latin + Cyrillic)
+#   bg   National Statistical Institute "Names in Bulgaria" releases 2012-2025 (raw/bg-nsi-Names*.pdf, news pages), read into
+#        raw/bg-nsi-newborn-top-names-2012-2025.tsv (Latin as NSI spells it in English + Cyrillic)
 #   br   IBGE Censo 2010 names API, top 20 per sex per decade of birth: raw/br-ibge-censo2010-ranking-by-decade.json
 #   fi   DVV Nimipalvelu, most popular first names by decade of birth (population register): raw/fi-dvv-top-etunimet-*.html
 #   md   Public Services Agency, most frequent first names of newborns 2016-2023 (dataset.gov.md 16943 / 16944):
@@ -362,6 +366,32 @@ def netherlands():
         for r in json.load(open(f, encoding="utf-8-sig"))["data"]: c[int(y)]["girl" if s == "meisjes" else "boy"][r[0]] = int(r[1])
     return c
 
+def srpska_ranks():
+    # 2025's articles give ranks 1-4 and then list the rest without saying their order, so only those 4 are kept
+    r, native = ranked(), {}
+    for line in open(f"{RAW}/ba-rs-rzs-top10-2024-2025.tsv", encoding="utf-8"):
+        if line.startswith("#"): continue
+        y, s, lat, cyr = line.rstrip("\n").split("\t")
+        lat, cyr = lat.split(","), cyr.split(",")
+        native.update(zip(lat, cyr))
+        r[int(y)]["girl" if s == "F" else "boy"] = lat[:4] if y == "2025" else lat
+    SRPSKA_NATIVE.update(native)
+    return r
+
+SRPSKA_NATIVE = {}
+
+BULGARIA_NATIVE = {}
+
+def bulgaria():
+    c = new()
+    for line in open(f"{RAW}/bg-nsi-newborn-top-names-2012-2025.tsv", encoding="utf-8"):
+        if line.startswith("#"): continue
+        y, s, lat, cyr = line.rstrip("\n").split("\t")
+        for a, b in zip(lat.split(","), cyr.split(",")):
+            n, v = a.rsplit(" ", 1); c[int(y)]["girl" if s == "F" else "boy"][n] = int(v)
+            BULGARIA_NATIVE[n] = b.rsplit(" ", 1)[0]
+    return c
+
 def finland():
     # each page: "Miehet" (men) table then "Naiset" (women), rows of rank | name | number; pages 1-2 = ranks 1-20
     c = new()
@@ -420,6 +450,10 @@ PLACES = [
          coverage="top", badge="ranked", threshold=None, rule="Top 10 names only, for births that happened and were registered in the year. 2015–2016 count a forename in any position; from 2017 only the first forename.", breaks=[2017], fn=south_africa),
     dict(key="ba-fbih", label="Federation of BiH", group="Bosnia and Herzegovina", region="Europe", agency="Federal Statistical Office (Federalni zavod za statistiku)", dataset="Top 100 names of newborns", license="Source: FZS",
          coverage="top", badge="ranked", threshold=None, rule="Top 100 names of babies born in the Federation of Bosnia and Herzegovina, one of the country's two entities; Republika Srpska publishes its own list.", fn=federation_bih),
+    dict(key="ba-rs", label="Republika Srpska", group="Bosnia and Herzegovina", region="Europe", agency="Republika Srpska Institute of Statistics", dataset="Most popular names of newborns", license="Source: RZS RS",
+         coverage="top", badge="ranked", threshold=None, native=SRPSKA_NATIVE, rule="Most popular names of babies born in Republika Srpska, one of the country's two entities, ranks only (no counts): top 10 for 2024, top 4 for 2025. Published in Cyrillic and Latin.", fn=new, ranked=srpska_ranks),
+    dict(key="bg", label="Bulgaria", group="", region="Europe", agency="National Statistical Institute", dataset="Names in Bulgaria (annual release)", license="Source: NSI",
+         coverage="top", badge="ranked", threshold=None, native=BULGARIA_NATIVE, rule="Most common names of babies born in the year: top 20 for 2012–2015, top 10 from 2016 (NSI marks most years preliminary). Names in Latin as NSI writes them in English; the Cyrillic is kept.", fn=bulgaria),
     dict(key="md", label="Moldova", group="", region="Europe", agency="Public Services Agency (Agenția Servicii Publice)", dataset="Raport statistic privind cel mai frecvent prenume al copiilor nou-născuți (dataset.gov.md)", license="Reuse with a link to date.gov.md",
          coverage="top", badge="ranked", threshold=None, rule="The most frequent first names of newborns registered by civil-status offices in the year (top 20 in 2018–2022, longer lists in 2016, 2017 and 2023).", fn=moldova),
     dict(key="nl", label="the Netherlands", group="", region="Europe", agency="Sociale Verzekeringsbank (SVB)", dataset="Kindernamen (child benefit registrations)", license="Public (svb.nl)",
@@ -471,7 +505,23 @@ def montenegro_census():
                           municipality=mun, rank=i + 1, name=n, count=None) for i, n in enumerate(names)]
     return rows
 
-census = montenegro_census()
+#   xk   Kosovo Agency of Statistics, Census 2024 "Names and Surnames in Kosova", Tab. 5: the most common name for each single
+#        year of age, with counts (raw/xk-ask-census2024-names-and-surnames-en.pdf), read into raw/xk-ask-census2024-top-name-by-single-age.tsv
+def kosovo_census():
+    rows = []
+    for line in open(f"{RAW}/xk-ask-census2024-top-name-by-single-age.tsv", encoding="utf-8"):
+        if line.startswith("#"): continue
+        age, sex, item = line.rstrip("\n").split("\t")
+        n, v = item.rsplit(" ", 1)
+        rows.append(dict(place="Kosovo", source="Kosovo Agency of Statistics, Census 2024", reference_year=2024, sex="girl" if sex == "F" else "boy",
+                         age_group=age, municipality=None, rank=1, name=n, count=int(v)))
+    return rows
+
+census = montenegro_census() + kosovo_census()
 path = os.path.join(HERE, "data/census-names.json")
+# other builders add their own places to this file (Romania: build_name_lists.py); keep their rows
+mine = {r["place"] for r in census}
+if os.path.exists(path):
+    census += [r for r in json.load(open(path, encoding="utf-8")) if r["place"] not in mine]
 json.dump(census, open(path, "w"), ensure_ascii=False, separators=(",", ":"))
 print("wrote", path, len(census), "rows")

@@ -108,7 +108,7 @@ Country lists checked for this step, all top-10 to top-50 only (PDFs): Philippin
 
 ## ⏳ The time machine: every year, from official birth records
 
-`data/years.json` (built by `scripts/build_years.py`) holds the top 12 girls' and boys' names of **every year** for 27 places, with each publisher's own rules kept beside the numbers, so a name that isn't listed reads "not published", never "0 babies".
+`data/years.json` (built by `scripts/build_years.py`) holds the top 12 girls' and boys' names of **every year** for 29 places, with each publisher's own rules kept beside the numbers, so a name that isn't listed reads "not published", never "0 babies".
 
 | Place | Publisher | Years | Publication rule |
 |---|---|---|---|
@@ -132,6 +132,10 @@ Country lists checked for this step, all top-10 to top-50 only (PDFs): Philippin
 | 🇩🇪 Berlin | Berlin Open Data, Liste der häufigen Vornamen | 2012–2023 | one city, not Germany; first names only from 2017 |
 | 🇳🇱 Netherlands | SVB, kindernamen | 2017–2025 | fewer than 10 hidden |
 | 🇲🇩 Moldova | Public Services Agency (dataset.gov.md) | 2016–2023 | top 20–100 registered newborn names |
+| 🇱🇺 Luxembourg | STATEC, La démographie luxembourgeoise en chiffres | 2022–2024 | top 5 only; spellings apart |
+| 🇧🇬 Bulgaria | National Statistical Institute, Names in Bulgaria | 2012–2025 | top 20 to 2015, top 10 from 2016; Cyrillic kept |
+| 🇧🇦 Federation of BiH | Federal Statistical Office (fzs.ba) | 2012–2025 | top 100 |
+| 🇧🇦 Republika Srpska | Republika Srpska Institute of Statistics | 2024–2025 | ranks only: top 10 in 2024, top 4 in 2025; Cyrillic kept |
 | 🇱🇻 Latvia | Central Statistical Bureau, 100 most popular newborn names | 1918–2026 in five-year periods | top 100, ranks only; before 1990 only people still in the register |
 | 🇨🇱 Chile | Registro Civil (via guaguas) | 1920–2021 | every name, even once; series ended |
 | 🇿🇦 South Africa | Stats SA, Recorded live births (P0305) | 2014–2024 | top 10 only |
@@ -140,11 +144,39 @@ Country lists checked for this step, all top-10 to top-50 only (PDFs): Philippin
 
 How the hard ones were reached: **ssa.gov** and **data.govt.nz** block scripts, so their official files were opened in a browser and only each year's top names were kept (`raw/us-top20-2018-2025.tsv`, `raw/nz-top12-1900-2025.txt`). US 1880–2017 comes from the babynames R package, which is built from the same SSA files. **data.qld.gov.au** challenges scripts on its download links, so Queensland was read through the portal's own CKAN datastore API. Denmark's top 50 comes from the HTML endpoint behind dst.dk's "Top 50" selector, South Africa's top 10 from the tables inside each P0305 PDF, Moldova's from the yearly reports (PDF, DOCX, XLSX), and Catalonia's accented spellings (Martí, Adrià) from each name's Idescat page because the API drops accents.
 
-Not ingested: **Belgium** (every statbel.fgov.be URL, file downloads included, returns a CAPTCHA page), **Philippines** (psa.gov.ph returns a Cloudflare challenge), **Argentina 2012–2024** (datosabiertos.renaper.gob.ar times out from here; the 1922–2015 RENAPER file is downloaded as `raw/ar-renaper-historico-nombres-1922-2015.zip` but not ingested yet), **Lithuania** (data.gov.lt and registrucentras.lt block this network), **Iceland** (the PxWeb API only has names born in 2021 and population snapshots by age, no birth-year series or census tables), **Andorra** (the Observatori de la infància reports checked carry birth counts but no name rankings).
+Not ingested: **Belgium** (every statbel.fgov.be URL, file downloads included, returns a CAPTCHA page), **Philippines** (psa.gov.ph returns a Cloudflare challenge), **Argentina 2012–2024** (datosabiertos.renaper.gob.ar times out from here; the 1922–2015 RENAPER file `raw/ar-renaper-historico-nombres-1922-2015.zip` has full given names and counts by year but no sex column, so it can't be split into girls and boys without guessing), **Lithuania** (data.gov.lt and registrucentras.lt block this network), **Liechtenstein** (statistikportal.li and llv.li return a Cloudflare challenge; the XLSX needs a manual download), **Kosovo** (the Agency of Statistics' name search gives a top 5 per birth year 1940–2025 with girls and boys mixed, residents not registrations; its census report's most common name for each age 1–100 is in `data/census-names.json`), **Georgia** (the Public Service Development Agency's name statistics need a reCAPTCHA token and have no years; no newborn rankings on sda.gov.ge, justice.gov.ge or geostat.ge), **Iceland** (the PxWeb API only has names born in 2021 and population snapshots by age, no birth-year series or census tables), **Andorra** (the Observatori de la infància reports checked carry birth counts but no name rankings).
 
-Montenegro's 2023 census names by age group and municipality (MONSTAT release 149/2024, names only) are kept apart in `data/census-names.json`, because an age group isn't a birth year.
+Montenegro's 2023 census names by age group and municipality (MONSTAT release 149/2024, names only) are kept apart in `data/census-names.json`, with Kosovo's 2024 census (most common name for each single age), because an age isn't a birth year.
 
 Not in the time machine (no official yearly newborn file): India, China, Japan, Korea, Mexico, Germany as a whole (national rankings come from private researchers), Belgium (CAPTCHA). Spain and Italy publish rankings or lookups only.
+
+## 🌍 Beyond Europe and North America
+
+Checked October 2026 for an **official** source (statistics office, civil registry, ministry or government open-data portal) of given-name counts by birth year or decade. Third-party sites (forebears, behindthename, nancy.cc) don't count.
+
+| Country | Rating | Agency | Source | Format | Years | What's counted / notes |
+|---|---|---|---|---|---|---|
+| Argentina | 🟢 100 years | RENAPER | historico-nombres.zip (infra.datos.gob.ar) · datos.gob.ar "Nombres propios en Argentina" | CSV | 1922–2015 · 2012–2024 | Every given name by birth year, but no sex column; newborns by province 2012–2024 (host times out from here) |
+| Chile | 🟢 100 years | Registro Civil | guaguas (built from a Registro Civil transparency request) · estadisticas.sed.srcei.cl | CSV · dashboard | 1920–2021 · 2010– | Every name registered, by year and sex. **In the time machine.** |
+| Taiwan | 🟢 100 years | Ministry of the Interior, Household Registration | ris.gov.tw national name report (112namestat.pdf) | PDF | birth decades 1910s–2020s | Living registered population (survivors); top 10 per decade with counts |
+| Brazil | 🟢 50+ | IBGE | servicodados.ibge.gov.br/api/v2/censos/nomes | API | birth decades before 1930–2000s | People alive at the 2010 census, by decade of birth. **In the time machine.** Censo 2022 names portal is behind a Cloudflare challenge |
+| Türkiye | 🟡 20+ | TÜİK | Birth Statistics bulletins (data.tuik.gov.tr) | bulletin tables | about 2000–2025 | Top newborn names with counts; the portal timed out from here |
+| South Africa | 🟠 recent | Stats SA | Recorded live births (P0305) | PDF | 2014–2024 | Top 10 with counts. **In the time machine.** |
+| South Korea | 🟠 recent | Supreme Court, family registration | efamily.scourt.go.kr | lookup tool | 2008– | Birth-registration names by year; no bulk download |
+| China | 🟠 recent | Ministry of Public Security | annual national name report (via Xinhua) | press release | births 2018–2021 | Top newborn names; nothing after 2022 found |
+| Philippines | 🟠 recent | PSA | civil-registration infographics (psa.gov.ph) | PDF | about 2017–2023 | Top 10 with counts; site behind a Cloudflare challenge |
+| Indonesia | 🟠 recent | Dukcapil, Ministry of Home Affairs | press releases | press | 2024–2025 | Top full names; no dataset |
+| Colombia | 🟠 recent | Registraduría Nacional | press releases | press | about 2020–2025 | Top newborn names; no bulk data |
+| Mexico | 🟠 recent | INEGI | Cuéntame de México (tool removed) | web | 2017–2020 pooled | Top 10 pooled over four years, not per year |
+| Uruguay | 🟠 recent | DNREC, Ministry of Education and Culture | gub.uy news releases | press | 2023, 2025 | Top 5–10 newborn names |
+| UAE | 🟠 one-off | FCSC | press (2020) | press | pooled | Emirati newborns only, average shares |
+| India · Pakistan · Bangladesh · Sri Lanka · Nepal | 🔴 | ORGI · NADRA · BBS · RGD · DoNIDCR | — | — | — | Nothing published |
+| Japan | 🔴 | — | — | — | — | Only a private insurer's survey (Meiji Yasuda) |
+| Malaysia · Vietnam · Thailand | 🔴 | JPN · MPS · DOPA | — | — | — | Occasional press quotes only |
+| Saudi Arabia · Egypt · Morocco | 🔴 | GASTAT · CAPMAS · Interior | — | — | — | No series found (a Moroccan 2023 list couldn't be traced to an official release) |
+| Nigeria · Ghana · Kenya · Ethiopia | 🔴 | NPC · BDR · CRS · ICS | — | — | — | No name data published |
+
+Takeaways: only Argentina, Chile and Taiwan have century-long official series, and Taiwan's counts survivors. Türkiye is the best mid-length candidate if TÜİK becomes reachable. South Asia, the Gulf, North Africa and Sub-Saharan Africa (except South Africa) have nothing defensible.
 
 ## ⏳ Found, not in yet (needs a manual download or more work)
 

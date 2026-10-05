@@ -205,7 +205,7 @@ const SHORT = { us: "US", ca: "Canada", au: "NSW", ew: "Eng & Wales", fr: "Franc
 // pronunciations: a dictionary for names people have, then the rules of each name's language (phonetics.js)
 fetch("data/pron.json?v=1").then(r => r.json()).then(d => PH.load(d)).catch(() => {});
 fetch("data/popularity.json?v=6").then(r => r.json()).then(d => { POP = d; }).catch(() => {});
-fetch("data/years.json?v=1").then(r => r.json()).then(d => { YEARS = d; Charts.ready(); }).catch(() => {});
+fetch("data/years.json?v=2").then(r => r.json()).then(d => { YEARS = d; Charts.ready(); }).catch(() => {});
 function popRanks(name, g) {
   if (!POP) return [];
   const sexes = g === "either" ? ["g", "b"] : [(g || gender)[0]], out = [];
@@ -899,14 +899,14 @@ const Charts = (() => {
     const span = place.periods && place.periods[y] ? place.periods[y] : place.period && !(place.single_years || []).includes(y) ? [y, y + place.period - 1] : null;
     $("#chYear").textContent = place.decades ? (y < 1930 && at === 0 && place.key === "br" ? "before 1930" : y + "s") : span && span[1] !== span[0] ? `${span[0]}–${String(span[1]).slice(-2)}` : y;
     $("#chRange").value = at;
-    $("#chNote").textContent = snapshot ? "A ten-year snapshot: the official top 100 for this year, ranks only (no counts)." : place.rule;
+    $("#chNote").textContent = snapshot ? (place.key === "ew" ? "A ten-year snapshot: the official top 100 for this year, ranks only (no counts)." : `Ranks only: the agency published the order, not the counts. ${place.rule || ""}`.trim()) : place.rule;
     $$("#chTicks button").forEach(b => b.setAttribute("aria-current", +b.dataset.year === y));
     if (!full.length) { Hang.render($("#chMobile"), []); $("#chList").innerHTML = `<li class="none">Not published for ${y}.</li>`; return; }
     const max = full[0][1] || 1, counted = full[0][1] != null;
     Hang.render($("#chMobile"), list.map(([n, ct], k) => ({ key: y + n, len: 40 + k * 22 + (k % 2) * 14,
       html: `<button class="charm" data-play-name="${esc(n)}"><small>${k + 1}</small><span>${esc(n)}</span><em>${ct != null ? ct.toLocaleString() : ""}</em></button>` })), { stagger: 60 });
     // with no counts (ranked snapshots) the bar shows rank instead
-    $("#chList").innerHTML = full.map(([n, ct], k) => `<li><span>${k + 1}</span><b>${esc(n)}</b><i style="--w:${(counted ? ct / max * 100 : 100 - k * 100 / full.length).toFixed(1)}%"></i><em>${counted ? ct.toLocaleString() + (place.rounded ? "*" : "") : "rank " + (k + 1)}</em></li>`).join("");
+    $("#chList").innerHTML = full.map(([n, ct], k) => `<li><span>${k + 1}</span><b>${esc(n)}</b><i style="--w:${(counted ? ct / max * 100 : 100 - k * 100 / full.length).toFixed(1)}%"></i><em>${counted ? ct.toLocaleString() + (place.rounded ? "*" : "") : ""}</em></li>`).join("");
     clearTimeout(timer);
     if (!quiet && MB.on) timer = setTimeout(() => playName(list[0][0]), 650);
   }
