@@ -82,7 +82,8 @@ const PH = (() => {
     const raw = word.toLowerCase();
     raw.normalize("NFD").replace(/[a-z][́]/g, (m, i) => (accents.push(m[0]), m));        // an acute accent marks stress (José, Sofía)
     const acc = raw.normalize("NFD").replace(/[^a-ź]/g, "");
-    let w = fold(word);
+    // Hungarian: á is a long open "ah", é a long "ay"; plain a is a rounder sound
+    let w = fold(prof === "hu" ? word.toLowerCase().replace(/á/g, "aa").replace(/é/g, "ei") : word);
     if (!w) return [];
     const ph = [];
     const P = (...x) => ph.push(...x);
@@ -126,10 +127,16 @@ const PH = (() => {
             c === "i" ? (last || !closed ? "IY" : "IH") : c === "o" ? (closed ? "AA" : "OW") : c === "u" ? (closed ? "AH" : "UW") : (last ? "IY" : "IH");
           P(v); k++; continue;
         }
-        P(V[c] || { a: "AA", e: "EH", o: "O" }[c]); k++; continue;
+        P(prof === "hu" && c === "a" ? "AO" : V[c] || { a: "AA", e: "EH", o: "O" }[c]); k++; continue;
       }
       // ── consonants ──
       if (c === next && !isV(c)) { k++; continue; }                                            // doubled letters sound once
+      // Hungarian letter pairs: sz is s, s is sh, zs is zh, cs is ch, gy/ty/ny are soft (Zsuzsanna, György, Anikó)
+      if (prof === "hu") {
+        const hu = three === "dzs" ? ["JH", 3] : { sz: ["S", 2], zs: ["ZH", 2], cs: ["CH", 2], gy: ["JH", 2], ty: ["CH", 2], ny: ["N Y", 2], ly: ["Y", 2] }[two];
+        if (hu) { P(...hu[0].split(" ")); k += hu[1]; continue; }
+        if (c === "c") { P("T", "S"); k++; continue; }
+      }
       if (three === "sch") { P(prof === "de" ? "SH" : "S", "K"); k += 3; continue; }
       if (prof === "it" && three.match(/^sc[ei]/)) { P("SH"); k += 2; continue; }
       if (prof === "it" && /^[cg]i[aeou]/.test(three)) { P(c === "c" ? "CH" : "JH"); k += 2; continue; }  // Giulia: the i only softens the g
