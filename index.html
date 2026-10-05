@@ -432,11 +432,12 @@
   /* the cradle */
   /* the cradle: a wooden rocking cradle; saved names hang as tags tied to its top rail, and it rocks while they play */
   .crib { position: relative; max-width: 900px; margin: 36px auto 0; }
-  .crib-rock { position: relative; transform-origin: 50% 96%; }
-  .crib.rocking .crib-rock { animation: rock 2.4s ease-in-out infinite; }
-  @keyframes rock { 0%, 100% { transform: rotate(-1.6deg); } 50% { transform: rotate(1.6deg); } }
+  /* it always wobbles a little on its rockers; while your names play it rocks properly */
+  .crib-rock { position: relative; transform-origin: 50% 96%; --tip: 1.1deg; animation: rock 3.4s ease-in-out infinite; }
+  .crib.rocking .crib-rock { --tip: 2.4deg; animation-duration: 2s; }
+  @keyframes rock { 0%, 100% { transform: rotate(calc(var(--tip) * -1)); } 50% { transform: rotate(var(--tip)); } }
   .crib-art svg { display: block; width: 100%; height: auto; }
-  #cradleMobile { position: absolute; left: 16%; right: 16%; top: 31%; }
+  #cradleMobile { position: absolute; left: 16%; right: 16%; top: 54%; }
   #cradleMobile .dowel { display: none; }
   #cradleMobile .hang-row { min-height: 0; }
   #cradleMobile .charm { min-width: 0; padding: 10px 14px 9px; }
@@ -514,7 +515,7 @@
     .charm { min-width: 0; padding: 10px 9px 9px; } .charm span { font-size: 1.08rem; } .charm em { display: none; }
     #chMobile .hc:nth-child(n+6) { display: none; }
     #cradleMobile .hang-row { flex-wrap: wrap; row-gap: 10px; } #cradleMobile .hc { flex: 0 0 33%; }
-    #cradleMobile .charm { padding: 6px 9px 5px; } #cradleMobile .charm span { font-size: .9rem; } #cradleMobile .charm .bow { width: 22px; } #cradleMobile { top: 29%; }
+    #cradleMobile .charm { padding: 6px 9px 5px; } #cradleMobile .charm span { font-size: .9rem; } #cradleMobile .charm .bow { width: 22px; } #cradleMobile { top: 53%; }
     #mobile { height: 42svh; }
     .tb-r { gap: 6px; } .tb-r button { padding: 7px 10px; font-size: .66rem; letter-spacing: .08em; }
     .tb-r .wide, .tb-r .snd-l { display: none; } .tb-r .snd i { margin-left: 0; }
@@ -725,7 +726,7 @@
 </footer>
 
 <script src="names.js?v=14"></script>
-<script src="generator.js?v=4"></script>
+<script src="generator.js?v=5"></script>
 <script src="phonetics.js?v=7"></script>
 <script src="musicbox.js?v=6"></script>
 <script src="mobile.js?v=12"></script>
@@ -733,6 +734,6 @@
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=38"></script>
+<script src="app.js?v=41"></script>
 </body>
 </html>

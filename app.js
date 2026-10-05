@@ -404,15 +404,19 @@ const Cradle = (() => {
     Hang.render(root, list.map((n, k) => ({ key: fold(n), len: 18 + (14 - (MB.melody(n).ev.find(e => e.kind === "main")?.i ?? 4)) * 3 + (k % 3) * 14,
       html: `<button class="charm" data-play-name="${esc(n)}"><svg class="bow" viewBox="0 0 40 22" aria-hidden="true"><path d="M20 11c-6-9-17-9-17 0s11 9 17 0c6-9 17-9 17 0s-11 9-17 0zM20 11l-5 10M20 11l5 10"/></svg><span>${esc(n)}</span></button><button class="untie" data-untie="${esc(n)}" aria-label="Take ${esc(n)} out of the cradle">×</button>` })));
   }
-  // a wooden rocking cradle: end posts with arched caps, slats, a linen mattress, rockers and one ribbon bow
+  // a wooden rocking cradle: end posts with arched caps, slats, a linen mattress, rockers, a pink bow on one post and a blue one on the other
   function crib() {
     const slats = Array.from({ length: 13 }, (_, k) => `<rect x="${176 + k * 44}" y="150" width="13" height="186" rx="5" fill="url(#cw)"/>`).join("");
-    return `<svg viewBox="0 0 900 470" aria-hidden="true">
+    return `<svg viewBox="0 -250 900 720" aria-hidden="true">
       <defs><linearGradient id="cw" x1="0" x2="1"><stop offset="0" stop-color="#f1dfbf"/><stop offset=".55" stop-color="#e3c697"/><stop offset="1" stop-color="#cda672"/></linearGradient>
         <linearGradient id="cwd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8cc9e"/><stop offset="1" stop-color="#c29966"/></linearGradient>
         <linearGradient id="linen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffbf3"/><stop offset="1" stop-color="#eee2cd"/></linearGradient>
         <filter id="cshadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#5a3c28" flood-opacity=".16"/></filter></defs>
       <ellipse cx="450" cy="452" rx="370" ry="12" fill="rgba(90,60,40,.12)"/>
+      <path d="M786 90 L786 -196 Q786 -226 756 -226 L470 -226" stroke="url(#cwd)" stroke-width="11" fill="none" stroke-linecap="round"/>
+      <circle cx="786" cy="-200" r="9" fill="url(#cw)"/>
+      <path d="M462 -226 Q450 -226 450 -212" stroke="#9a9ca0" stroke-width="2" fill="none"/>
+      <g id="cribMobile"></g>
       <g filter="url(#cshadow)">
         <path d="M58 398 Q450 476 842 398" stroke="url(#cwd)" stroke-width="17" fill="none" stroke-linecap="round"/>
         <path d="M150 300 C260 268 640 268 750 300 L750 338 L150 338 Z" fill="url(#linen)"/>
@@ -424,10 +428,46 @@ const Cradle = (() => {
         <rect x="108" y="116" width="26" height="296" rx="8" fill="url(#cw)"/><rect x="766" y="116" width="26" height="296" rx="8" fill="url(#cw)"/>
         <path d="M96 124 Q121 74 146 124" stroke="url(#cwd)" stroke-width="13" fill="none" stroke-linecap="round"/>
         <path d="M754 124 Q779 74 804 124" stroke="url(#cwd)" stroke-width="13" fill="none" stroke-linecap="round"/>
-        <g transform="translate(121 150)" fill="#a23d55" opacity=".9"><path d="M0 0c-10-9-24-8-24 0s14 9 24 0c10-9 24-8 24 0s-14 9-24 0z"/><path d="M0 0l-7 22 5-2 2 5zM0 0l7 22-5-2-2 5z"/><circle r="3.4"/></g>
+        <g transform="translate(121 150)" fill="#d8a3ad"><path d="M0 0c-10-9-24-8-24 0s14 9 24 0c10-9 24-8 24 0s-14 9-24 0z"/><path d="M0 0l-7 22 5-2 2 5zM0 0l7 22-5-2-2 5z"/><circle r="3.4" fill="#c48893"/></g>
+        <g transform="translate(779 150)" fill="#a3bacf"><path d="M0 0c-10-9-24-8-24 0s14 9 24 0c10-9 24-8 24 0s-14 9-24 0z"/><path d="M0 0l-7 22 5-2 2 5zM0 0l7 22-5-2-2 5z"/><circle r="3.4" fill="#8aa3ba"/></g>
       </g></svg>`;
   }
-  if ($("#cribArt")) $("#cribArt").innerHTML = crib();
+  if ($("#cribArt")) { $("#cribArt").innerHTML = crib(); spinMobile(); }
+  // the little mobile above the cradle: a hoop of felt charms that turns slowly, a little faster while names play
+  function spinMobile() {
+    const g = $("#cribMobile"), NS = "http://www.w3.org/2000/svg", cx = 450, cy = -120, rx = 150, ry = 24, top = -212;
+    const SHAPES = {
+      moon: c => `<path d="M8 -14 A15 15 0 1 0 8 14 A11 11 0 1 1 8 -14Z" fill="${c}"/><path d="M4 -10 A11 11 0 0 0 4 10" stroke="rgba(90,70,55,.35)" stroke-dasharray="2 3" fill="none"/>`,
+      star: c => `<path d="M0 -15 L4.4 -5 15 -4.6 6.8 2.4 9.4 13 0 7 -9.4 13 -6.8 2.4 -15 -4.6 -4.4 -5Z" fill="${c}"/><path d="M0 -9 L2.6 -3 9 -2.8 4 1.5 5.7 8 0 4.4 -5.7 8 -4 1.5 -9 -2.8 -2.6 -3Z" stroke="rgba(90,70,55,.3)" stroke-dasharray="2 2.5" fill="none"/>`,
+      cloud: c => `<g fill="${c}"><circle cx="-9" cy="2" r="8"/><circle cx="0" cy="-4" r="10"/><circle cx="10" cy="1" r="8"/><rect x="-16" y="1" width="32" height="9" rx="4.5"/></g><path d="M-9 4 Q0 -2 9 4" stroke="rgba(90,70,55,.3)" stroke-dasharray="2 2.5" fill="none"/>`,
+    };
+    const charms = [["moon", "#b9c6ae", 70], ["star", "#e6cf9f", 52], ["cloud", "#efe3cf", 84], ["star", "#e2c3b5", 60], ["cloud", "#cdd8e3", 76]].map(([k, c, L], i) => {
+      const el = document.createElementNS(NS, "g");
+      el.innerHTML = `<line class="str" stroke="rgba(140,108,84,.55)" stroke-width="1.1"/><g class="ch">${SHAPES[k](c)}</g>`;
+      g.appendChild(el); return { el, a: i / 5 * Math.PI * 2, L };
+    });
+    const hoop = document.createElementNS(NS, "g");
+    hoop.innerHTML = [0, 1, 2, 3].map(k => { const a = k * Math.PI / 2 + .4; return `<line x1="${cx}" y1="${top}" x2="${cx + rx * Math.cos(a)}" y2="${cy + ry * Math.sin(a)}" stroke="rgba(150,118,92,.5)" stroke-width="1"/>`; }).join("") +
+      `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="none" stroke="url(#cwd)" stroke-width="6"/>`;
+    g.appendChild(hoop);
+    let rot = 0, last = performance.now(), on = true;
+    new IntersectionObserver(([e]) => { on = e.isIntersecting; if (on) { last = performance.now(); requestAnimationFrame(frame); } }).observe($("#crib"));
+    function frame(now) {
+      if (!on) return;
+      rot += (now - last) / 1000 * ($("#crib").classList.contains("rocking") ? .6 : .22); last = now;
+      const order = charms.map(c => {
+        const a = c.a + rot, x = cx + rx * Math.cos(a), y = cy + ry * Math.sin(a), d = (Math.sin(a) + 1) / 2, s = .82 + d * .3;
+        c.el.querySelector(".str").setAttribute("x1", x); c.el.querySelector(".str").setAttribute("y1", y);
+        c.el.querySelector(".str").setAttribute("x2", x); c.el.querySelector(".str").setAttribute("y2", y + c.L);
+        c.el.querySelector(".ch").setAttribute("transform", `translate(${x} ${y + c.L + 12}) scale(${s}) rotate(${Math.sin(now / 900 + c.a) * 6})`);
+        c.el.style.opacity = .6 + d * .4; return { c, d };
+      }).sort((p, q) => p.d - q.d);
+      // the back half of the hoop sits behind the far charms, the near ones swing in front of it
+      for (const { c, d } of order) if (d < .5) g.insertBefore(c.el, hoop); else g.appendChild(c.el);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
   async function playAll() {
     $("#crib").classList.add("rocking");
     for (const n of list) {
@@ -1087,9 +1127,26 @@ soundUI();
 // the top bar turns to paper once you leave the box
 new IntersectionObserver(([en]) => $("#topbar").classList.toggle("solid", !en.isIntersecting), { rootMargin: "-64px 0px 0px 0px" }).observe($("#stage"));
 $("#cradleBtn").onclick = () => $("#cradle").scrollIntoView({ behavior: "smooth" });
+// the count climbs from 1, faster and faster (1, 2, 3, 4 … 1,000 … 100,000 …), and keeps climbing as more names arrive
+const Count = (() => {
+  let shown = 0, goal = 0, from = 1, t0 = 0, dur = 0, raf = 0;
+  const el = $("#totalLine");
+  function tick(now) {
+    const t = Math.min(1, (now - t0) / dur);
+    shown = Math.max(shown, Math.round(from * Math.pow(goal / from, t)));
+    el.textContent = `${shown.toLocaleString()} names`;
+    raf = t < 1 ? requestAnimationFrame(tick) : 0;
+  }
+  return n => {
+    if (n <= goal) return;
+    goal = n; from = Math.max(1, shown); t0 = performance.now(); dur = shown ? 1600 : 3600;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { shown = n; el.textContent = `${n.toLocaleString()} names`; return; }
+    if (!raf) raf = requestAnimationFrame(tick);
+  };
+})();
 addEventListener("namesdb", () => {
   const gen = ROOT_NAMES.length + ["girl", "boy", "either"].reduce((s, g) => s + invented(g).length, 0);
-  $("#totalLine").textContent = `${(REAL.length + DB.length + gen).toLocaleString()} names`;
+  Count(REAL.length + DB.length + gen);
 });
 
 // shared link: ?mom=Priya&dad=Daniel&g=girl opens straight into the duet

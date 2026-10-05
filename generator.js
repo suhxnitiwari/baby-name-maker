@@ -113,14 +113,15 @@ function buildRootNames() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 2. INVENTED NAMES: syllable mashups, 100,000+ per gender.
+// 2. INVENTED NAMES: syllable mashups, 125,000+ per gender (250,000+ in all, after real names are taken out).
 // ─────────────────────────────────────────────────────────────
 const PARTS = {
   girl: {
     start: `A Ad Al Am An Ar Au Bel Bri Ca Cal Ce Cla Co Da Del E El Em Ev Fa Fe Flo Gi Gwen Ha I Il Is Ja Jo Ka Ki La Le Li
       Lu Ma Mi Mo Na Ne No O Pe Ri Ro Sa Se Si So Ta Te Va Ve Vi Wi Ya Za Ze Ry Ari Eli Cora Lo Mei Noe Rae Tia Bea Fio Gia
       Lia Mae Sky Ash Ivy Bry Cle Dae Ema Fay Gem Hal Jes Kae Lyr Mar Nev Per Rhi Sel Tal Val Wyn Yva Zin
-      Aza Cae Dia Ela Fen Gwy Hel Ila Jun Kal Lae Mir Nai Oli Pai Ros Sab Una Vel Yel Zah Ama Ber Cel`,
+      Aza Cae Dia Ela Fen Gwy Hel Ila Jun Kal Lae Mir Nai Oli Pai Ros Sab Una Vel Yel Zah Ama Ber Cel
+      Ade Bri Cia Dal Eva Fia Ghi Ina Jae Kia Lea Mila Nia Oda Pia Rea Sia Tea Ula Via Wren Xe Yasa Zia Ala Esa`,
     mid: "la li le lo na ni ne no ra ri re ro ma mi me ta ti sa si se da di va vi ve ya ca ce ci ba be bi ly ny ry lia ria ola ena ise ana eli",
     end: "a ah ia ie y ey elle ella etta ette ina ine lyn ne na ra ssa ya ara ora ise anne aya ena ica ika ila ily essa iana ielle ri ani ali ari eya ova une isa lie lee nie sha",
   },
@@ -129,7 +130,8 @@ const PARTS = {
       Jo Ju Ka Ke Ko La Le Lu Ma Mar Mi Na Ni O Or Ra Re Ro Sa Se Si Ta Te Tho Ty Va Vi Wil Za Ze Bren Cor Dex Gav Jas Kel
       Ron Tav Zan Ben Ash Bar Cad Dom Fen Gid Hal Jor Kas Lan Mal Nas Pax Ros Sev Tor Vas Wes Xan Yor Zev
       Bas Ely Hen Kal Lev Mat Nol Rad Sam Tam Vic Zak
-      Ald Bel Cai Dev Eli Fal Hab Ivo Jai Kol Lio Mav Ned Osk Ral Sol Tib Ulf Wel Yan`,
+      Ald Bel Cai Dev Eli Fal Hab Ivo Jai Kol Lio Mav Ned Osk Ral Sol Tib Ulf Wel Yan
+      Ari Bod Cal Dag Ean Fil Gan Har Ian Jov Kai Leo Mik Nik Oti Pel Rio Sti Teo Uri Vin Wal Xav Yuv Zed`,
     mid: "ba bi da de di do ga ka ki la le li lo ma mi mo na ne ni no ra re ri ro sa se si ta te ti to va vi za zi dri bri the xa",
     end: "an en in on er el ar or us as is os o io iel ius ian ias ett ton son den ric rick mir vin win ard ald iah ix ex ax ek ik ir ul ent eon ael ito ando ren dan ro ver",
   },
