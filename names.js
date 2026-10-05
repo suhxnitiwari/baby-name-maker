@@ -3170,6 +3170,7 @@ Sarvar|b|Uzbek|Persian||leader, chief|
 Behzod|b|Uzbek|Persian||well-born|Kamoliddin Behzod, master miniature painter of Herat
 Firdavs|b|Uzbek|Persian||paradise|
 Ozod|b|Uzbek|Persian||free|
+Suhani|g|Hindi|Hindi||pleasant, agreeable|Written सुहानी, the feminine of the Hindi word सुहाना (suhānā), “pleasant, agreeable, nice”, which comes from Sanskrit शुभान (śubhāná). (Wiktionary, after McGregor’s Oxford Hindi–English Dictionary)
 `;
 
 const REAL = REAL_RAW.trim().split("\n").map(line => {
