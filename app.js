@@ -67,6 +67,78 @@ function addStoried(rows) {
     if (x.o !== grp && [x.o, ...(x.oo || [])].some(c => list.split(",").includes(c)) && !(x.oo || []).includes(grp)) x.oo = [...(x.oo || []), grp];
   fillSelects();
 }
+// ── the sacred thread (data/sacred.json, built by scripts/build_sacred.py from data/sacred/*.tsv) ──
+// every tie to a sacred text says how close it is: ● the name is in the text, ◐ a related form of a name in the text,
+// ◇ a sacred connection (a figure, saint or concept, not a name in the text), ○ cultural usage (common in the tradition)
+const TRADITION = { Hindu: "Hindu traditions", Buddhist: "Buddhist traditions", Jewish: "Jewish tradition", Christian: "Christian tradition", Islamic: "Islamic tradition",
+  Sikh: "Sikh tradition", Jain: "Jain tradition", Zoroastrian: "Zoroastrian tradition" };
+const PERSONLIKE = new Set(["human", "prophet", "sage", "saint", "disciple", "royal", "deity", "bodhisattva", "angel"]);
+const SACRED = new Map(); // folded name → cited references
+let SACRED_FIG = {};
+const FIG_FORMS = new Map(); // figure → every name form it carries, across traditions (Abraham, Avraham, Ibrahim)
+const sacredReady = Promise.all([fetch("data/sacred.json?v=1").then(r => r.ok ? r.json() : null).catch(() => null), storied]).then(([d]) => {
+  if (!d) return;
+  SACRED_FIG = d.f;
+  const have = new Map(ALL_NAMED.map(x => [fold(x.n), x]));
+  for (const [n, sex, rows] of d.n) {
+    const refs = rows.map(([t, c, text, at, url, s, role, fid, orig, tr, rel, occ]) =>
+      ({ t: d.t[t], c: d.c[c], text, at, url, s, role, fid, orig, tr, rel, occ, kind: (d.f[fid] || [])[1] || "" }));
+    const k = fold(n);
+    SACRED.set(k, [...(SACRED.get(k) || []), ...refs]);
+    for (const r of refs) if (r.s !== "s") FIG_FORMS.set(r.fid, [...(FIG_FORMS.get(r.fid) || []), { n, ...r }]);
+    const named = refs.filter(r => r.s !== "s" && r.role !== "w" && PERSONLIKE.has(r.kind)), cur = have.get(k);
+    if (cur) { cur.r = [...new Set([...cur.r, ...named.map(r => r.t)])]; continue; }
+    // a person named in a text but not yet a known given name: kept for "named in the text" searches only
+    if (!named.length || !sex) continue;
+    const e = { n, g: { g: "girl", b: "boy", e: "either" }[sex], o: "", l: "", r: [...new Set(named.map(r => r.t))], m: "", src: "", type: "real", x: [], oo: [], sacredOnly: true };
+    REAL.push(e); ALL_NAMED.push(e); have.set(k, e); TAKEN.add(k); indexName(e);
+  }
+  fillSelects();
+  const known = new Set([...$("#fText").options].map(o => o.value));
+  $("#fText").insertAdjacentHTML("beforeend", [...new Set(d.c)].filter(c => !known.has(c) && !Object.values(TEXT_ALIAS).flat().includes(c)).map(c => `<option value="${esc(c)}">the ${esc(c)}</option>`).join(""));
+}).catch(e => console.error(e));
+const sacredOf = x => SACRED.get(fold(x.n)) || [];
+// how close a name sits to a tradition (or to any, when none is chosen): 3 in the text, 2 a sacred connection, 1 cultural usage, 0 none
+function closeness(x, trad) {
+  const refs = sacredOf(x).filter(r => !trad || r.t === trad);
+  if (refs.some(r => r.s === "a" && r.role !== "w")) return 3;
+  if (refs.length || (x.x || []).length && (!trad || x.r.includes(trad))) return 2;
+  return (trad ? x.r.includes(trad) : x.r.some(r => TRADITION[r])) ? 1 : 0;
+}
+const CLOSE_NEED = { "": 1, sacred: 2, text: 3 };
+const TORAH = new Set(["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]);
+const TEXT_ALIAS = { "Hebrew Bible": ["Tanakh", "Old Testament"], Bible: ["Tanakh", "Old Testament", "New Testament"], Quran: ["Qur'an"], Ramayana: ["Valmiki Ramayana"],
+  Puranas: ["Bhagavata Purana", "Vishnu Purana", "Shiva Purana", "Markandeya Purana", "Devi Mahatmya"], Vedas: ["Rigveda", "Samaveda", "Yajurveda", "Atharvaveda"] };
+const inText = (x, t) => (x.x || []).includes(t) || sacredOf(x).some(r => r.c === t || (TEXT_ALIAS[t] || []).includes(r.c) || t === "Torah" && r.c === "Tanakh" && TORAH.has(r.text));
+function sacredOk(x, f) {
+  if (x.sacredOnly && f.close !== "text") return false;
+  if (f.text && !inText(x, f.text)) return false;
+  if (f.text && f.close === "text" && !sacredOf(x).some(r => r.s === "a" && (r.c === f.text || (TEXT_ALIAS[f.text] || []).includes(r.c) || f.text === "Torah" && TORAH.has(r.text)))) return false;
+  if (!f.religion && !f.close) return true;
+  return closeness(x, f.religion) >= CLOSE_NEED[f.close || ""];
+}
+const MARK = { a: ["●", "In the text"], r: ["◐", "Related form"], s: ["◇", "Sacred connection"] };
+function threadHTML(x) {
+  const refs = sacredOf(x).filter(r => r.kind !== "place" && r.kind !== "tribe");
+  const byTrad = new Map();
+  for (const r of refs) if (!byTrad.has(r.t) || byTrad.get(r.t).length < 3) byTrad.set(r.t, [...(byTrad.get(r.t) || []), r]);
+  const lines = [...byTrad.values()].flat().map(r => {
+    const [m, word] = MARK[r.s], fig = (SACRED_FIG[r.fid] || [])[0];
+    const what = r.role === "e" ? `an epithet${r.rel ? " · " + r.rel.replace(/^epithet of /, "of ") : ""}` : r.role === "d" ? "a divine name" : r.role === "t" ? "a title" : r.rel || (fig && fold(fig.split(",")[0]) !== fold(x.n) ? fig : fig || "");
+    return `<li><span class="mark m-${r.s}" title="${word}">${m}</span><div><b>${esc(r.c)}</b>${r.at ? ` · ${r.url ? `<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.at)} ↗</a>` : esc(r.at)}` : ""}
+      <small>${word}${what ? " · " + esc(what) : ""}${r.occ ? ` · named ${r.occ.toLocaleString()} time${r.occ === 1 ? "" : "s"}` : ""}</small>
+      ${r.orig || r.tr ? `<span class="orig">${esc(r.orig || "")}${r.orig && r.tr && r.tr !== r.orig ? " · " : ""}${r.tr && r.tr !== r.orig ? esc(r.tr) : ""}</span>` : ""}</div></li>`;
+  });
+  const k = fold(x.n), elsewhere = [];
+  for (const fid of new Set(refs.map(r => r.fid))) for (const o of FIG_FORMS.get(fid) || [])
+    if (fold(o.n) !== k && !elsewhere.some(e => e.n === o.n)) elsewhere.push(o);
+  if (elsewhere.length) lines.push(`<li><span class="mark">↔</span><div><small>The same figure as ${elsewhere.slice(0, 4).map(o =>
+    `<button class="inline" data-spell="${esc(o.n)}">${esc(o.n)}</button> (${esc(o.c)}${o.at ? " " + esc(o.at.replace(/^Qur'an /, "")) : ""})`).join(", ")}</small></div></li>`);
+  const cultural = !refs.length ? x.r.filter(r => TRADITION[r]) : [];
+  if (!lines.length && !cultural.length) return "";
+  return `<div class="sthread"><p class="sthread-h">Sacred thread</p><ul>${lines.join("")}${cultural.map(t =>
+    `<li><span class="mark m-c" title="Cultural usage">○</span><div><b>${esc(TRADITION[t])}</b><small>Cultural usage · common in the tradition; no cited text yet</small></div></li>`).join("")}</ul></div>`;
+}
 const dbReady = Promise.all([fetch("data/names-db.tsv?v=3").then(r => r.text()), storied]).then(([t]) => {
   const ours = new Set(ALL_NAMED.map(x => fold(x.n)));
   for (const line of t.split("\n")) {
@@ -149,16 +221,16 @@ document.addEventListener("click", e => { const b = e.target.closest("[data-gend
 document.addEventListener("change", e => { if (e.target.classList.contains("g-select")) setGender(e.target.value); });
 
 // ── selects filled from the data ──
-function fillSelect(el, anyLabel, values) {
+function fillSelect(el, anyLabel, values, label = v => v) {
   const cur = el.value;
-  el.innerHTML = `<option value="">${anyLabel}</option>` + values.map(v => `<option>${esc(v)}</option>`).join("");
+  el.innerHTML = `<option value="">${anyLabel}</option>` + values.map(v => `<option value="${esc(v)}">${esc(label(v))}</option>`).join("");
   if (values.includes(cur)) el.value = cur;
   fit(el);
 }
 function fillSelects() {
   const cultures = uniq([...ALL_NAMED.flatMap(x => [x.o, ...(x.oo || [])]), DB_READY ? "Israeli" : ""]);
   $$('[data-fill="culture"]').forEach(el => fillSelect(el, el.dataset.any || "any", cultures));
-  $$('[data-fill="religion"]').forEach(el => fillSelect(el, el.dataset.any || "any faith", uniq(ALL_NAMED.flatMap(x => x.r))));
+  $$('[data-fill="religion"]').forEach(el => fillSelect(el, el.dataset.any || "any faith", uniq(ALL_NAMED.flatMap(x => x.r)).sort((a, b) => !!TRADITION[b] - !!TRADITION[a]), v => TRADITION[v] || v));
   $$('[data-fill="lang"]').forEach(el => fillSelect(el, el.dataset.any || "any language", uniq(ALL_NAMED.map(x => x.l))));
 }
 const fillThemes = () => $$('[data-fill="theme"]').forEach(el => fillSelect(el, el.dataset.any || "anything", THEME_ORDER[gender]));
@@ -199,10 +271,9 @@ function lenOk(name, len) {
 function matches(x, f, letters = true) {
   if (!genderOk(x)) return false;
   if (f.theme && !themesOf(x).includes(f.theme)) return false;
-  if (f.religion && !x.r.includes(f.religion)) return false;
+  if (!sacredOk(x, f)) return false;
   if (f.culture && x.o !== f.culture && !(x.oo || []).includes(f.culture)) return false;
   if (f.lang && x.l !== f.lang) return false;
-  if (f.text && !(x.x || []).includes(f.text)) return false;
   if (letters) {
     const n = fold(x.n);
     if (f.first2 && !n.startsWith(f.first2)) return false;
@@ -218,7 +289,7 @@ function buildPools(f) {
     real: shuffle(REAL.filter(x => matches(x, f))),
     root: shuffle(ROOT_NAMES.filter(x => matches(x, f))),
     // official records: weighted toward names more people actually have; they only know culture when it's Israel
-    db: !needsMeaning || (f.culture && !f.theme && !f.religion && !f.lang && !f.text) ? DB.filter(x => matches(x, f)).map(x => [Math.random() ** (1 / (1 + Math.log10(x.cnt))), x]).sort((a, b) => b[0] - a[0]).map(p => p[1]) : [],
+    db: !needsMeaning || (f.culture && !f.theme && !f.religion && !f.lang && !f.text) || ((f.religion || f.text) && f.close && !f.culture && !f.theme && !f.lang) ? DB.filter(x => matches(x, f)).map(x => [Math.random() ** (1 / (1 + Math.log10(x.cnt))), x]).sort((a, b) => b[0] - a[0]).map(p => p[1]) : [],
     invented: !needsMeaning ? shuffle(invented(gender).filter(x => matches(x, f))) : [],
   };
   pools.ptr = { real: 0, db: 0, root: 0, invented: 0 };
@@ -246,7 +317,7 @@ const RELAX = [["vibe", 1, f => `the ${FEEL_LABEL[f.vibe] || f.vibe} feel`], ["l
   ["ends", 5, f => `ending in “${f.ends}”`], ["start", 6, f => `starting with “${f.first2}”`]];
 const CHECK = {
   vibe: (x, f) => vibeMatch(x, f.vibe), len: (x, f) => lenOk(x.n, f.len), lang: (x, f) => x.l === f.lang, culture: (x, f) => x.o === f.culture || (x.oo || []).includes(f.culture),
-  text: (x, f) => (x.x || []).includes(f.text), religion: (x, f) => x.r.includes(f.religion), theme: (x, f) => themesOf(x).includes(f.theme),
+  text: (x, f) => inText(x, f.text), religion: (x, f) => sacredOk(x, { ...f, text: "" }), theme: (x, f) => themesOf(x).includes(f.theme),
   ends: (x, f) => fold(x.n).endsWith(f.ends), start: (x, f) => fold(x.n).startsWith(f.first2),
 };
 function closest(f) {
@@ -266,7 +337,7 @@ function closest(f) {
     if (n && (!best || cost < best.cost || n > best.n)) best = { R, cost, n };
   }
   const items = [];
-  for (const [m, xs] of byMask) if (!best || (m & ~best.R) === 0) items.push(...xs);
+  for (const [m, xs] of byMask) if (!best || (m & ~best.R) === 0) for (const x of xs) items.push(x);
   return { loosened: active.filter((_, i) => !best || best.R & (1 << i)).map(([, , say]) => say(f)), items };
 }
 // new names that keep the letters, length and feel exactly (meanings are left to the parents)
@@ -361,7 +432,7 @@ function rowHTML(x, o = {}) {
   const r = reg(x), m = MB.melody(x.n, "", ownersOf(x)), syl = sylCount(x.n);
   return `<article class="row${o.big ? " big" : ""}" data-r="${r}">
     <button class="row-hit" data-open aria-expanded="false">
-      <span class="row-id">${x.pick ? `<em class="pick">${esc(x.pick)}</em>` : ""}No. ${hexId(x.n)} · ${esc(x.badge || KIND_LABEL[x.type])}</span>
+      <span class="row-id">${x.pick ? `<em class="pick">${esc(x.pick)}</em>` : ""}No. ${hexId(x.n)} · ${esc(x.badge || (x.sacredOnly ? `Named in the ${(sacredOf(x).find(r => r.s === "a") || {}).c || "texts"}` : KIND_LABEL[x.type]))}</span>
       <span class="row-name">${x.prov && o.big ? coloredName(x.n, ownersOf(x)) : esc(x.n)}</span>
       <span class="row-where">${esc(whereOf(x))} · ${syl} syllable${syl === 1 ? "" : "s"}</span>
       <span class="row-notes"><i>♪</i> ${notesOf(m)}</span>
@@ -384,6 +455,7 @@ function moreHTML(x) {
         ${x.m ? `<p class="mean">“${esc(x.m)}”</p>` : `<p class="mean none">${isNew ? "A brand-new name. No meaning yet: it's yours to give." : x.x && x.x.length ? `A name from the ${esc(x.x[0])}.` : "A real name, from official birth records."}</p>`}
         ${x.src ? `<p class="src">${esc(x.src)}</p>` : x.ety ? `<p class="src">${esc(x.ety)} <small>(Wiktionary)</small></p>` : ""}
         ${x.prov ? provHTML(x) : ""}
+        ${threadHTML(x)}
       </div>
       <dl class="dl">
         ${(() => { const S = /[\s-]/.test(x.n) ? null : MB.say(x.n); return S && S.say ? `<div><dt>Said</dt><dd>${esc(S.say)} <small>${esc(S.source)}</small></dd></div><div><dt>Sound shape</dt><dd>${S.shape < -.33 ? "rounded ◯" : S.shape > .33 ? "sharp ◇" : "in between"}</dd></div>` : ""; })()}
@@ -635,12 +707,12 @@ const Spell = (() => {
 // ─────────────────────────────────────────────────────────────
 const FEEL_LABEL = { soft: "soft", bold: "bold", elegant: "romantic", timeless: "timeless", modern: "modern", playful: "playful", rare: "rare" };
 const Find = (() => {
-  const F = { vibe: "", culture: "", theme: "", first2: "", ends: "", len: "", last: "", religion: "", lang: "", text: "" };
+  const F = { vibe: "", culture: "", theme: "", first2: "", ends: "", len: "", last: "", religion: "", close: "", lang: "", text: "" };
   let pools = null, seen = new Set();
   const read = () => {
     F.culture = $("#fRoots").value; F.theme = $("#fTheme").value;
     F.first2 = fold($("#fStart").value); F.ends = fold($("#fEnd").value); F.len = $("#fLen").value; F.last = $("#fLast").value.trim();
-    F.religion = $("#fFaith").value; F.text = $("#fText").value; F.lang = $("#fLang").value;
+    F.religion = $("#fFaith").value; F.close = $("#fClose").value; F.text = $("#fText").value; F.lang = $("#fLang").value;
   };
   const pressVibe = () => $$('#quick [data-key="vibe"] button').forEach(b => b.setAttribute("aria-pressed", b.dataset.v === F.vibe));
   $('#quick [data-key="vibe"]').addEventListener("click", e => {

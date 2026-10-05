@@ -108,6 +108,23 @@ if os.path.exists(mp):
             if v.get("m") or v.get("ety"):
                 db.execute("INSERT INTO meanings VALUES (?,?,?,?,?,?)", (nid, v.get("m") or "", v.get("ety"), v.get("root"), "wiktionary", None))
 
+# ── the sacred layer (data/sacred/*.tsv, format in docs/sacred-format.md) ──
+import csv, glob
+for path in sorted(glob.glob(os.path.join(DATA, "sacred", "*.tsv"))):
+    if path.endswith("-review.tsv"):
+        continue
+    for r in csv.DictReader(open(path, encoding="utf-8"), delimiter="\t", quoting=csv.QUOTE_NONE):
+        if not (r.get("name") or "").strip() or not r.get("figure_id") or r.get("status") not in ("attested", "related", "association"):
+            continue
+        sex = r.get("sex", "").strip() or None
+        db.execute("INSERT OR IGNORE INTO sacred_figures VALUES (?,?,?,?)", (r["figure_id"], r["figure"], r.get("entity_type") or None, sex))
+        nid = name_id(r["name"].strip(), g=sex, l=r.get("language"), kind="sacred")
+        occ = (r.get("occurrences") or "").strip()
+        db.execute("INSERT INTO sacred_references VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                   (nid, r["figure_id"], r["tradition"], r.get("subtradition") or None, r["corpus"], r.get("text") or None, r.get("passage") or None, r.get("url") or None,
+                    r.get("original") or None, r.get("translit") or None, r.get("language") or None, r.get("name_role") or None, r["status"], r.get("relation") or None,
+                    int(occ) if occ.isdigit() else None, r.get("source") or None, float(r["confidence"]) if r.get("confidence") else None))
+
 # ── relationships ──
 by_norm = collections.defaultdict(list)
 for d, i in ids.items(): by_norm[norm(d)].append(i)
@@ -234,7 +251,7 @@ checks = [
 ]
 print()
 for label, ok in checks: print(("✓ " if ok else "✗ ") + label)
-for t in ["names", "name_forms", "meanings", "associations", "name_references", "relationships", "pronunciations", "syllables", "lullabytes", "popularity_observations", "sources"]:
+for t in ["names", "name_forms", "meanings", "associations", "name_references", "sacred_figures", "sacred_references", "relationships", "pronunciations", "syllables", "lullabytes", "popularity_observations", "sources"]:
     print(f"{t:24} {q(f'SELECT COUNT(*) FROM {t}'):>10,}")
 db.execute("VACUUM")
 db.close()

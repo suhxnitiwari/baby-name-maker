@@ -81,6 +81,34 @@ CREATE TABLE name_references (
   source_id            TEXT REFERENCES sources(source_id)
 );
 
+-- the sacred layer: one figure (Abraham / Avraham / Ibrāhīm) belongs to many traditions; every tie cites a passage
+CREATE TABLE sacred_figures (
+  figure_id            TEXT PRIMARY KEY,      -- Wikidata QID when one exists, else 'slug:<tradition>:<name>'
+  label                TEXT NOT NULL,
+  entity_type          TEXT,                  -- human | deity | prophet | sage | saint | disciple | bodhisattva | angel | royal | demon | place | tribe | epithet | concept …
+  sex                  TEXT
+);
+CREATE TABLE sacred_references (
+  name_id              INTEGER NOT NULL REFERENCES names(name_id),
+  figure_id            TEXT NOT NULL REFERENCES sacred_figures(figure_id),
+  tradition            TEXT NOT NULL,         -- Jewish | Christian | Islamic | Hindu | Buddhist | Sikh | Jain …
+  subtradition         TEXT,
+  text_corpus          TEXT NOT NULL,         -- Tanakh, New Testament, Qur'an, Mahabharata, Pali Canon, Guru Granth Sahib …
+  text_name            TEXT,                  -- Genesis, Adi Parva, Digha Nikaya
+  passage              TEXT,                  -- first occurrence: Exodus 15:20 · Qur'an 3:36 · Gita 1.4 · DN 16
+  passage_url          TEXT,
+  original_form        TEXT,                  -- מִרְיָם · إِبْرَاهِيم · कृष्ण
+  transliteration      TEXT,                  -- Miryām · Ibrāhīm · Kṛṣṇa
+  language             TEXT,
+  name_role            TEXT,                  -- personal | epithet | title | divine | word
+  attestation          TEXT NOT NULL,         -- attested (in the text) | related (a later or variant form) | association (connected, not a name in the text)
+  relation             TEXT,                  -- 'epithet of Arjuna', 'later form of Miriam'
+  occurrence_count     INTEGER,               -- NULL when not counted, never 0 for unknown
+  source               TEXT,
+  confidence           REAL
+);
+CREATE INDEX sacred_name ON sacred_references(name_id);
+
 CREATE TABLE relationships (
   name_id              INTEGER NOT NULL REFERENCES names(name_id),
   related_name_id      INTEGER NOT NULL REFERENCES names(name_id),

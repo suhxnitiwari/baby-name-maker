@@ -266,6 +266,14 @@
   .mean { font: 400 1.7rem/1.15 var(--serif); margin: 0; }
   .mean.none { font-size: 1.2rem; color: var(--muted); font-style: italic; }
   .src { color: var(--muted); font-size: .86rem; margin: 6px 0 0; }
+  .sthread { margin-top: 16px; }
+  .sthread-h { font: .6rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+  .sthread ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .sthread li { display: grid; grid-template-columns: 18px 1fr; gap: 6px; font-size: .9rem; line-height: 1.35; }
+  .sthread b { font-weight: 500; } .sthread a { color: inherit; text-underline-offset: 3px; }
+  .sthread small { display: block; color: var(--muted); font-size: .76rem; }
+  .sthread .orig { display: block; font-size: .95rem; margin-top: 1px; }
+  .sthread .mark { font-size: .8rem; line-height: 1.6; color: var(--muted); } .sthread .m-a { color: var(--ink); }
   .dl { font: .7rem/1.9 var(--mono); margin: 0; }
   .dl div { display: flex; justify-content: space-between; gap: 14px; border-bottom: 1px dotted var(--rule); }
   .dl dt { color: var(--muted); letter-spacing: .1em; text-transform: uppercase; font-size: .6rem; padding-top: 1px; white-space: nowrap; }
@@ -555,8 +563,9 @@
     <label class="q"><span class="ql">Last name <i>optional</i></span><input id="fLast" placeholder="to hear them together"></label>
     <details class="q wide more-q"><summary>Faith, sacred texts and language</summary>
       <div class="more-grid">
-        <label class="q"><span class="ql">Faith</span><select id="fFaith" data-fill="religion" data-any="any faith"></select></label>
-        <label class="q"><span class="ql">Named in</span><select id="fText"><option value="">any sacred text</option><option value="Torah">the Torah</option><option value="Hebrew Bible">the Hebrew Bible</option><option value="New Testament">the New Testament</option><option value="Bible">the Bible</option><option value="Quran">the Quran</option><option value="Bhagavad Gita">the Bhagavad Gita</option><option value="Mahabharata">the Mahabharata</option><option value="Ramayana">the Ramayana</option><option value="Puranas">the Puranas</option><option value="Vedas">the Vedas</option></select></label>
+        <label class="q"><span class="ql">Rooted in</span><select id="fFaith" data-fill="religion" data-any="any tradition"></select></label>
+        <label class="q"><span class="ql">How close?</span><select id="fClose"><option value="">any connection</option><option value="sacred">a sacred connection</option><option value="text">named in the text</option></select></label>
+        <label class="q"><span class="ql">Named in</span><select id="fText"><option value="">any sacred text</option><option value="Torah">the Torah</option><option value="Hebrew Bible">the Hebrew Bible (Tanakh)</option><option value="New Testament">the New Testament</option><option value="Bible">the Bible</option><option value="Quran">the Quran</option><option value="Bhagavad Gita">the Bhagavad Gita</option><option value="Mahabharata">the Mahabharata</option><option value="Ramayana">the Ramayana</option><option value="Puranas">the Puranas</option><option value="Vedas">the Vedas</option></select></label>
         <label class="q"><span class="ql">Language</span><select id="fLang" data-fill="lang" data-any="any language"></select></label>
       </div>
     </details>
@@ -658,6 +667,6 @@
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=19"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>
