@@ -936,6 +936,7 @@ const Duet = (() => {
   function keys() {
     const a = val(mom), b = val(dad), voices = [a && Piano.voice(a, "a"), b && Piano.voice(b, "b")].filter(Boolean);
     $("#duetPiano").innerHTML = Piano.html(voices);
+    $(".duet-piano").classList.toggle("waiting", !a && !b);
     $("#duetLegend").innerHTML = a || b ? `<span class="lg a">${esc(a || "Mom")}</span><span class="lg b">${esc(b || "Dad")}</span><span class="lg both">both</span>` : `<span>type both names to hear them on the keys</span>`;
   }
   [mom, dad].forEach(el => el.addEventListener("input", () => { clearTimeout(el._t); el._t = setTimeout(keys, 200); }));
@@ -1066,7 +1067,8 @@ const Charts = (() => {
   // the crank: turn it counterclockwise to go back in time
   const knob = $("#chKnob");
   let drag = null;
-  knob.addEventListener("pointerdown", e => { const r = knob.getBoundingClientRect(); drag = { cx: r.left + r.width / 2, cy: r.top + r.height / 2, a: Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)), acc: 0 }; knob.setPointerCapture(e.pointerId); MB.ensure(); });
+  knob.addEventListener("pointerdown", e => { const r = knob.getBoundingClientRect(), cx = r.left + r.width * 171 / 230, cy = r.top + r.height * 86 / 150; // turn around the crank's hub
+    drag = { cx, cy, a: Math.atan2(e.clientY - cy, e.clientX - cx), acc: 0 }; knob.setPointerCapture(e.pointerId); MB.ensure(); });
   knob.addEventListener("pointermove", e => {
     if (!drag) return;
     const a = Math.atan2(e.clientY - drag.cy, e.clientX - drag.cx);

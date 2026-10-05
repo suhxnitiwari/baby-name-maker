@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
-    --page: #f6efe2; --paper: #fbf5e8; --ink: #241417; --muted: #6e594b; --rule: #e3d6c1; --rose: #a23d55; --brass: #c99a4c; --glow: #ffd98a;
+    --page: #f6efe2; --paper: #fbf5e8; --ink: #241417; --muted: #574437; --rule: #e3d6c1; --rose: #a23d55; --brass: #c99a4c; --glow: #ffd98a;
     --night: #3a2a24; --walnut: #5a3a28; --sand: #efe5d4; --mom: #b4566e; --dad: #4f7c9e; --ok: #5e8a4c; --warn: #b9682f;
     --serif: "Instrument Serif", Georgia, serif; --sans: Inter, system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
     --ease: cubic-bezier(.2,.8,.2,1); --drop: cubic-bezier(.3,1.35,.45,1);
@@ -131,7 +131,7 @@
   .say em { font: .6rem var(--mono); font-style: normal; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-left: 4px; }
   .say .or { font-style: italic; }
   .say-opt { all: unset; cursor: pointer; font: 400 1.05rem var(--serif); color: var(--rose); border-bottom: 1px dotted currentColor; }
-  .say-opt.quiet { font: .6rem var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .say-opt.quiet { font: .7rem var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
   .say-opt:hover { color: var(--rose); }
   .say-in { font: italic 400 1.05rem var(--serif); border: 0; border-bottom: 1px solid var(--rose); background: transparent; color: var(--ink); padding: 0 2px; width: 12ch; }
   .say-in:focus { outline: none; }
@@ -154,7 +154,9 @@
   .anchor.spin b { display: inline-block; color: var(--rose); font-weight: 500; animation: nudge 2.6s var(--ease) infinite; }
   @keyframes nudge { 0%, 60%, 100% { transform: rotate(0); } 20% { transform: rotate(-35deg); } 40% { transform: rotate(25deg); } }
   @media (max-height: 760px) { .anchor { display: none; } }
-  .hero-acts { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
+  .hero-acts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .hero-acts .link { border: 1px solid rgba(87,68,55,.28); border-radius: 999px; padding: 7px 14px 6px; background: rgba(255,251,244,.6); color: var(--ink); }
+  .hero-acts .link:hover { border-color: var(--rose); color: var(--rose); }
   .hero-acts .tied { color: var(--rose); border-color: var(--rose); }
   .hero-acts .tied::after { content: " · in the cradle"; }
 
@@ -334,6 +336,7 @@
   .nope-note.fade { opacity: 0; }
 
   /* the duet */
+  .duet-piano.waiting { display: none; }
   .duet-piano { display: grid; justify-items: center; gap: 14px; margin: 40px auto 0; max-width: 620px; }
   .duet-piano .piano { max-width: 620px; }
   .legend { display: flex; gap: 18px; font: .64rem var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
@@ -416,12 +419,13 @@
   .tm-year { font: 400 clamp(4.5rem, 9vw, 7.5rem)/.85 var(--serif); letter-spacing: -.03em; margin: 0; transition: opacity .3s; }
   .tm-note { font: .62rem/1.6 var(--mono); color: var(--muted); letter-spacing: .06em; margin: -8px 0 0; }
   .knob-row { display: flex; align-items: center; gap: 16px; }
-  .knob { all: unset; cursor: grab; position: relative; width: 110px; height: 110px; border-radius: 50%; touch-action: none;
-    background: radial-gradient(circle at 35% 30%, #f3dcbc, #d1a87c 55%, #a87a4f); box-shadow: inset 0 0 0 1px rgba(255,255,255,.5), 0 14px 26px -12px rgba(90,55,25,.6); }
+  /* the year machine is a hand-crank music box: wind the crank back and the years go with it */
+  .knob { all: unset; cursor: grab; position: relative; width: 230px; height: 150px; touch-action: none; }
+  .knob svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .knob .crank { transform-box: view-box; transform-origin: 171px 86px; transform: rotate(var(--a, 0rad)); transition: transform .12s; }
+  .knob:hover .crank, .knob:focus-visible .crank { filter: drop-shadow(0 0 4px rgba(162,61,85,.35)); }
   .knob:active { cursor: grabbing; }
-  .knob::before { content: ""; position: absolute; inset: 14px; border-radius: 50%; border: 1px dashed rgba(90,55,25,.35); }
-  .knob i { position: absolute; inset: 0; transform: rotate(var(--a, 0rad)); transition: transform .12s; }
-  .knob i::after { content: ""; position: absolute; left: 50%; top: 10px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--rose); box-shadow: 0 0 0 3px rgba(255,255,255,.4); }
+
   .knob-row .link { font-size: 1rem; border: 0; }
   .knob-hint { font: italic 400 1.05rem var(--serif); color: var(--muted); margin: 0; }
   .years { width: 100%; accent-color: var(--rose); }
@@ -449,6 +453,7 @@
   #cradleMobile .dowel { display: none; }
   #cradleMobile .hang-row { min-height: 0; }
   #cradleMobile .charm { min-width: 0; padding: 10px 14px 9px; }
+  .crib .cradle-empty { position: absolute; left: 0; right: 0; top: 70%; padding: 0; font-size: clamp(1rem, 2vw, 1.4rem); }
   .cradle-empty { font: italic 400 1.6rem/1.3 var(--serif); color: var(--muted); text-align: center; padding: 30px 0 0; }
 
   /* the same-song sheet */
@@ -693,7 +698,27 @@
     <div class="tm-dial">
       <p class="tm-year" id="chYear">2025</p>
       <p class="tm-note" id="chNote"></p>
-      <div class="knob-row"><button class="link" id="chBack" aria-label="Year before">←</button><button class="knob" id="chKnob" role="slider" aria-label="Turn the knob to change the year"><i></i></button><button class="link" id="chFwd" aria-label="Year after">→</button></div>
+      <div class="knob-row"><button class="link" id="chBack" aria-label="Year before">←</button><button class="knob" id="chKnob" role="slider" aria-label="Turn the crank to change the year">
+        <svg viewBox="0 0 230 150" aria-hidden="true">
+          <defs><linearGradient id="mbf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e6c592"/><stop offset="1" stop-color="#c99d66"/></linearGradient>
+            <linearGradient id="mbs" x1="0" x2="1"><stop offset="0" stop-color="#c39463"/><stop offset="1" stop-color="#a97c4c"/></linearGradient>
+            <linearGradient id="mbt" x1="0" x2="1"><stop offset="0" stop-color="#f1d9b0"/><stop offset="1" stop-color="#e0bd8a"/></linearGradient>
+            <linearGradient id="chrome" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4f5f7"/><stop offset=".5" stop-color="#b9bdc2"/><stop offset="1" stop-color="#868a90"/></linearGradient></defs>
+          <ellipse cx="100" cy="140" rx="92" ry="7" fill="rgba(90,60,40,.16)"/>
+          <path d="M162 52 L180 38 L180 120 L162 134 Z" fill="url(#mbs)"/>
+          <path d="M20 52 L38 38 L180 38 L162 52 Z" fill="url(#mbt)"/>
+          <path d="M30 50 L42 41 L170 41 L158 50 Z" fill="none" stroke="rgba(120,78,40,.35)"/>
+          <rect x="20" y="52" width="142" height="82" fill="url(#mbf)"/>
+          <rect x="20.5" y="52.5" width="141" height="81" fill="none" stroke="rgba(110,72,38,.45)"/>
+          <g fill="rgba(95,60,32,.5)"><rect x="20" y="58" width="4" height="10"/><rect x="20" y="80" width="4" height="10"/><rect x="20" y="102" width="4" height="10"/><rect x="20" y="122" width="4" height="8"/>
+            <rect x="158" y="68" width="4" height="10"/><rect x="158" y="90" width="4" height="10"/><rect x="158" y="112" width="4" height="10"/></g>
+          <g fill="none" stroke="rgba(120,78,40,.45)" stroke-width="1.2">
+            <path d="M91 93 C100 78 120 80 122 92 C124 102 112 104 110 96"/><path d="M91 93 C82 78 62 80 60 92 C58 102 70 104 72 96"/>
+            <path d="M91 93 C102 108 124 108 138 100"/><path d="M91 93 C80 108 58 108 44 100"/><path d="M91 87 L96 93 L91 99 L86 93 Z"/></g>
+          <ellipse cx="171" cy="86" rx="4" ry="5.5" fill="#5d3c22"/>
+          <g class="crank"><path d="M171 86 L198 86 L198 110" stroke="url(#chrome)" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="192" y="106" width="12" height="20" rx="5" fill="url(#chrome)"/></g>
+        </svg></button><button class="link" id="chFwd" aria-label="Year after">→</button></div>
       <p class="knob-hint">Turn it back. The years go with it.</p>
       <input type="range" class="years" id="chRange" aria-label="Year">
       <div class="ticks" id="chTicks"></div>
@@ -713,8 +738,7 @@
     <div><p class="kick">05 · saved on this device</p><h2 id="cradleTitle">The <i>cradle.</i></h2><p class="lede">Your little playlist of maybes. Tap ♡ on any name to hang it here.</p></div>
     <button class="go hidden" id="cradlePlay">▶ Play all</button>
   </div>
-  <div class="crib" id="crib"><div class="crib-rock"><div class="crib-art" id="cribArt"></div><div class="hang" id="cradleMobile"></div></div></div>
-  <p class="cradle-empty" id="cradleEmpty">Nothing in the cradle yet.</p>
+  <div class="crib" id="crib"><div class="crib-rock"><div class="crib-art" id="cribArt"></div><div class="hang" id="cradleMobile"></div><p class="cradle-empty" id="cradleEmpty">Nothing in the cradle yet.</p></div></div>
 </section>
 
 <footer>
@@ -737,11 +761,11 @@
 <script src="generator.js?v=5"></script>
 <script src="phonetics.js?v=7"></script>
 <script src="musicbox.js?v=6"></script>
-<script src="mobile.js?v=12"></script>
+<script src="mobile.js?v=13"></script>
 <script src="piano.js?v=3"></script>
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=47"></script>
+<script src="app.js?v=49"></script>
 </body>
 </html>
