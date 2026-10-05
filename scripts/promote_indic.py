@@ -40,6 +40,28 @@ PROMOTE = {
     ("Mahabharata", "Sushena"): None, ("Mahabharata", "Vibhishana"): None, ("Mahabharata", "Vinata"): None, ("Mahabharata", "Sutasoma"): None,
     ("Mahabharata", "Tryambaka"): None, ("Mahabharata", "Kadru"): ("Kadru, mother of the nagas", "mythological_being", "girl"),
     ("Mahabharata", "Kausalya"): None, ("Mahabharata", "Pramadvara"): None,
+    # second pass: figures with a Wikidata entry, and well-known names checked against their passage
+    ("Bhagavad Gita", "Vasuki"): ("Vasuki, king of the serpents", "mythological_being", "boy"), ("Bhagavad Gita", "Varuna"): ("Varuna, god of the waters", "deity", "boy"),
+    ("Bhagavad Gita", "Yama"): ("Yama, god of death", "deity", "boy"), ("Bhagavad Gita", "Bhrigu"): ("Bhrigu, a great sage", "sage", "boy"),
+    ("Bhagavad Gita", "Vishnu"): ("Vishnu", "deity", "boy"), ("Bhagavad Gita", "Skanda"): ("Skanda (Karttikeya), leader of the gods' armies", "deity", "boy"),
+    ("Valmiki Ramayana", "Narada"): ("Narada, a sage", "sage", "boy"), ("Valmiki Ramayana", "Bhagiratha"): None, ("Valmiki Ramayana", "Vasuki"): ("Vasuki, king of the serpents", "mythological_being", "boy"),
+    ("Valmiki Ramayana", "Uma"): ("Uma (Parvati), daughter of Himavat", "deity", "girl"), ("Valmiki Ramayana", "Satyavati"): ("Satyavati, sister of Vishvamitra", "human", "girl"),
+    ("Valmiki Ramayana", "Nahusha"): None, ("Valmiki Ramayana", "Jamadagni"): ("Jamadagni, a sage, father of Parashurama", "sage", "boy"),
+    ("Valmiki Ramayana", "Urvashi"): ("Urvashi, an apsaras", "mythological_being", "girl"), ("Valmiki Ramayana", "Shuka"): ("Shuka, a minister of Ravana", "human", "boy"),
+    ("Valmiki Ramayana", "Surasa"): None, ("Valmiki Ramayana", "Kesari"): ("Kesari, father of Hanuman", "mythological_being", "boy"),
+    ("Valmiki Ramayana", "Kubera"): None, ("Valmiki Ramayana", "Kushadhvaja"): ("Kushadhvaja, brother of Janaka", "royal", "boy"),
+    ("Valmiki Ramayana", "Kalmashapada"): None, ("Valmiki Ramayana", "Indra"): None,
+    ("Mahabharata", "Vritra"): None, ("Mahabharata", "Takshaka"): None, ("Mahabharata", "Jaratkaru"): None, ("Mahabharata", "Atri"): None,
+    ("Mahabharata", "Anasuya"): ("Anasuya, wife of the sage Atri", "human", "girl"), ("Mahabharata", "Kansa"): None, ("Mahabharata", "Tilottama"): None,
+    ("Mahabharata", "Dadhicha"): None, ("Mahabharata", "Uddalaka"): None,
+    ("Mahabharata", "Jamadagni"): ("Jamadagni, a sage, father of Parashurama", "sage", "boy"), ("Mahabharata", "Bhagiratha"): None,
+    ("Mahabharata", "Menaka"): ("Menaka, an apsaras", "mythological_being", "girl"), ("Mahabharata", "Lopamudra"): ("Lopamudra, wife of the sage Agastya", "sage", "girl"),
+    ("Mahabharata", "Ahalya"): None, ("Mahabharata", "Valmiki"): None, ("Mahabharata", "Shurpanakha"): None, ("Mahabharata", "Mandodari"): None,
+    ("Mahabharata", "Yama"): ("Yama, god of death", "deity", "boy"), ("Mahabharata", "Vishnu"): ("Vishnu", "deity", "boy"),
+    ("Mahabharata", "Bhrigu"): ("Bhrigu, a great sage", "sage", "boy"), ("Mahabharata", "Bharadvaja"): ("Bharadvaja, a sage, father of Drona", "sage", "boy"),
+    ("Mahabharata", "Shibi"): None, ("Mahabharata", "Astika"): None, ("Mahabharata", "Parashara"): ("Parashara, a sage, father of Vyasa", "sage", "boy"),
+    ("Mahabharata", "Tara"): ("Tara, wife of Brihaspati", "human", "girl"), ("Mahabharata", "Renuka"): ("Renuka, wife of Jamadagni and mother of Parashurama", "human", "girl"),
+    ("Mahabharata", "Parvati"): ("Parvati, wife of Shiva", "deity", "girl"),
 }
 
 rows = list(csv.DictReader(open(SRC, encoding="utf-8"), delimiter="\t", quoting=csv.QUOTE_NONE))
