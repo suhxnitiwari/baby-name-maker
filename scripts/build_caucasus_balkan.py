@@ -160,6 +160,23 @@ def ety_glosses(sec):
     gl = list(dict.fromkeys(gl))
     return gl[0] if len(gl) == 1 else ""
 
+def render_ety(e):
+    """an etymology sentence as plain text: From shpresë “hope”."""
+    def tpl(mt):
+        parts = mt.group(1).split("|"); name = parts[0].strip().rstrip("+")
+        kw = {p.split("=", 1)[0].strip(): p.split("=", 1)[1] for p in parts[1:] if "=" in p}
+        pos = [p for p in parts[1:] if "=" not in p]
+        if name in ("m", "l", "cog"): term, alt, gloss = (pos + [""] * 4)[1:4]
+        elif name in ("der", "bor", "inh", "uder", "lbor", "slbor"): term, alt, gloss = (pos + [""] * 5)[2:5]
+        else: return ""
+        gloss = clean(kw.get("t") or kw.get("gloss") or gloss)
+        out = clean(alt or term)
+        if kw.get("tr") and out and not re.search(r"[A-Za-z]", out): out += f" ({clean(kw['tr'])})"
+        return (out + (f" “{gloss}”" if gloss else "")).strip()
+    t = re.sub(r"\{\{([^{}]*)\}\}", tpl, e)
+    t = re.sub(r"\[\[(?:[^|\]]*\|)?([^\]]*)\]\]", r"\1", t)
+    return re.sub(r"\s+([,.)])", r"\1", re.sub(r"\s+", " ", t)).strip(" .")
+
 HEDGE = re.compile(r"\b(perhaps|possibly|probably|uncertain|unknown|disputed|folk etymology)\b", re.I)
 def meaning_from(text, lang):
     sec = section(text, lang)
@@ -450,9 +467,14 @@ if __name__ == "__main__":
             if row and not row[5]:
                 _, m = meaning_from(v["text"], c)
                 if not m: continue
-                ety = re.search(r"(?ms)^===+\s*Etymology[^=]*===+\s*$(.*?)(?=^===)", section(v["text"], c))
-                e = ety and re.split(r"(?<=\.)\s", ety.group(1).strip(), maxsplit=1)[0]
-                fill[n.lower()] = {"m": m[:80], "ety": clean(re.sub(r"\{\{(?:m|l|der|bor|inh)\+?\|[^|{}]*\|(?:[^|{}]*\|)?([^|{}]+)[^{}]*\}\}", r"\1", e or "")), "src": "Wiktionary"}
+                sec = section(v["text"], c)
+                ety = re.search(r"(?ms)^===+\s*Etymology[^=]*===+\s*$(.*?)(?=^===)", sec)
+                e = re.split(r"(?<=\.)\s", ety.group(1).strip(), maxsplit=1)[0] if ety else ""
+                eq = re.search(r"\{\{given name\|[^{}]*\|eq=([^|}]+)", sec)
+                if eq and m.replace(" ", "") == eq.group(1).replace(" ", ""): continue    # Zhak "James, Jacob" is an equivalent, not a meaning
+                if re.search(r"\|\[\[[A-Z][^\]]*\]\]\}\}", e): continue                   # Shaban "[[Sha'aban]]": a name, not a meaning
+                if re.match(r"From \{\{(?:m|l)\|[^|{}]*\|[^|{}]*\|([^|{}=]+)\}\}", e): continue   # Hyinora: hyjnor's slot is mis-filled; "star" is hyll's
+                fill[n.lower()] = {"m": m[:80], "ety": render_ety(e), "src": "Wiktionary"}
     json.dump(fill, open(os.path.join(ROOT, "data", "extra-meanings.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=0, sort_keys=True)
     print(f"  data/extra-meanings.json: meanings for {len(fill)} existing rows that had none")
     print("  sq.wiktionary given-name categories:", {k: v for k, v in sq.items() if re.search(r"vet|femr|meshk|djal|vajz|përve", k)} or "none")
