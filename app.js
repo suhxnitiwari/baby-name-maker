@@ -642,8 +642,10 @@ const Hero = (() => {
     const nat = (sacredOf(x).find(r => nonLatin(r.orig)) || {}).orig || [(x.src || "").match(/Written ([^\s.,(]+)/)?.[1]].find(nonLatin);
     const pop = popRanks(x.n, x.g).slice(0, 2).map(([c, r, , yr]) => `#${r} in ${c}, ${yr}`).join(" · ");
     const m = x.m || (MEAN[k] || {}).m || "";
+    // where the meaning comes from, so it can be checked: the source named at the end of the note, else Wiktionary for fetched meanings
+    const cite = m && ((x.src || "").match(/\(([^()]*(?:Wiktionary|Monier|Behind the Name|McGregor|Hitchcock|Wikidata)[^()]*)\)\s*$/)?.[1] || (MEAN[k] && MEAN[k].m === m ? "Wiktionary" : ""));
     box.innerHTML = `<span class="hc-where">${nat ? `<span class="nat">${esc(nat)}</span>` : ""}${esc(whereOf(x))}</span>` +
-      (m ? `<span class="hc-mean">“${esc(m)}”</span>` : "") + (pop ? `<span class="hc-chart">${esc(pop)}</span>` : "");
+      (m ? `<span class="hc-mean">“${esc(m)}”</span>` : "") + (cite ? `<span class="hc-src">${esc(cite)}</span>` : "") + (pop ? `<span class="hc-chart">${esc(pop)}</span>` : "");
   }
   if (touched) $("#typeHint").classList.add("gone");
   function show(v, user) {
