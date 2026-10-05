@@ -39,9 +39,11 @@ function eastAsian(d) {
   return rows;
 }
 // names from sacred texts, Hebrew names from Israel, Japanese/Korean/Chinese names, and 120+ cultures
-const storied = Promise.all(["data/scripture-names.json?v=1", "data/hebrew-names.json?v=1", "data/east-asian-names.json?v=1", "data/culture-names.json?v=7", "data/also-cultures.json?v=1"]
+// the cultures list leads; the East Asian lists (some built from syllables) and Israel's records, which include names
+// from everywhere, come after it, so they only add cultures (Rani is Bengali, Hindi and Telugu first)
+const storied = Promise.all(["data/scripture-names.json?v=1", "data/culture-names.json?v=7", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=1", "data/hebrew-names.json?v=1"]
   .map(u => fetch(u).then(r => r.json()).catch(() => [])))
-  .then(([a, b, c, d, e]) => addStoried([...a, ...b, ...eastAsian(c), ...d, ...e])).catch(e => console.error(e));
+  .then(([a, d, e, c, b]) => addStoried([...a, ...d, ...e, ...eastAsian(c), ...b])).catch(e => console.error(e));
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
   for (const [n, g, o, l, r, m, src, texts, kind, also] of rows) {
@@ -68,7 +70,7 @@ const dbReady = Promise.all([fetch("data/names-db.tsv?v=3").then(r => r.text()),
   for (const line of t.split("\n")) {
     if (!line) continue;
     const [n, g, cc, cnt] = line.split("\t"), k = fold(n), ccs = cc.split(",");
-    const e = { n, g: DB_G[g], cc: ccs, cnt: +cnt, o: ccs.includes("il") ? "Israeli" : "", l: "", r: [], m: "", src: "", type: "attested" };
+    const e = { n, g: DB_G[g], cc: ccs, cnt: +cnt, o: ccs.length === 1 && ccs[0] === "il" ? "Israeli" : "", l: "", r: [], m: "", src: "", type: "attested" };
     if (!DB_KEYS.has(k)) DB_KEYS.set(k, e);
     TAKEN.add(k);
     if (!ours.has(k)) DB.push(e);
@@ -106,7 +108,7 @@ function setGender(g) {
   $$("[data-gender]").forEach(b => b.setAttribute("aria-pressed", b.dataset.gender === g));
   $$(".g-select").forEach(s => { s.value = g; fit(s); });
   fillThemes();
-  Find.refresh(); Ear.refresh(); Charts.draw();
+  Find.refresh(); Charts.draw();
 }
 document.addEventListener("click", e => { const b = e.target.closest("[data-gender]"); if (b) setGender(b.dataset.gender); });
 document.addEventListener("change", e => { if (e.target.classList.contains("g-select")) setGender(e.target.value); });
@@ -311,9 +313,14 @@ function coloredName(n, own) {
   let k = 0;
   return [...n].map(c => /[\s-]/.test(c) ? esc(c) : `<span class="o-${own[k++] || "x"}">${esc(c)}</span>`).join("");
 }
+// a name's cultures, most specific first (the broad baskets only when there's nothing else)
+const BASKETS = new Set(["African", "South Asian", "Pacific", "Slavic", "Latin American", "Indigenous American", "Central Asian", "Nordic"]);
 function whereOf(x) {
   const cc = x.cc || (dbEntry(x.n) || {}).cc || [];
-  return [x.o, x.l && x.l !== x.o ? x.l : ""].filter(Boolean).join(" · ") || (x.type === "attested" ? "Official records · " + cc.slice(0, 3).map(c => CC_LABEL[c]).join(", ") : "An original");
+  const all = [...new Set([x.o, ...(x.oo || [])].filter(Boolean))], named = all.filter(c => !BASKETS.has(c));
+  const cultures = (named.length ? named : all).slice(0, 3);
+  if (cultures.length > 1) return cultures.join(" · ");
+  return [cultures[0], x.l && x.l !== cultures[0] ? x.l : ""].filter(Boolean).join(" · ") || (x.type === "attested" ? "Official records · " + cc.slice(0, 3).map(c => CC_LABEL[c]).join(", ") : "An original");
 }
 function rowHTML(x, o = {}) {
   const r = reg(x), m = MB.melody(x.n, "", ownersOf(x)), syl = sylCount(x.n);
@@ -321,7 +328,7 @@ function rowHTML(x, o = {}) {
     <button class="row-hit" data-open aria-expanded="false">
       <span class="row-id">${x.pick ? `<em class="pick">${esc(x.pick)}</em>` : ""}No. ${hexId(x.n)} · ${esc(x.badge || KIND_LABEL[x.type])}</span>
       <span class="row-name">${x.prov && o.big ? coloredName(x.n, ownersOf(x)) : esc(x.n)}</span>
-      <span class="row-where">${esc(whereOf(x))} · ${syl} syllable${syl === 1 ? "" : "s"}${x.match ? ` · <b>${x.match.total.toFixed(0)}% your ear</b>` : ""}</span>
+      <span class="row-where">${esc(whereOf(x))} · ${syl} syllable${syl === 1 ? "" : "s"}</span>
       <span class="row-notes"><i>♪</i> ${notesOf(m)}</span>
       <span class="row-play">Play <i>→</i></span>
     </button>
@@ -556,67 +563,35 @@ const Spell = (() => {
 })();
 
 // ─────────────────────────────────────────────────────────────
-// FIND THEIR LULLABY: a guided composition, one question at a time
+// FIND THEIR LULLABY: one quick form, then names that play themselves
 // ─────────────────────────────────────────────────────────────
-const FEEL_LABEL = { soft: "soft", bold: "bold", elegant: "romantic", timeless: "timeless", playful: "playful", rare: "rare" };
+const FEEL_LABEL = { soft: "soft", bold: "bold", elegant: "romantic", timeless: "timeless", modern: "modern", playful: "playful", rare: "rare" };
 const Find = (() => {
   const F = { vibe: "", culture: "", theme: "", first2: "", ends: "", len: "", last: "", religion: "", lang: "", text: "" };
-  const L = {};                                                    // what the person picked, in their words
-  let step = 0, pools = null, seen = new Set();
-  const steps = $$("#find .step");
-  const ROOM = { soft: "#f7ece6", bold: "#efe2d2", elegant: "#f5e6e4", timeless: "#efe9dc", playful: "#f6eddc", rare: "#ebe7e0" };
-  function go(k) {
-    step = Math.max(0, Math.min(steps.length - 1, k));
-    steps.forEach((s, i) => { s.classList.toggle("on", i === step); s.classList.toggle("past", i < step); s.setAttribute("aria-hidden", i !== step); });
-    $$("#findDots i").forEach((d, i) => d.classList.toggle("on", i <= step));
-    $("#findBack").classList.toggle("hidden", step === 0);
-    crumbs();
-  }
-  function crumbs() {
-    const bits = [
-      F.vibe && [0, L.vibe], F.culture && [1, `${L.culture || F.culture} roots`], F.theme && [2, `carries ${(L.theme || F.theme).toLowerCase()}`],
-      F.first2 && [3, `starts with ${F.first2.toUpperCase()}`], F.ends && [3, `ends in -${F.ends}`], F.len && [3, $("#fLen").selectedOptions[0].text.toLowerCase()],
-      F.religion && [3, F.religion], F.text && [3, `in the ${F.text}`], F.lang && [3, F.lang], F.last && [3, `with ${capName(F.last)}`],
-    ].filter(Boolean);
-    $("#findCrumbs").innerHTML = bits.map(([s, t]) => `<button data-step="${s}">${esc(t)}</button>`).join("");
-  }
-  $("#find").addEventListener("click", e => {
-    const ch = e.target.closest(".choice");
-    if (ch) {
-      const key = ch.closest(".choices").dataset.key;
-      F[key] = F[key] === ch.dataset.v ? "" : ch.dataset.v; L[key] = ch.textContent;
-      ch.parentElement.querySelectorAll(".choice").forEach(c => c.setAttribute("aria-pressed", c.dataset.v === F[key] && !!F[key]));
-      if (key === "culture") $("#fMoreRoots").value = "";
-      if (key === "vibe") $("#find").style.setProperty("--room", ROOM[F.vibe] || "var(--page)");
-      MB.ensure(); MB.pluck(4 + Math.floor(Math.random() * 6), .5);
-      setTimeout(() => go(step + 1), 420);
-      return;
-    }
-    const c = e.target.closest("[data-step]"); if (c) return go(+c.dataset.step);
-    if (e.target.closest("#findBack")) return go(step - 1);
-    if (e.target.closest("[data-skip]")) return go(step + 1);
-  });
-  $("#fMoreRoots").onchange = e => { F.culture = e.target.value; L.culture = ""; $$('[data-key="culture"] .choice').forEach(c => c.setAttribute("aria-pressed", false)); if (F.culture) setTimeout(() => go(step + 1), 300); };
+  let pools = null, seen = new Set();
   const read = () => {
+    F.culture = $("#fRoots").value; F.theme = $("#fTheme").value;
     F.first2 = fold($("#fStart").value); F.ends = fold($("#fEnd").value); F.len = $("#fLen").value; F.last = $("#fLast").value.trim();
-    F.religion = $("#fFaith").value; F.text = $("#fText").value; F.lang = $("#fLang").value; crumbs();
+    F.religion = $("#fFaith").value; F.text = $("#fText").value; F.lang = $("#fLang").value;
   };
-  ["#fStart", "#fEnd", "#fLast"].forEach(s => $(s).addEventListener("input", read));
-  ["#fLen", "#fFaith", "#fText", "#fLang"].forEach(s => $(s).addEventListener("change", read));
-  $("#fMore").onclick = () => { $("#fMoreBox").hidden = !$("#fMoreBox").hidden; $("#fMore").setAttribute("aria-expanded", !$("#fMoreBox").hidden); };
-  ["#fStart", "#fEnd", "#fLast"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key === "Enter") wind(); }));
-
-  // wind the music box: the key turns, the ratchet clicks, then the names come out
-  async function wind() {
-    read(); MB.ensure();
-    const btn = $("#windBtn");
-    btn.classList.add("winding");
-    for (let k = 0; k < 7; k++) { MB.tick(.5 + k * .05); await new Promise(r => setTimeout(r, 95)); }
-    btn.classList.remove("winding");
+  const pressVibe = () => $$('#quick [data-key="vibe"] button').forEach(b => b.setAttribute("aria-pressed", b.dataset.v === F.vibe));
+  $('#quick [data-key="vibe"]').addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    F.vibe = b.dataset.v; pressVibe(); MB.ensure(); MB.pluck(4 + Math.floor(Math.random() * 6), .45);
+    if (!$("#findOut").hidden) { read(); search(); }
+  });
+  // once there are results, every change updates them
+  $("#quick").addEventListener("change", () => { if (!$("#findOut").hidden) { read(); search(); } });
+  $("#quick").addEventListener("submit", e => {
+    e.preventDefault(); read(); MB.ensure(); MB.tick(.6);
     search();
     $("#findOut").scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-  $("#windBtn").onclick = wind;
+  });
+  $("#findReset").onclick = () => {
+    $("#quick").reset(); F.vibe = ""; pressVibe(); read(); fitAll();
+    if (!$("#findOut").hidden) search();
+  };
+  pressVibe();
   const f = () => ({ ...F, first2: F.first2 });
   function search() {
     seen = new Set(); pools = buildPools(f());
@@ -627,7 +602,7 @@ const Find = (() => {
       const of = t => shuffle(c.items.filter(x => (x.type === "attested" ? "db" : x.type) === t));
       pools = { real: of("real"), db: of("db"), root: of("root"), invented: of("invented"), ptr: { real: 0, db: 0, root: 0, invented: 0 } };
       const list = c.loosened.length > 1 ? c.loosened.slice(0, -1).join(", ") + " and " + c.loosened.slice(-1) : c.loosened[0];
-      head.innerHTML = `<p class="relax">Nothing fits every wish at once, so the box let go of <b>${esc(list || "nothing")}</b> and kept the rest.</p>`;
+      head.innerHTML = `<p class="relax">Nothing fits all of that at once, so these let go of <b>${esc(list || "nothing")}</b> and kept the rest.</p>`;
       fillRows(out, [...made, ...drawFrom(pools, 8 - made.length, seen)], () => drawFrom(pools, 1, seen)[0]);
     } else {
       const fmt = n => n.toLocaleString();
@@ -638,99 +613,19 @@ const Find = (() => {
   }
   $("#findMore").onclick = () => { $("#findRows").insertAdjacentHTML("beforeend", drawFrom(pools, 8, seen).map(x => rowHTML(x)).join("")); $("#findMore").classList.toggle("hidden", !poolsLeft(pools)); };
   addEventListener("namesdb", () => { if (!$("#findOut").hidden) search(); });
-  go(0);
   return { refresh: () => { if (!$("#findOut").hidden) search(); }, surname: () => capName(F.last || Duet.surname() || "") };
 })();
-
-// ─────────────────────────────────────────────────────────────
-// WHAT SOUNDS LIKE LOVE TO YOU? one name at a time; after eight, it knows your ear
-// ─────────────────────────────────────────────────────────────
-const Ear = (() => {
-  const ROUND = 8;
-  let deck = [], i = 0, judged = 0;
-  function build() {
-    // a deck that spans the sounds: popular names and storied ones, spread across endings and lengths
-    const pool = new Map();
-    if (POP) for (const c of POP.countries) for (const sx of gender === "either" ? ["girl", "boy"] : [gender]) c.top["5"][sx].slice(0, 60).forEach(([n]) => pool.set(fold(n), n));
-    REAL.slice(0, HAND_PICKED).filter(x => genderOk(x) && x.m).forEach(x => Math.random() < .2 && pool.set(fold(x.n), x.n));
-    const mine = new Set([...taste.love, ...taste.hate].map(fold));
-    const names = shuffle([...pool.values()].filter(n => !mine.has(fold(n)) && !wrongGender(n) && !n.includes("-")));
-    const buckets = {};
-    names.forEach(n => { const k = endClass(n) + sylOf(n); (buckets[k] = buckets[k] || []).push(n); });
-    deck = [];
-    const keys = Object.keys(buckets);
-    while (deck.length < 40 && keys.some(k => buckets[k].length)) for (const k of keys) if (buckets[k].length) deck.push(buckets[k].pop());
-    i = 0;
-  }
-  function show() {
-    const n = deck[i];
-    if (!n) { build(); if (!deck[i]) return; return show(); }
-    const card = $("#earCard");
-    card.classList.remove("in"); void card.offsetWidth; card.classList.add("in");
-    $("#earName").textContent = n;
-    const x = (BY_NAME.get(fold(n)) || [])[0];
-    $("#earWhere").textContent = x ? whereOf(x) : "official records";
-    $("#earPiano").innerHTML = Piano.html([Piano.voice(n)], { small: true });
-    $("#earDots").innerHTML = Array.from({ length: ROUND }, (_, k) => `<i class="${k < Math.min(judged, ROUND) ? "on" : ""}"></i>`).join("");
-    if (MB.on && userHeard) setTimeout(play, 350);
-  }
-  let userHeard = false;
-  const play = () => { MB.ensure(); Piano.play($("#earPiano .piano"), [Piano.voice(deck[i])]); };
-  function judge(love) {
-    userHeard = true;
-    const n = deck[i];
-    tasteSet(n, love ? "love" : "hate");
-    judged++; i++;
-    $("#earCard").classList.add(love ? "out-love" : "out-nope");
-    setTimeout(() => { $("#earCard").classList.remove("out-love", "out-nope"); judged >= ROUND && taste.love.length >= 2 && !$("#earReveal").dataset.shown ? reveal() : show(); }, 340);
-  }
-  function reveal() {
-    const { p } = tasteMatches(0);
-    if (!p) return show();
-    $("#earReveal").dataset.shown = 1;
-    $("#earGame").hidden = true; $("#earReveal").hidden = false;
-    $("#earSays").innerHTML = `You lean toward ${explain(p).map(esc).join(", ")}, and ${esc(p.melody)}.`;
-    $("#earCount").textContent = `learned from ${taste.love.length} you loved and ${taste.hate.length} you didn't`;
-    $("#earRows").innerHTML = ""; $("#earMatches").classList.remove("hidden");
-  }
-  function matches() {
-    const { list } = tasteMatches(6);
-    fillRows($("#earRows"), list, null);
-    $("#earMatches").classList.add("hidden");
-    const first = $("#earRows .row"); if (first) openRow(first);
-  }
-  $("#earLove").onclick = () => judge(true);
-  $("#earNope").onclick = () => judge(false);
-  $("#earPlay").onclick = () => { userHeard = true; play(); };
-  $("#earMatches").onclick = matches;
-  $("#earMore").onclick = () => { delete $("#earReveal").dataset.shown; judged = 0; $("#earReveal").hidden = true; $("#earGame").hidden = false; show(); };
-  $("#earForget").onclick = () => { tasteReset(); judged = 0; delete $("#earReveal").dataset.shown; $("#earReveal").hidden = true; $("#earGame").hidden = false; build(); show(); };
-  addEventListener("keydown", e => {
-    if ($("#earGame").hidden || !isOnScreen($("#earCard")) || /INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
-    if (e.key === "ArrowRight") judge(false); else if (e.key === "ArrowLeft") judge(true);
-  });
-  const start = () => {
-    if (!deck.length) build();
-    if (taste.love.length >= 3 && taste.love.length + taste.hate.length >= ROUND) { judged = ROUND; reveal(); }
-    else show();
-  };
-  let started = false;
-  new IntersectionObserver(([en]) => { if (en.isIntersecting && !started && POP) { started = true; start(); } }, { rootMargin: "200px" }).observe($("#ear"));
-  setTimeout(() => { if (!started && POP) { started = true; start(); } }, 4000);
-  return { refresh: () => { if (started) { build(); if (!$("#earGame").hidden) show(); } } };
-})();
-const isOnScreen = el => { const r = el.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; };
 
 // ─────────────────────────────────────────────────────────────
 // TWO NAMES. TWO MELODIES. One piano, Mom's notes and Dad's, then what they make together
 // ─────────────────────────────────────────────────────────────
 const Duet = (() => {
   const mom = $("#mom"), dad = $("#dad");
-  const val = el => capName(el.value.trim() || el.placeholder);
+  const val = el => capName(el.value.trim());
   function keys() {
-    const a = val(mom), b = val(dad);
-    $("#duetPiano").innerHTML = Piano.html([Piano.voice(a, "a"), Piano.voice(b, "b")]);
-    $("#duetLegend").innerHTML = `<span class="lg a">${esc(a)}</span><span class="lg b">${esc(b)}</span><span class="lg both">both</span>`;
+    const a = val(mom), b = val(dad), voices = [a && Piano.voice(a, "a"), b && Piano.voice(b, "b")].filter(Boolean);
+    $("#duetPiano").innerHTML = Piano.html(voices);
+    $("#duetLegend").innerHTML = `<span class="lg a">${esc(a || "Mom")}</span><span class="lg b">${esc(b || "Dad")}</span><span class="lg both">both</span>`;
   }
   [mom, dad].forEach(el => el.addEventListener("input", () => { clearTimeout(el._t); el._t = setTimeout(keys, 200); }));
   [mom, dad].forEach(el => el.addEventListener("keydown", e => { if (e.key === "Enter") together(); }));
@@ -744,8 +639,10 @@ const Duet = (() => {
   const filt = () => ({ vibe: $("#dVibe").value, theme: $("#dTheme").value, culture: $("#dRoots").value, lang: $("#dLang").value, religion: $("#dFaith").value, text: $("#dText").value, len: $("#dLen").value, first2: "", ends: "" });
   const surname = () => $("#x-last").hidden ? "" : $("#dLast").value.trim();
   function together() {
+    const a = val(mom), b = val(dad);
+    if (!a || !b) return (a ? dad : mom).focus();
     MB.ensure(); keys();
-    const a = val(mom), b = val(dad), p = $("#duetPiano .piano");
+    const p = $("#duetPiano .piano");
     $("#duetResult").hidden = true;
     const dur = Piano.play(p, [Piano.voice(a, "a"), Piano.voice(b, "b")]);
     $("#duetTogether").classList.add("playing");
@@ -753,6 +650,7 @@ const Duet = (() => {
   }
   function run(reveal = false) {
     const a = val(mom), b = val(dad);
+    if (!a || !b) return;
     const extra = $("#x-honor").hidden ? [] : $("#dHonor").value.split(/[,;]+|\s+/).map(t => t.trim()).filter(t => /^[\p{L}'-]{2,}$/u.test(t));
     let { picks, rest, log, total } = blend({ a, b, extra, mode: $("#dMode").value, honor: extra.length ? 1 : .5 }, filt(), capName(surname()));
     // "a lot of both": each parent gives at least a third of the letters
@@ -777,7 +675,7 @@ const Duet = (() => {
     navigator.clipboard?.writeText(u.toString());
     $("#duetShare").textContent = "link copied · send it to your partner";
   };
-  $("#duetPiano").addEventListener("click", e => { if (e.target.closest(".syl")) { const v = +e.target.closest(".syl").dataset.v; Piano.play($("#duetPiano .piano"), [Piano.voice(v ? val(dad) : val(mom), v ? "b" : "a")]); } });
+  $("#duetPiano").addEventListener("click", e => { const s = e.target.closest(".syl"); if (s) { const own = s.classList.contains("o-b") ? "b" : "a"; Piano.play($("#duetPiano .piano"), [Piano.voice(val(own === "b" ? dad : mom), own)]); } });
   addEventListener("namesdb", () => { if (!$("#duetResult").hidden) run(); });
   keys();
   return { run, surname, keys };
@@ -861,8 +759,7 @@ $("#cradlePlay").onclick = () => Cradle.playAll();
 // ─────────────────────────────────────────────────────────────
 // the explore mobile, drawn: one felt charm per room, on a beech dowel
 (() => {
-  const ROOMS = [["stage", "Play a name", "star", "#e6cf9f", 150], ["find", "Find their lullaby", "cloud", "#f4ebdc", 250], ["ear", "What sounds like love", "drop", "#d9a79c", 190],
-    ["duet", "Two names, two melodies", "moon", "#cdbfa9", 300], ["spell", "Same song, different letters", "bird", "#b7c5aa", 210], ["charts", "The names we once sang", "sun", "#e6cf9f", 270], ["cradle", "The cradle", "bell", "#a3b7c6", 170]];
+  const ROOMS = [["stage", "Play a name", "star", "#e6cf9f", 150], ["find", "Find their lullaby", "cloud", "#f4ebdc", 250], ["duet", "Two names, two melodies", "moon", "#cdbfa9", 300], ["spell", "Same song, different letters", "bird", "#b7c5aa", 210], ["charts", "The names we once sang", "sun", "#e6cf9f", 270], ["cradle", "The cradle", "bell", "#a3b7c6", 170]];
   const SH = {
     star: `<polygon points="${Array.from({ length: 10 }, (_, k) => { const a = -Math.PI / 2 + k * Math.PI / 5, r = k % 2 ? .46 : 1; return (Math.cos(a) * r).toFixed(3) + "," + (Math.sin(a) * r).toFixed(3); }).join(" ")}"/>`,
     cloud: `<circle cx="-.55" cy=".12" r=".45"/><circle cx="-.15" cy="-.2" r=".55"/><circle cx=".32" cy="-.1" r=".5"/><circle cx=".62" cy=".18" r=".38"/><circle cx="0" cy=".22" r=".5"/>`,
