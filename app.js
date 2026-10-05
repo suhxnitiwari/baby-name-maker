@@ -77,7 +77,7 @@ const PERSONLIKE = new Set(["human", "prophet", "sage", "saint", "disciple", "ro
 const SACRED = new Map(), SACRED_SEX = new Map(); // folded name → cited references; the sex of the people the text gives that name
 let SACRED_FIG = {};
 const FIG_FORMS = new Map(); // figure → every name form it carries, across traditions (Abraham, Avraham, Ibrahim)
-const sacredReady = Promise.all([fetch("data/sacred.json?v=1").then(r => r.ok ? r.json() : null).catch(() => null), storied]).then(([d]) => {
+const sacredReady = Promise.all([fetch("data/sacred.json?v=2").then(r => r.ok ? r.json() : null).catch(() => null), storied]).then(([d]) => {
   if (!d) return;
   SACRED_FIG = d.f;
   const have = new Map(ALL_NAMED.map(x => [fold(x.n), x]));
@@ -90,8 +90,8 @@ const sacredReady = Promise.all([fetch("data/sacred.json?v=1").then(r => r.ok ? 
     for (const r of refs) if (r.s !== "s") FIG_FORMS.set(r.fid, [...(FIG_FORMS.get(r.fid) || []), { n, ...r }]);
     const named = refs.filter(r => r.s !== "s" && r.role !== "w" && PERSONLIKE.has(r.kind) && !(r.kind === "deity" && ["Jewish", "Christian", "Islamic"].includes(r.t))), cur = have.get(k);
     if (cur) { cur.r = [...new Set([...cur.r, ...named.map(r => r.t)])]; continue; }
-    // a person named in a text but not yet a known given name: kept for "named in the text" searches only
-    if (!named.length || !sex) continue;
+    // a person named in a text but not yet a known given name: kept for "named in the text" searches only, and only as someone's own name (not an epithet like Gadabhrit)
+    if (!named.some(r => r.role === "p") || !sex) continue;
     const e = { n, g: { g: "girl", b: "boy", e: "either" }[sex], o: "", l: "", r: [...new Set(named.map(r => r.t))], m: "", src: "", type: "real", x: [], oo: [], sacredOnly: true };
     REAL.push(e); ALL_NAMED.push(e); have.set(k, e); TAKEN.add(k); indexName(e);
   }
@@ -99,7 +99,14 @@ const sacredReady = Promise.all([fetch("data/sacred.json?v=1").then(r => r.ok ? 
   const known = new Set([...$("#fText").options].map(o => o.value));
   $("#fText").insertAdjacentHTML("beforeend", [...new Set(d.c)].filter(c => !known.has(c) && !Object.values(TEXT_ALIAS).flat().includes(c)).map(c => `<option value="${esc(c)}">the ${esc(c)}</option>`).join(""));
 }).catch(e => console.error(e));
-const sacredOf = x => SACRED.get(fold(x.n)) || [];
+// Hindi drops Sanskrit's final a (Arjun from Arjuna, Kapil from Kapila): the modern name is a related form of the one in the text
+const INDIC = new Set(["Hindu", "Jain", "Buddhist", "Sikh"]);
+const sacredOf = x => {
+  const k = fold(x.n), own = SACRED.get(k);
+  if (own) return own;
+  const full = !/a$/.test(k) && SACRED.get(k + "a");
+  return full ? full.filter(r => INDIC.has(r.t) && r.s === "a").map(r => ({ ...r, s: "r", rel: `the modern form of Sanskrit ${r.tr || x.n + "a"}`, role: "p" })) : [];
+};
 // how close a name sits to a tradition (or to any, when none is chosen): 3 in the text, 2 a sacred connection, 1 cultural usage, 0 none
 // "in the text" needs a person (not a place or tribe) who carries the name as a girl or a boy, matching who it's for
 function closeness(x, trad) {
