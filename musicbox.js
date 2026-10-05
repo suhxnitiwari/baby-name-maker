@@ -79,51 +79,66 @@ const MB = (() => {
     return { w, syl };
   }
 
-  // name → events on the comb. t is in steps, i is the tooth, v is how hard it's plucked.
-  function phrase(word, t0, ev, owners) {
-    const { syl } = syllables(word);
+  // Each syllable's letters, for labels and Mom + Dad colors: the spelling split, or an even share when the sounds split differently
+  function spansOf(word, n) {
+    const { w, syl } = syllables(word);
+    if (syl.length === n) return syl.map(x => ({ s: x.s, e: x.e }));
+    return Array.from({ length: n }, (_, k) => ({ s: Math.round(k * w.length / n), e: Math.round((k + 1) * w.length / n) }));
+  }
+  const onsetOf = on => on.find(p => p !== "HH") || on[0] || "";
+
+  // name → events on the comb, from how it SOUNDS (phonetics.js). t is in steps, i is the tooth, v is how hard it's plucked.
+  //   the vowel places the note (back/round low, front/high high); a glide plays two notes;
+  //   the consonant before it nudges the pitch a little and decides how the note is played (soft, warm, crisp, airy);
+  //   stress decides how long it lingers; an open last syllable rings out.
+  function phrase(word, t0, ev, owners, off = 0) {
+    const P = PH.word(word);
+    if (!P.syl.length) return { t: t0, syl: [], shape: 0 };
+    const spans = spansOf(word, P.syl.length), shape = PH.shape(P.syl);
     let t = t0;
-    syl.forEach((x, k) => {
-      const first = k === 0, last = k === syl.length - 1;
-      const rungs = nucleus(x.nuc, x.magic).map(r => r + lean(x.on)), teeth = rungs.map(rung);
-      const on = x.on.replace(/^h/, "");
-      const hard = /^(b|d|g|k|p|t|c(?![eiyh])|q|j|x)/.test(on), hiss = /^(s|z|sh|ch|f|v|th|c(?=[eiy]))/.test(on);
-      const v = first ? 1 : last ? .82 : .74;
-      const len = first && syl.length > 1 ? 2 : last ? (x.co ? 2 : 3) : 1;
-      const own = owners ? majority(owners, x.s, x.e) : "";
-      teeth.forEach((i, g) => {
-        ev.push({ t: t + g * .5, i, v: g ? v * .8 : v, kind: "main", syl: k, own });
-      });
-      if (hard) ev.push({ t, i: rung(rungs[0] - 2), v: v * .55, kind: "pluck", syl: k, own });
-      if (hiss && rungs[0] + 5 < PENTA.length) ev.push({ t, i: rung(rungs[0] + 5), v: v * .32, kind: "spark", syl: k, own });
-      t += Math.max(len, teeth.length > 1 ? 1.5 : 1);
+    P.syl.forEach((x, k) => {
+      const last = k === P.syl.length - 1, on = onsetOf(x.on);
+      const rungs = (PH.RUNG[x.v] || [4]).map(r => r + PH.LEAN[PH.PLACE(on)]), teeth = rungs.map(rung);
+      const art = PH.MANNER(on);
+      const v = x.stress === 1 ? 1 : x.stress === 2 ? .86 : .72;
+      let len = x.stress === 1 ? 2 : x.stress === 2 ? 1.5 : 1;
+      if (last && !x.co.length) len += 1;
+      if (teeth.length > 1) len = Math.max(len, 1.5);
+      const sp = spans[k], own = owners ? majority(owners, sp.s, sp.e) : "", syl = off + k;
+      teeth.forEach((i, g) => ev.push({ t: t + g * Math.min(.75, len / 2), i, v: g ? v * .8 : v, kind: "main", syl, own, art, stress: x.stress }));
+      if (art === "crisp") ev.push({ t, i: rung(rungs[0] - 2), v: v * .5, kind: "pluck", syl, own, art });
+      if (/^(S|Z|SH|ZH|CH)$/.test(on) && rungs[0] + 5 < PENTA.length) ev.push({ t, i: rung(rungs[0] + 5), v: v * .3, kind: "spark", syl, own, art: "airy" });
+      t += len;
     });
-    return { t, syl };
+    return { t, syl: P.syl, shape };
   }
   const majority = (owners, s, e) => {
     const c = {}; for (let i = s; i < e; i++) if (owners[i]) c[owners[i]] = (c[owners[i]] || 0) + 1;
     return Object.entries(c).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
   };
 
-  const cache = new Map();
+  let cache = new Map();
+  const ALGORITHM = "lullabyte-2 · phonetic";                      // which rules made a melody (a melody made by older rules may differ)
   // melody("Amara") or melody("Amara", "Tiwari"); owners = per-letter source for Mom + Dad
   function melody(first, last = "", owners = null) {
     const key = first + "|" + last + "|" + (owners ? owners.join("") : "");
     if (cache.has(key)) return cache.get(key);
     const ev = [];
     const words = first.split(/[\s-]+/).filter(Boolean);
-    let t = .5, off = 0, syl = [];
+    let t = .5, off = 0, syl = [], shapes = [];
     for (const wd of words) {
       const own = owners ? owners.slice(off, off + flat(wd).length) : null;
       off += flat(wd).length;
-      const p = phrase(wd, t, ev, own); syl.push(...p.syl); t = p.t + .5;
+      const p = phrase(wd, t, ev, own, syl.length); syl.push(...p.syl); shapes.push(p.shape); t = p.t + .5;
     }
-    if (last) { t += .5; t = phrase(last, t, ev, null).t + .5; }
-    ev.push({ t: t + .5, i: 0, v: .5, kind: "home" }); // every tune comes home to low C
-    const m = { ev, steps: t + 2, syl };
+    if (last) { t += .5; t = phrase(last, t, ev, null, syl.length).t + .5; }
+    // a breath, then the Lullabyte signature: one low C. It isn't part of the name. It's ours.
+    ev.push({ t: t + 1, i: 0, v: .5, kind: "home", art: "soft" });
+    const m = { ev, steps: t + 3, syl, shape: shapes.length ? shapes.reduce((a, b) => a + b, 0) / shapes.length : 0, algorithm: ALGORITHM };
     cache.set(key, m);
     return m;
   }
+  const reset = () => { cache = new Map(); };
 
   // ── sound ──
   let ctx = null, bus = null;
@@ -144,18 +159,21 @@ const MB = (() => {
     bus.connect(comp); bus.connect(verb); verb.connect(wet); wet.connect(comp); comp.connect(ctx.destination);
     return ctx;
   }
-  // a music-box tine: bright attack, glassy partials, long soft ring
-  const pluck = (i, v = 1, when = 0) => tone(COMB[i], v, when);
+  // a music-box tine: glassy partials, long soft ring.
+  // art: how the note arrives (soft glides in, crisp strikes, airy breathes); shape: -1 round … 1 sharp sets how bright it is
+  const pluck = (i, v = 1, when = 0, art, shape) => tone(COMB[i], v, when, art, shape);
+  const ATTACK = { soft: .016, warm: .006, crisp: .0018, airy: .01 }, RING = { soft: 1.2, warm: 1, crisp: .72, airy: .92 };
   // any key on the toy piano, black keys included (midi note number)
-  function tone(midi, v = 1, when = 0) {
+  function tone(midi, v = 1, when = 0, art = "warm", shape = 0) {
     if (!on || !ensure()) return;
     const t = Math.max(ctx.currentTime, when || ctx.currentTime) + .005;
-    const f = 440 * 2 ** ((midi - 69) / 12), ring = 2.4 - (midi - 72) * .045;
-    for (const [r, a] of [[1, 1], [2.001, .34], [3.02, .1], [4.17, .05], [5.43, .025]]) {
+    const f = 440 * 2 ** ((midi - 69) / 12), ring = (2.4 - (midi - 72) * .045) * (RING[art] || 1);
+    const bright = (Math.max(-1, Math.min(1, shape)) + 1) / 2;   // a rounder name sounds like felt, a sharper one like glass
+    for (const [r, a] of [[1, 1], [2.001, .2 + .24 * bright], [3.02, .04 + .12 * bright], [4.17, .02 + .07 * bright], [5.43, .008 + .045 * bright]]) {
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = "sine"; o.frequency.value = f * r;
       g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(.11 * v * a, t + .003);
+      g.gain.linearRampToValueAtTime(.11 * v * a, t + (ATTACK[art] || .004));
       g.gain.exponentialRampToValueAtTime(.0001, t + ring / (r * .8));
       o.connect(g); g.connect(bus); o.start(t); o.stop(t + ring + .1);
     }
@@ -174,7 +192,7 @@ const MB = (() => {
   // schedule a whole melody; returns its length in seconds
   function play(m, speed = 1) {
     const c = on && ensure(), t0 = c ? c.currentTime + .06 : 0;
-    if (c) for (const e of m.ev) pluck(e.i, e.v, t0 + e.t * STEP / speed);
+    if (c) for (const e of m.ev) pluck(e.i, e.v, t0 + e.t * STEP / speed, e.art, m.shape);
     return m.steps * STEP / speed;
   }
 
@@ -223,19 +241,26 @@ const MB = (() => {
   }
   const label = m => m.ev.filter(e => e.kind === "main").map(e => NOTE_NAMES[e.i]).join(" ");
 
-  // Why each syllable plays the note it does, in plain words: "NI · 'ee' is bright, the N lifts it two steps → E6"
-  const SOUND = { 2: "“oo” is low and dark", 3: "“oh” sits low", 4: "“ah” is the middle of the comb", 5: "“eh” sits above the middle", 7: "“ee” is high and bright" };
-  const LEAN = { "-1": "the lips pull it down a step", 1: "the L or R lifts it a step", 2: "the tongue tip lifts it two steps", 3: "the back of the mouth lifts it three" };
+  // Why each syllable plays the note it does, in plain words, plus everything the mobile needs to draw it
+  const STRESS_SAY = ["", "stressed, so it lingers", "lightly stressed"];
   function explain(name) {
     const m = melody(name), out = [];
-    for (const wd of name.split(/[\s-]+/).filter(Boolean)) for (const x of syllables(wd).syl) out.push(x);
-    return out.map((x, k) => {
-      const r = nucleus(x.nuc, x.magic), l = lean(x.on);
-      const notes = m.ev.filter(e => e.kind === "main" && e.syl === k).map(e => NOTE_NAMES[e.i]);
-      const sound = r.length > 1 ? `“${x.magic ? x.nuc[0] + "…e" : x.nuc}” glides between two notes` : SOUND[r[0]] || "an open vowel";
-      return { text: (x.on + x.nuc + x.co).toUpperCase(), notes, why: [sound, LEAN[l]].filter(Boolean).join(", ") };
-    });
+    for (const wd of name.split(/[\s-]+/).filter(Boolean)) {
+      const P = PH.word(wd), w = flat(wd), spans = spansOf(wd, P.syl.length);
+      P.syl.forEach((x, k) => {
+        const on = onsetOf(x.on), place = PH.PLACE(on), art = PH.MANNER(on), idx = out.length;
+        const ev = m.ev.filter(e => e.kind === "main" && e.syl === idx);
+        out.push({
+          text: (w.slice(spans[k].s, spans[k].e) || PH.respell([x])).toUpperCase(), say: PH.respell([{ ...x, stress: 0 }]),
+          notes: ev.map(e => NOTE_NAMES[e.i]), teeth: ev.map(e => e.i), v: x.v, glide: (PH.RUNG[x.v] || []).length > 1, place, art, stress: x.stress,
+          why: [STRESS_SAY[x.stress], PH.VOWEL_SAY[x.v], PH.LEAN_SAY[place], PH.ART_SAY[art]].filter(Boolean).join(" · "),
+        });
+      });
+    }
+    return out;
   }
+  // how the name is being said, where that comes from, and the other honest ways to say it
+  const say = name => { const w = name.split(/[\s-]+/).filter(Boolean); if (w.length !== 1) return null; const P = PH.word(w[0]); return { ...P, shape: PH.shape(P.syl) }; };
 
   // ── the punched paper strip: what a real music box reads. Rows are teeth (high notes on top), columns are steps.
   // Every hole is one note; names that sound alike punch the same holes. labels: the syllables, under their notes.
@@ -314,6 +339,6 @@ const MB = (() => {
     return dur;
   }
 
-  return { melody, syllables, stripSVG, paperSVG, playPaper, explain, play, playEl, pluck, tone, tick, ensure, label, STEP, COMB, NOTE_NAMES,
+  return { melody, syllables, stripSVG, paperSVG, playPaper, explain, say, reset, ALGORITHM, play, playEl, pluck, tone, tick, ensure, label, STEP, COMB, NOTE_NAMES,
     get on() { return on; }, setOn, stopAll: () => playing && playing.stop() };
 })();

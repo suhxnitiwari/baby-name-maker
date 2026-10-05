@@ -26,7 +26,7 @@ const Piano = (() => {
     let maxRow = 0;
     const placed = voices.map((v, vi) => {
       const pos = [], rows = [];
-      v.words.forEach((w, k) => { const e = v.m.ev.find(e => e.kind === "main" && e.syl === k); if (e) pos.push({ w, k, at: x(e.i) }); });
+      v.words.forEach((w, k) => { const e = v.m.ev.find(e => e.kind === "main" && e.syl === k); if (e) pos.push({ w, k, at: x(e.i), stress: e.stress === 1 }); });
       return pos.map(p => {
         let row = 0; while ((rows[row] || []).some(q => Math.abs(q - p.at) < Math.max(7, p.w.length * 2.2))) row++;
         (rows[row] = rows[row] || []).push(p.at);
@@ -35,7 +35,7 @@ const Piano = (() => {
       });
     }).flat();
     // earlier syllables sit higher, so stacked ones read top to bottom
-    const lyr = placed.map(p => `<span class="syl${p.own ? " o-" + p.own : ""}" data-v="${p.vi}" data-syl="${p.k}" style="left:${p.at.toFixed(2)}%;--row:${maxRow - p.r}">${esc(p.w)}</span>`).join("");
+    const lyr = placed.map(p => `<span class="syl${p.own ? " o-" + p.own : ""}${p.stress ? " stress" : ""}" data-v="${p.vi}" data-syl="${p.k}" style="left:${p.at.toFixed(2)}%;--row:${maxRow - p.r}">${esc(p.w)}</span>`).join("");
     return `<div class="piano${o.small ? " small" : ""}" ${o.id ? `id="${o.id}"` : ""}>
       <div class="lyrics" style="height:${26 + (maxRow + 1) * 20}px">${lyr}</div>
       <div class="case"><div class="felt"></div><div class="keys">${keys}</div></div>

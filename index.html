@@ -96,6 +96,21 @@
   .cell b { font: 400 1.55rem/1 var(--serif); letter-spacing: .04em; }
   .cell code { font: .68rem var(--mono); color: var(--muted); letter-spacing: .08em; }
   .cell.on { transform: translateY(-4px); color: var(--rose); } .cell.on code { color: var(--rose); }
+  .cell.stress b { font-style: italic; }
+  .cell.stress b::before { content: "ˈ"; font-style: normal; color: var(--rose); margin-right: 1px; }
+  .say { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; font: 400 1.05rem var(--serif); color: var(--muted); max-width: 560px; }
+  .say b { color: var(--ink); font-weight: 400; letter-spacing: .02em; }
+  .say em { font: .6rem var(--mono); font-style: normal; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-left: 4px; }
+  .say .or { font-style: italic; }
+  .say-opt { all: unset; cursor: pointer; font: 400 1.05rem var(--serif); color: var(--rose); border-bottom: 1px dotted currentColor; }
+  .say-opt.quiet { font: .6rem var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .say-opt:hover { color: var(--rose); }
+  .say-in { font: italic 400 1.05rem var(--serif); border: 0; border-bottom: 1px solid var(--rose); background: transparent; color: var(--ink); padding: 0 2px; width: 12ch; }
+  .say-in:focus { outline: none; }
+  .shape { display: flex; align-items: center; gap: 10px; font: .6rem var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); cursor: help; }
+  .shape:empty { display: none; }
+  .shape i { position: relative; width: 120px; height: 1px; background: var(--rule); }
+  .shape b { position: absolute; top: -3px; width: 7px; height: 7px; margin-left: -3.5px; border-radius: 50%; background: var(--rose); }
   .cell:hover b, .cell:focus-visible b { color: var(--rose); }
   .sep { color: var(--rule); font-style: normal; }
   .why { font: .66rem/1.5 var(--mono); color: var(--muted); letter-spacing: .04em; min-height: 1.5em; margin-top: -4px; max-width: 520px; }
@@ -132,6 +147,7 @@
   .lyrics { position: relative; margin: 0 14px; }
   .lyrics .syl { position: absolute; bottom: calc(var(--row) * 20px); transform: translateX(-50%); font: italic 400 1.1rem/1 var(--serif); color: var(--muted); white-space: nowrap; transition: color .25s, transform .35s var(--drop); }
   .lyrics .syl::after { content: ""; position: absolute; left: 50%; top: 100%; width: 1px; height: calc(4px + var(--row) * 20px); background: currentColor; opacity: .25; }
+  .lyrics .syl.stress::before { content: "ˈ"; font-style: normal; }
   .lyrics .syl.on { color: var(--rose); transform: translateX(-50%) translateY(-3px); }
   .lyrics .syl.o-a { color: var(--mom); } .lyrics .syl.o-b { color: var(--dad); }
   .lyrics .syl.on.o-a, .lyrics .syl.on.o-b { text-shadow: 0 0 12px rgba(255,217,138,.9); }
@@ -478,6 +494,8 @@
       <div class="type-hint" id="typeHint">Type your name ↑</div>
       <div class="syl-row" id="sylRow" aria-live="polite"></div>
       <p class="why" id="why"></p>
+      <div class="say" id="say" aria-live="polite"></div>
+      <div class="shape" id="shape"></div>
       <div class="tape" id="tape"><div id="tapePaper"></div></div>
       <div class="hero-acts hidden" id="heroActs">
         <button class="link" id="heroSpell">Hear other spellings →</button>
@@ -509,7 +527,7 @@
 <nav id="explore" aria-label="Explore Lullabyte">
   <div class="ex-top"><span class="brand">Lulla<span>byte</span></span><div class="tb-r"><button id="exploreClose">Close ×</button></div></div>
   <div class="ex-mobile" id="exMobile"></div>
-  <p class="ex-foot">How a name becomes a tune: each syllable is one note. The vowel picks the pitch (“oo” low, “ah” in the middle, “ee” high), the consonant before it nudges it up or down. Every tune comes home to the same low C. Names that sound alike punch the same holes.</p>
+  <p class="ex-foot">How a name becomes a lullaby: we start with how your name sounds, not how it's spelled. Each syllable becomes a note. Its vowel places it on the keys: rounder, deeper vowels tend lower; brighter front vowels rise higher. The consonant before it nudges the note and shapes how it arrives, from soft and flowing to crisp and struck. Stressed syllables linger. Gliding vowels become two notes. Every pitch settles into a five-note scale, C · D · E · G · A, which keeps even unfamiliar combinations gently consonant. Same pronunciation, same lullaby; a different pronunciation, a different song. And when the name is finished, one last low C rings out. That one's ours.</p>
 </nav>
 
 <!-- 02 · find -->
@@ -633,12 +651,13 @@
 
 <script src="names.js?v=10"></script>
 <script src="generator.js?v=4"></script>
-<script src="musicbox.js?v=4"></script>
-<script src="mobile.js?v=7"></script>
-<script src="piano.js?v=2"></script>
+<script src="phonetics.js?v=3"></script>
+<script src="musicbox.js?v=5"></script>
+<script src="mobile.js?v=9"></script>
+<script src="piano.js?v=3"></script>
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=12"></script>
+<script src="app.js?v=13"></script>
 </body>
 </html>

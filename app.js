@@ -89,6 +89,8 @@ const KIND_LABEL = { attested: "Real name", real: "Real name", root: "Built from
 // official popularity: rank badges, and every year's top names for the time machine
 let POP = null, YEARS = null;
 const SHORT = { us: "US", ca: "Canada", au: "NSW", ew: "Eng & Wales", fr: "France" };
+// pronunciations: a dictionary for names people have, then the rules of each name's language (phonetics.js)
+fetch("data/pron.json?v=1").then(r => r.json()).then(d => PH.load(d)).catch(() => {});
 fetch("data/popularity.json?v=6").then(r => r.json()).then(d => { POP = d; }).catch(() => {});
 fetch("data/years.json?v=1").then(r => r.json()).then(d => { YEARS = d; Charts.ready(); }).catch(() => {});
 function popRanks(name, g) {
@@ -351,6 +353,7 @@ function moreHTML(x) {
         ${x.prov ? provHTML(x) : ""}
       </div>
       <dl class="dl">
+        ${(() => { const S = /[\s-]/.test(x.n) ? null : MB.say(x.n); return S && S.say ? `<div><dt>Said</dt><dd>${esc(S.say)} <small>${esc(S.source)}</small></dd></div><div><dt>Sound shape</dt><dd>${S.shape < -.33 ? "rounded ◯" : S.shape > .33 ? "sharp ◇" : "in between"}</dd></div>` : ""; })()}
         <div><dt>Feels</dt><dd>${v.words.map(esc).join(", ") || "its own thing"}</dd></div>
         ${pop ? `<div><dt>Chart</dt><dd>${esc(pop)}</dd></div>` : ""}
         ${spell.length ? `<div><dt>Also spelled</dt><dd>${spell.map(s => `<button class="inline" data-spell="${esc(s.n)}">${esc(s.n)}</button>`).join(", ")}</dd></div>` : ""}
@@ -449,12 +452,43 @@ const Hero = (() => {
     const parts = v ? MB.explain(v) : [];
     $("#heroPlay").innerHTML = `<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg><span>${v ? "Play " + esc(v) : "Play"}</span>`;
     $("#heroPlay").disabled = !v;
-    $("#sylRow").innerHTML = parts.map((p, k) => `<button class="cell" data-k="${k}" data-why="${esc(p.text + " · " + p.why + " → " + p.notes.join("–"))}"><b>${esc(p.text)}</b><code>${p.notes.join("–") || "·"}</code></button>`).join(`<i class="sep">·</i>`);
+    $("#sylRow").innerHTML = parts.map((p, k) => `<button class="cell${p.stress === 1 ? " stress" : ""}" data-k="${k}" data-why="${esc(p.text + " · " + p.why + " → " + p.notes.join("–"))}"><b>${esc(p.text)}</b><code>${p.notes.join("–") || "·"}</code></button>`).join(`<i class="sep">·</i>`);
     $("#why").textContent = parts.length ? "point at a syllable to see why it plays that note" : "";
+    sayLine(v);
     $("#heroActs").classList.toggle("hidden", !v || !user);
     $("#heroKeep").classList.toggle("tied", !!v && Cradle.has(v)); $("#heroKeep").dataset.heart = v;
     if (v !== lastStrip) $("#tape").classList.remove("out");
   }
+  // how the name is being said, and the other honest ways to say it. Picking one changes the song everywhere.
+  function sayLine(v) {
+    const box = $("#say"), meter = $("#shape");
+    const S = v && !/[\s-]/.test(v.trim()) ? MB.say(v) : null;
+    if (!S || !S.say) { box.innerHTML = ""; meter.innerHTML = ""; return; }
+    const others = S.opts.filter(o => o.say.toLowerCase() !== S.say.toLowerCase());
+    box.innerHTML = `<span>said <b>${esc(S.say)}</b> <em>${esc(S.source)}</em></span>` +
+      (others.length ? `<span class="or">or</span>${others.map(o => `<button class="say-opt" data-say="${esc(o.say)}" title="${esc(o.source)}">${esc(o.say)} ♪</button>`).join("")}` : "") +
+      (S.mine ? `<button class="say-opt quiet" data-say="">use the usual way</button>` : "") +
+      `<button class="say-opt quiet" data-say-own>say it differently →</button>`;
+    const x = (S.shape + 1) / 2 * 100;
+    meter.innerHTML = `<span>rounded ◯</span><i><b style="left:${x.toFixed(0)}%"></b></i><span>◇ sharp</span>`;
+    meter.title = "the sound's shape: soft sounds and round vowels lean rounded, crisp stops and bright vowels lean sharp. It changes how the music box sounds, not how good the name is.";
+  }
+  $("#say").addEventListener("click", e => {
+    const v = typed.textContent.trim();
+    const own = e.target.closest("[data-say-own]");
+    if (own) {
+      own.outerHTML = `<input class="say-in" id="sayIn" placeholder="like mah-YAH" aria-label="Write how you say it, stressed part in capitals">`;
+      const inp = $("#sayIn"); inp.focus();
+      inp.addEventListener("keydown", ev => { if (ev.key === "Enter" && inp.value.trim()) { PH.choose(v, inp.value.trim()); } if (ev.key === "Escape") sayLine(v); });
+      return;
+    }
+    const b = e.target.closest("[data-say]");
+    if (!b) return;
+    PH.choose(v, b.dataset.say);
+  });
+  // a new reading (yours, or the dictionary arriving) redraws the name and plays it the new way
+  addEventListener("say", () => { const v = typed.textContent.trim(); if (v) { show(v, true); play(); } });
+  addEventListener("pron", () => { const v = typed.textContent.trim(); if (v && !auto) show(v, true); });
   // the instruction types itself, then hands over
   async function demo() {
     const sleep = ms => new Promise(r => auto.t = setTimeout(r, ms));

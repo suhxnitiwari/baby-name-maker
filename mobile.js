@@ -1,8 +1,9 @@
 // ─────────────────────────────────────────────────────────────
 // THE MOBILE: the first screen. Every name builds its own object.
-// Each letter threads a bead onto the hoop; each syllable drops a felt charm on a string.
+// Each letter threads a bead onto the hoop; each syllable, as it's SAID, drops a felt charm on a string.
 // The charm's shape is the vowel (oo moon, oh sun, ah cloud, eh drop, ee star, a glide is a bird),
-// its color is the consonant before it, and its string length is the note: low notes hang long.
+// its color is where the consonant before it is made, its string length is the note (low notes hang long),
+// and the stressed syllable's charm is a little bigger.
 // No two names make the same mobile. Play it and the charms light up in order; drag to spin it.
 // ─────────────────────────────────────────────────────────────
 const Mobile = (() => {
@@ -15,9 +16,7 @@ const Mobile = (() => {
   // the consonant before a vowel colors its felt: lips rose, L/R wheat, tongue tip sage, back of the mouth slate, none cream
   const TINT = { lips: "#d9a79c", lr: "#e6cf9f", tip: "#b7c5aa", back: "#a3b7c6", h: "#d3c4ad", none: "#f4ebdc" };
   const cls = c => !c ? "none" : "bpmfvw".includes(c) ? "lips" : "lr".includes(c) ? "lr" : "dtnszx".includes(c) ? "tip" : c === "h" ? "h" : "back";
-  const tintOf = on => TINT[cls(on.replace(/^h(?=.)/, "")[0])];
   const beadColor = c => "aeiouy".includes(c) ? null : TINT[cls(c)];
-  const SHAPE = { 2: "moon", 3: "sun", 4: "cloud", 5: "drop", 7: "star" };
   const REST = [["cloud", 7, TINT.none], ["moon", 1, "#cdbfa9"], ["star", 10, "#e6cf9f"], ["cloud", 4, "#e2c3b5"], ["sun", 0, "#f4ebdc"], ["drop", 8, "#b9c6ae"]];
 
   let W = 0, H = 0, dpr = 1, S = 1, hx = 0, hookY = 0, ringY = 0, rx = 0, ry = 0, narrow = false;
@@ -47,19 +46,20 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
   const pendantLen = () => (H - ringY) * (.08 + Math.min(10, name.replace(/[^a-z]/gi, "").length) * .012);
 
   // ── a name → its parts ──
+  // a name → its syllables as they're SAID (phonetics.js), each with its letters, vowel, consonant and notes
   function parts(n) {
-    const words = n.split(/[\s-]+/).filter(Boolean), syl = [];
-    for (const w of words) syl.push(...MB.syllables(w).syl.map(x => ({ ...x, letters: x.on + x.nuc + x.co })));
-    return { syl, m: MB.melody(n || " "), letters: MB.syllables(words.join("")).w };
+    const words = n.split(/[\s-]+/).filter(Boolean);
+    return { syl: n ? MB.explain(n) : [], letters: MB.syllables(words.join("")).w };
   }
   const makeStrand = o => ({ len: 0, lenT: 0, v: 0, swing: (Math.random() - .5) * .2, vs: 0, bob: 0, vb: 0, glow: 0, alpha: 1, dying: false, beads: [], ...o, aT: o.a });
-  const nucRung = v => /^(oo|ou|u|ew)/.test(v) ? 2 : /^(ee|ea|ie|i|y)/.test(v) ? 7 : /^(au|aw)/.test(v) || v[0] === "o" ? 3 : v[0] === "e" ? 5 : 4;
+  // the charm's shape is the vowel family: oo moon, oh sun, ah cloud, eh drop, ee star; a gliding vowel is a bird
+  const SHAPE_OF = v => /^(UW|UH)$/.test(v) ? "moon" : /^(AO|O)$/.test(v) ? "sun" : /^(AA|AH|ER)$/.test(v) ? "cloud" : /^(AE|EH|E)$/.test(v) ? "drop" : "star";
   const retire = s => { s.dying = true; s.lenT = 0; };
   function load(n) {
     const prev = name;
     name = n;
-    const { syl, m, letters } = parts(n);
-    mel = m;
+    const { syl, letters } = parts(n);
+    mel = MB.melody(n || " ");
     if (!n) {
       // at rest: six quiet felt charms, the mobile before it has a name
       strands.filter(s => !s.dying && !s.rest).forEach(retire);
@@ -68,17 +68,17 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
       strands.filter(s => s.rest && !s.dying).forEach(retire);
       const mine = strands.filter(s => !s.dying && !s.rest), N = syl.length;
       syl.forEach((x, j) => {
-        const notes = m.ev.filter(e => e.kind === "main" && e.syl === j);
-        const i = notes.length ? notes[0].i : 4;
-        const kind = notes.length > 1 ? "bird" : SHAPE[nucRung(x.nuc)];
-        const r = (j === 0 && N > 1 ? 1.1 : 1) * (x.co && j === N - 1 ? .92 : 1);
+        const i = x.teeth.length ? x.teeth[0] : 4;
+        const kind = x.glide ? "bird" : SHAPE_OF(x.v);
+        const r = 1;
         let s = mine[j];
         if (!s) { s = makeStrand({ i, a: j / N * TAU + .001 }); strands.push(s); }
         if (s.kind && s.kind !== kind) s.vs += .25;                        // a charm that changes shape swings
-        Object.assign(s, { i, kind, color: tintOf(x.on), r, lenT: lenFor(i), aT: j / N * TAU, syl: j });
+        Object.assign(s, { i, kind, color: TINT[x.place] || TINT.none, r: r * (x.stress === 1 ? 1.08 : 1), lenT: lenFor(i), aT: j / N * TAU, syl: j });
         // beads: one per letter of the syllable, falling into place on its string
-        [...x.letters].forEach((c, b) => { if (!s.beads[b]) s.beads.push({ c, y: -.3, vy: 0 }); else s.beads[b].c = c; });
-        s.beads.length = x.letters.length;
+        const lt = x.text.toLowerCase();
+        [...lt].forEach((c, b) => { if (!s.beads[b]) s.beads.push({ c, y: -.3, vy: 0 }); else s.beads[b].c = c; });
+        s.beads.length = lt.length;
       });
       mine.slice(N).forEach(retire);
     }
