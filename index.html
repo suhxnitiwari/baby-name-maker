@@ -56,17 +56,24 @@
   /* ── 01 the box ── */
   #stage { position: relative; height: 100svh; min-height: 720px; overflow: hidden;
     background: radial-gradient(ellipse 55% 60% at 66% 30%, #fffaf2 0%, rgba(255,250,242,0) 70%), linear-gradient(180deg, #f6efe4 0%, #efe5d6 100%); }
+  /* window light: two beams across the wall, and one broad one falling behind the name toward the floor */
   #stage::before { content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: linear-gradient(115deg, transparent 0 40%, rgba(255,255,255,.32) 40% 48%, transparent 48% 54%, rgba(255,255,255,.22) 54% 59%, transparent 59%); }
+    background: linear-gradient(115deg, transparent 0 40%, rgba(255,255,255,.42) 40% 48%, transparent 48% 54%, rgba(255,255,255,.3) 54% 59%, transparent 59%),
+      linear-gradient(62deg, transparent 0 8%, rgba(255,250,240,.5) 8% 30%, transparent 30%); }
   #stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .08; mix-blend-mode: multiply;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
   #mobile { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; cursor: grab; z-index: 1; }
-  .hero-left { position: absolute; z-index: 3; left: 48px; top: 92px; bottom: 28px; width: min(41vw, 600px); display: flex; flex-direction: column; pointer-events: none; }
+  .hero-left { position: absolute; z-index: 3; left: 48px; top: 92px; bottom: 64px; width: min(41vw, 600px); display: flex; flex-direction: column; pointer-events: none; }
   .hero-left > * { pointer-events: auto; }
   .hero-copy h1 { font: 400 clamp(3rem, min(7.2vw, 10.4vh), 7.6rem)/.86 var(--serif); letter-spacing: -.02em; margin: 14px 0 0; }
   .hero-copy h1 i { color: var(--rose); }
-  .namer { margin-top: clamp(22px, 5vh, 56px); display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
-  .field { position: relative; display: inline-flex; align-items: baseline; font: 400 clamp(2.6rem, 5vw, 4.3rem)/1.05 var(--serif); min-width: 4ch; max-width: 100%;
+  .hero-lede { font: italic 400 clamp(1.2rem, 1.7vw, 1.55rem) var(--serif); color: var(--muted); margin: 14px 0 0; }
+  .namer { position: relative; margin-top: clamp(28px, 8vh, 100px); display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+  /* a soft glow of wall behind the name, so charms can swing behind it and the words stay clear */
+  .namer::before { content: ""; position: absolute; inset: -40px -60px -30px -48px; z-index: -1; pointer-events: none;
+    background: radial-gradient(ellipse 70% 65% at 35% 45%, rgba(246,239,228,.92), rgba(246,239,228,.6) 55%, rgba(246,239,228,0) 80%); }
+  .name-row { display: flex; align-items: flex-end; gap: 22px; width: 92%; }
+  .field { position: relative; flex: 1; display: inline-flex; align-items: baseline; font: 400 clamp(3.1rem, 6.2vw, 5.3rem)/1.05 var(--serif); min-width: 4ch; max-width: 100%;
     padding: 0 4px 4px; border-bottom: 1px solid rgba(120,90,60,.35); cursor: text; transition: border-color .3s; }
   .field:focus-within { border-color: var(--rose); }
   .field #typed { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
@@ -75,6 +82,7 @@
   .caret { order: 1; display: inline-block; width: 2px; height: .82em; margin: 0 2px 0 3px; background: var(--rose); align-self: center; animation: blink 1.05s steps(1) infinite; }
   @keyframes blink { 50% { opacity: 0; } }
   #heroName { position: absolute; inset: 0; width: 100%; opacity: 0; font-size: 16px; border: 0; cursor: text; }
+  .name-row .play { margin-bottom: 10px; flex: none; }
   .type-hint { font: 500 .68rem var(--mono); letter-spacing: .2em; color: var(--rose); margin-top: -4px; transition: opacity .8s, height .6s; }
   .type-hint.gone { opacity: 0; height: 0; overflow: hidden; margin: -6px 0 0; }
   .play { border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 12px; padding: 13px 24px 12px 18px; border-radius: 999px;
@@ -93,6 +101,11 @@
   .why { font: .66rem/1.5 var(--mono); color: var(--muted); letter-spacing: .04em; min-height: 1.5em; margin-top: -4px; max-width: 520px; }
   .tape { max-width: 100%; overflow-x: auto; clip-path: inset(0 100% 0 0); transition: clip-path 1.3s var(--ease); scrollbar-width: none; filter: drop-shadow(0 8px 12px rgba(120,90,60,.16)); }
   .tape.out { clip-path: inset(0 0 0 0); }
+  .anchor { position: absolute; z-index: 3; bottom: 24px; font: 500 .66rem var(--mono); letter-spacing: .22em; text-transform: uppercase; color: rgba(90,65,50,.6); }
+  button.anchor { all: unset; position: absolute; z-index: 3; bottom: 24px; left: 48px; cursor: pointer; font: 500 .66rem var(--mono); letter-spacing: .22em; text-transform: uppercase; color: rgba(90,65,50,.6); }
+  button.anchor:hover { color: var(--rose); }
+  .anchor.spin { left: 57.5%; transform: translateX(-50%); pointer-events: none; }
+  @media (max-height: 760px) { .anchor { display: none; } }
   .hero-acts { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; }
   .hero-acts .tied { color: var(--rose); border-color: var(--rose); }
   .hero-acts .tied::after { content: " · in the cradle"; }
@@ -409,6 +422,7 @@
     .hero-copy { order: 0; padding: 78px 16px 0; position: relative; z-index: 3; }
     .namer { order: 2; padding: 0 16px 34px; margin-top: -10px; position: relative; z-index: 3; }
     .hero-copy h1 { font-size: clamp(2.8rem, 13vw, 4rem); }
+    .name-row { width: 100%; flex-wrap: wrap; } .anchor { display: none; } .namer::before { display: none; }
     .room { padding: 90px 16px 30px; } .room-head { grid-template-columns: 1fr; } .seg-wrap { justify-items: start; }
     .choices { gap: 4px 22px; }
     #spellSheet { padding: 22px 16px 30px; } #explore { padding: 14px 16px 24px; } footer { padding: 24px 16px 40px; }
@@ -451,14 +465,17 @@
     <div class="hero-copy">
       <p class="kick" id="totalLine">every name plays its own song</p>
       <h1>Every name<br>is a <i>lullaby.</i></h1>
+      <p class="hero-lede">Type one to hear it.</p>
     </div>
     <div class="namer">
-      <label class="field empty">
-        <input id="heroName" spellcheck="false" autocomplete="off" autocapitalize="words" maxlength="24" aria-label="Type a name to hear it">
-        <span id="typed" aria-hidden="true"></span><i class="caret" aria-hidden="true"></i><span class="ph" aria-hidden="true">your name…</span>
-      </label>
+      <div class="name-row">
+        <label class="field empty">
+          <input id="heroName" spellcheck="false" autocomplete="off" autocapitalize="words" maxlength="24" aria-label="Type a name to hear it">
+          <span id="typed" aria-hidden="true"></span><i class="caret" aria-hidden="true"></i><span class="ph" aria-hidden="true">your name…</span>
+        </label>
+        <button class="play" id="heroPlay" disabled></button>
+      </div>
       <div class="type-hint" id="typeHint">Type your name ↑</div>
-      <button class="play" id="heroPlay" disabled></button>
       <div class="syl-row" id="sylRow" aria-live="polite"></div>
       <p class="why" id="why"></p>
       <div class="tape" id="tape"><div id="tapePaper"></div></div>
@@ -469,6 +486,8 @@
       </div>
     </div>
   </div>
+  <button class="anchor" id="toFind">Find your lullaby ↓</button>
+  <span class="anchor spin" aria-hidden="true">Drag the mobile to spin</span>
 </section>
 
 <!-- same song, different letters -->
@@ -615,11 +634,11 @@
 <script src="names.js?v=10"></script>
 <script src="generator.js?v=4"></script>
 <script src="musicbox.js?v=4"></script>
-<script src="mobile.js?v=6"></script>
+<script src="mobile.js?v=7"></script>
 <script src="piano.js?v=2"></script>
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=11"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>

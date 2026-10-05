@@ -505,7 +505,7 @@ const Hero = (() => {
   $("#sylRow").addEventListener("click", e => { const c = e.target.closest(".cell"); if (c) { const p = MB.explain(typed.textContent)[+c.dataset.k]; $("#why").textContent = c.dataset.why; const ev = MB.melody(typed.textContent).ev.filter(x => x.kind === "main" && x.syl === +c.dataset.k); ev.forEach((x, g) => MB.pluck(x.i, .9, 0)); } });
   $("#heroPlay").onclick = play;
   $("#heroSpell").onclick = () => Spell.open(typed.textContent.trim());
-  $("#heroFind").onclick = () => $("#find").scrollIntoView({ behavior: "smooth" });
+  $("#heroFind").onclick = $("#toFind").onclick = () => $("#find").scrollIntoView({ behavior: "smooth" });
   show("");
   return { demo, get name() { return typed.textContent.trim(); } };
 })();

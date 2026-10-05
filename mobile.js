@@ -18,7 +18,7 @@ const Mobile = (() => {
   const tintOf = on => TINT[cls(on.replace(/^h(?=.)/, "")[0])];
   const beadColor = c => "aeiouy".includes(c) ? null : TINT[cls(c)];
   const SHAPE = { 2: "moon", 3: "sun", 4: "cloud", 5: "drop", 7: "star" };
-  const REST = [["cloud", 6, TINT.none], ["moon", 2, "#cdbfa9"], ["star", 9, "#e6cf9f"], ["cloud", 4, "#e2c3b5"], ["sun", 1, "#f4ebdc"], ["drop", 7, "#b9c6ae"]];
+  const REST = [["cloud", 7, TINT.none], ["moon", 1, "#cdbfa9"], ["star", 10, "#e6cf9f"], ["cloud", 4, "#e2c3b5"], ["sun", 0, "#f4ebdc"], ["drop", 8, "#b9c6ae"]];
 
   let W = 0, H = 0, dpr = 1, S = 1, hx = 0, hookY = 0, ringY = 0, rx = 0, ry = 0, narrow = false;
   let name = "", mel = null, rot = .4, spin = .1, drag = null, tilt = 0, vtilt = 0, keyA = 0, hover = null;
@@ -32,8 +32,8 @@ const Mobile = (() => {
     dpr = Math.min(devicePixelRatio || 1, 2); W = r.width; H = r.height;
     cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     narrow = W < 760;
-    hx = narrow ? W * .5 : W * .655;
-    rx = narrow ? Math.min(W * .36, 190) : Math.min(W * .25, H * .46, 420);
+    hx = narrow ? W * .5 : W * .575;                          // the ring reaches back toward the headline
+    rx = narrow ? Math.min(W * .36, 190) : Math.min(W * .285, H * .52, 480);
     S = rx / 300;
     ry = rx * .18;
     hookY = narrow ? 8 : 0;
@@ -42,7 +42,8 @@ const Mobile = (() => {
     if (pendant.lenT) pendant.lenT = pendantLen();
   }
   // string length from the note: low notes hang long, so the melody is the mobile's silhouette
-  const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .24 + (14 - i) / 14 * .48) * (rest ? .9 : 1);
+  // desktop strings run from ~half the screen to near the floor, so you stand underneath it
+const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .3 + (14 - i) / 14 * .52) * (rest ? .95 : 1);
   const pendantLen = () => (H - ringY) * (.08 + Math.min(10, name.replace(/[^a-z]/gi, "").length) * .012);
 
   // ── a name → its parts ──
