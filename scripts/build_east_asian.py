@@ -36,6 +36,17 @@ NAME_SENSE = dict(x.replace("_", " ").split(":") for x in """博:learned 空:sky
 彩:color 紗:silk 千:thousand 乃:no_(for_its_sound) 那:na_(for_its_sound) 佳:fine 恵:blessing 理:reason 里:village 希:hope 芽:bud
 良:good 菜:greens 桜:cherry_blossom 雪:snow 月:moon 星:star 光:light 春:spring 夏:summer 秋:autumn 冬:winter 健:healthy 二:second_son""".split())
 
+# the dictionary sense a name uses (瑞 auspicious, not "congratulations"; 潤 lustrous, not "wet"): the first gloss names mean, else the first
+NAMEY = re.compile(r"\b(great|grand|beautiful|graceful|elegant|gentle|calm|quiet|tranquil|peace|happy|happiness|joy|delight|trust|faith|honest|sincere|"
+                   r"rose|lotus|orchid|plum|jade|pearl|gem|bright|brilliant|clever|wise|wisdom|virtue|kind|pure|clean|snow|spring|autumn|summer|winter|moon|"
+                   r"star|cloud|rain|sea|ocean|mountain|forest|sun|morning|dawn|light|shine|glory|hero|strong|brave|soar|fly|dragon|phoenix|fragrant|"
+                   r"poem|poetry|music|song|refined|lovely|charming|smart|auspicious|lucky|prosperous|rich|harmony|kindness|noble|tender|soft|grace|"
+                   r"elegance|excellent|talented|treasure|precious|beauty|blessing|favour|favor|lustrous|glossy|wealth|benevolence|loyal|righteous)\b", re.I)
+def name_sense(meanings):
+    ms = [re.sub(r"\s*\(.*?\)", "", m).strip() for m in meanings if not re.search(r"radical|counter|kokuji|\(no\.", m)]
+    ms = [m for m in ms if m]
+    return next((m for m in ms if NAMEY.search(m) and len(m) < 40), ms[0] if ms else "")
+
 def short(meanings, n=2):
     ms = [re.sub(r"\s*\(.*?\)", "", m).strip() for m in meanings if not re.search(r"radical|counter|kokuji|\(no\.", m)]
     return ", ".join(dict.fromkeys(m for m in ms if m)[:n] if False else list(dict.fromkeys(m for m in ms if m))[:n])
@@ -135,7 +146,7 @@ def korean(kd, db):
             if ra[-1:] in "aeiou" and rb_[:1] in "aeiou" and not rb_.startswith(("eo", "eu")): pass
             n = (ra + rb_).capitalize()
             ha, hb = syl[a][0], syl[b][0]
-            meaning = f"{short(kd[ha]['m'], 1)} + {short(kd[hb]['m'], 1)}"
+            meaning = f"{name_sense(kd[ha]['m'])} + {name_sense(kd[hb]['m'])}"
             out.append([n, g, a + b, ha + hb, meaning, 1 if n.lower() in db else 0])
     return out
 
@@ -174,6 +185,18 @@ def chinese(db):
     for c, lean in ZH.items():
         if c in cd: chars[c] = (cd[c][0][0], cd[c][0][1][0].split(";")[0].strip(), lean)
     out = []
+    # one-character names first (Wei 伟, Ting 婷, Jing 静): a single character is a common Chinese given name on its own
+    # its meaning is the dictionary sense a name uses (信 trust, not "letter"; 薇 rose, not the fern): the first of a character's
+    # CC-CEDICT glosses that names mean, else its first gloss
+    NAMEY = re.compile(r"\b(great|grand|beautiful|graceful|elegant|gentle|calm|quiet|tranquil|peace|happy|happiness|joy|delight|trust|faith|honest|sincere|"
+                       r"rose|lotus|orchid|plum|jade|pearl|gem|bright|brilliant|clever|wise|wisdom|virtue|kind|pure|clean|snow|spring|autumn|summer|winter|moon|"
+                       r"star|cloud|rain|sea|ocean|mountain|forest|sun|morning|dawn|light|shine|glory|hero|strong|brave|soar|fly|dragon|phoenix|fragrant|"
+                       r"poem|poetry|music|song|refined|graceful|lovely|charming|smart|auspicious|lucky|prosperous|rich|harmony|kindness|noble|tender|soft)\b", re.I)
+    for c, (p, gl, lean) in chars.items():
+        senses = [x.strip() for g in cd[c][0][1] for x in g.split(";") if x.strip() and not re.match(r"(surname|variant of|CL:|abbr)", x.strip())]
+        best = next((x for x in senses if NAMEY.search(x) and len(x) < 40), senses[0] if senses else gl)
+        n = re.sub(r"\d", "", p).replace("u:", "u").capitalize()
+        out.append([n, {"f": "g", "m": "b"}.get(lean, "e"), c, tone_mark(p), re.sub(r" *[(].*?[)]", "", best), 1 if n.lower() in db else 0])
     for a in chars:
         for b in chars:
             pa, ga, la = chars[a]; pb, gb, lb = chars[b]
@@ -195,6 +218,14 @@ if __name__ == "__main__":
     kd, db = kanjidic(), db_names()
     ja, ko, zh = japanese(kd, db), korean(kd, db), chinese(db)
     # one spelling, one home: Japanese (real names) first, then Korean, then Chinese (Yui is Japanese, Minjun Korean)
+    # a Japanese entry with no kanji (Wei: only archaic kana) gives way to a Chinese one that has its character
+    zh_names = {r[0].lower() for r in zh}
+    ja = [r for r in ja if r[2] or r[0].lower() not in zh_names]
+    # how families actually spell Korean names next to the official romanization: Hayun → Hayoon, Jun → Joon, Su → Soo
+    def everyday(n):
+        v = re.sub(r"(?<=[yj])u(?=n)", "oo", n.lower()); v = re.sub(r"su(?![a-z]*[aeiou])", "soo", v) if v.endswith("su") else v
+        return v.capitalize() if v != n.lower() else None
+    ko += [[everyday(r[0])] + r[1:] for r in ko if everyday(r[0])]
     taken = {r[0].lower() for r in ja}
     ko = [r for r in ko if r[0].lower() not in taken]; taken |= {r[0].lower() for r in ko}
     zh = [r for r in zh if r[0].lower() not in taken]

@@ -3173,9 +3173,10 @@ Ozod|b|Uzbek|Persian||free|
 Suhani|g|Hindi|Hindi||pleasant, beautiful, charming|Written सुहानी, the feminine of the Hindi word सुहाना (suhānā): pleasant, agreeable, and, as a verb, to seem attractive or to be an adornment. It comes from Sanskrit शुभान (śubhāná). (Wiktionary, after McGregor’s Oxford Hindi–English Dictionary)
 Nupur|g|Hindi|Hindi||anklet|Written नूपुर, from Sanskrit नूपुर (nūpura): an ornament for the toes or ankles, an anklet, a word used in the Mahabharata and classical poetry. (Monier-Williams Sanskrit–English Dictionary)
 Kapil|b|Hindi|Hindi|Hindu|tawny, reddish-brown|Written कपिल, from Sanskrit कपिल (kapila): brown, tawny, reddish. Also the name of an ancient sage, identified by some with Vishnu and held to be the founder of the Sāṃkhya school of philosophy (Mahabharata, Bhagavad Gita). (Monier-Williams Sanskrit–English Dictionary)
-Sonal|g|Indian|Hindi||gold, golden|From Hindi सोना (sonā), Marathi सोन (son) or Gujarati સોનું (sonũ), “gold”, all from Sanskrit सुवर्ण (suvarṇa), literally “good colour”. (Behind the Name; Wiktionary)
+Sonal|g|Indian|Hindi||gold, golden|Written सोनल. From Hindi सोना (sonā), Marathi सोन (son) or Gujarati સોનું (sonũ), “gold”, all from Sanskrit सुवर्ण (suvarṇa), literally “good colour”. (Behind the Name; Wiktionary)
 Ariana|g|Greek|Greek||most holy|A modern form of Ariadne: Cretan Greek ari “most” + adnos “holy”. Ariadne was the Cretan princess who gave Theseus the thread that led him out of the Labyrinth. (Wiktionary; Behind the Name)
 Saroj|e|Indian|Sanskrit||lotus|Written सरोज, from Sanskrit सरोज (saroja), “produced or found in lakes”, and so a lotus: saras “lake” + ja “born”. (Monier-Williams Sanskrit–English Dictionary)
+Aishwarya|g|Indian|Sanskrit|Hindu|prosperity, power|Written ऐश्वर्या, from Sanskrit ऐश्वर्य (aiśvarya): the state of being a mighty lord, sovereignty, power, and so prosperity. (Monier-Williams Sanskrit–English Dictionary)
 `;
 
 const REAL = REAL_RAW.trim().split("\n").map(line => {

@@ -16,6 +16,7 @@ const store = { get: (k, d) => { try { return JSON.parse(localStorage.getItem(k)
 const ROOT_NAMES = buildRootNames();
 const HAND_PICKED = REAL.length;                                  // the hand-written names with stories, before the big lists join
 const TAKEN = new Set([...REAL, ...ROOT_NAMES].map(x => x.n.toLowerCase()));
+REAL.forEach(x => x.hand = true); // names.js: written by hand, origin included; later lists record where a name is used
 const ALL_NAMED = [...REAL, ...ROOT_NAMES];
 const BY_NAME = new Map(), SOUND_INDEX = new Map();
 const indexName = x => { const k = fold(x.n); BY_NAME.has(k) ? BY_NAME.get(k).push(x) : BY_NAME.set(k, [x]); const sk = soundKey(x.n); SOUND_INDEX.has(sk) ? SOUND_INDEX.get(sk).push(x.n) : SOUND_INDEX.set(sk, [x.n]); };
@@ -42,7 +43,7 @@ function eastAsian(d) {
 // the cultures list leads; the East Asian lists (some built from syllables) and Israel's records, which include names
 // from everywhere, come after it, so they only add cultures (Rani is Bengali, Hindi and Telugu first)
 // …then medieval England and France, Old Norse, and Azerbaijan's official list (data/medieval-names.json, data/az-names.json)
-const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=7", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=1",
+const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=7", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=2",
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1"]
   .map(u => fetch(u).then(r => r.json()).catch(() => [])))
   .then(([a, bx, d, e, c, med, az, b, ru]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru])).catch(e => console.error(e));
@@ -504,12 +505,34 @@ function coloredName(n, own) {
 }
 // a name's cultures, most specific first (the broad baskets only when there's nothing else)
 const BASKETS = new Set(["African", "South Asian", "Pacific", "Slavic", "Latin American", "Indigenous American", "Central Asian", "Nordic"]);
+// where a name comes from, not everywhere it's given: the hand-written origin (Ali: Arabic), else its etymology (Elias: Greek, from
+// Hebrew), else the first culture that lists it. The other lists record where families who moved use it, so they stay out of this line.
+const ETY_LANG = /\b(?:from|of)\s+(?:the\s+)?(?:Ancient |Classical |Biblical |Koine |Old |Middle |Late |Medieval |Modern )?(Greek|Hebrew|Latin|Arabic|Sanskrit|Persian|Aramaic|Old Norse|Germanic|Celtic|Irish|Welsh|Slavic|Turkish|Hindi|Tamil|Swahili|Yoruba|Igbo|Akan|Japanese|Chinese|Korean)\b/gi;
+let ORIGINS = {}, NATIVE_ALL = {};
+fetch("data/name-origins.json?v=2").then(r => r.json()).then(d => ORIGINS = d).catch(() => {});
+function originOf(x) {
+  const k = fold(x.n);
+  // 1. the name's own etymology on Wiktionary (Omar, Ali, Aisha: borrowed from Arabic)
+  if (ORIGINS[k]) return ORIGINS[k];
+  if (x.hand && x.o) return [x.o, x.l && x.l !== x.o ? x.l : ""].filter(Boolean).join(" · ");
+  // 2. a name of the Islamic tradition with an Arabic spelling is Arabic, wherever families who moved now give it (Ibrahim, Muhammad)
+  if (x.r && x.r.includes("Islamic") && (NATIVE_ALL[k] || []).some(([, l]) => l === "Arabic")) return "Arabic";
+  const chain = [...(x.ety || "").matchAll(ETY_LANG)].map(m => m[1]).filter((v, i, a) => a.indexOf(v) === i).slice(0, 2);
+  if (chain.length) return chain[0] + (chain[1] ? ` · from ${chain[1]}` : "");
+  // a nationality list (Argentine, Filipino) says where a name is given, never where it's from
+  const NATIONAL = new Set(["Argentine", "Mexican", "Colombian", "Dominican", "Puerto Rican", "Cuban", "Chilean", "Peruvian", "Venezuelan", "Brazilian",
+    "Filipino", "American", "Canadian", "Australian", "Israeli", "Latin American", "Spanish American"]);
+  const c = [x.o, ...(x.oo || [])].find(c => c && !BASKETS.has(c) && !NATIONAL.has(c)) || (x.l && !NATIONAL.has(x.l) ? x.l : "");
+  return c ? [c, x.l && x.l !== c ? x.l : ""].filter(Boolean).join(" · ") : "";
+}
 function whereOf(x) {
+  const o = originOf(x);
+  if (o) return o;
   const cc = x.cc || (dbEntry(x.n) || {}).cc || [];
   const all = [...new Set([x.o, ...(x.oo || [])].filter(Boolean))], named = all.filter(c => !BASKETS.has(c));
   const cultures = (named.length ? named : all).slice(0, 3);
   if (cultures.length > 1) return cultures.join(" · ");
-  return [cultures[0], x.l && x.l !== cultures[0] ? x.l : ""].filter(Boolean).join(" · ") || (x.type === "attested" ? "Official records · " + cc.slice(0, 3).map(c => CC_LABEL[c]).join(", ") : "An original");
+  return [cultures[0], x.l && x.l !== cultures[0] ? x.l : ""].filter(Boolean).join(" · ") || (x.type === "attested" ? "Recorded in " + cc.slice(0, 3).map(c => CC_LABEL[c]).join(", ") : "An original");
 }
 function rowHTML(x, o = {}) {
   const r = reg(x), m = MB.melody(x.n, "", ownersOf(x)), syl = sylCount(x.n);
@@ -633,18 +656,59 @@ function fillRows(el, items, next) {
 const Hero = (() => {
   const inp = $("#heroName"), typed = $("#typed"), field = $(".field");
   let auto = null, touched = store.get("lullabyte-typed", false), lastStrip = "", lastPlayed = "";
+  // the name in its own scripts (data/native-forms.json): only the languages of the name's own cultures, so Sofia gets Σοφία and
+  // Софья but not a Japanese spelling of a borrowed name; same-sounding spellings share theirs (Fatima ← Fatimah's فاطمة)
+  let NATIVE = {};
+  fetch("data/native-forms.json?v=5").then(r => r.json()).then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
+  const LANG_OF = { Arab: "Arabic", Arabic: "Arabic", Indian: "Hindi Sanskrit Marathi", "South Asian": "Hindi Sanskrit Urdu Bengali", Hindi: "Hindi Sanskrit",
+    Israeli: "Hebrew", Hebrew: "Hebrew", Jewish: "Hebrew", Persian: "Persian", Iranian: "Persian", Chinese: "Chinese", Japanese: "Japanese", Korean: "Korean",
+    Greek: "Greek", Russian: "Russian", Slavic: "Russian Ukrainian Bulgarian Serbian", Ukrainian: "Ukrainian", Armenian: "Armenian", Georgian: "Georgian",
+    Bengali: "Bengali", Punjabi: "Punjabi", Tamil: "Tamil", Telugu: "Telugu", Urdu: "Urdu", Pashtun: "Pashto", Afghan: "Pashto Persian", Thai: "Thai",
+    Kazakh: "Kazakh", Tatar: "Tatar", Bashkir: "Bashkir", Turkish: "Ottoman Turkish", Ethiopian: "Amharic", Nepali: "Nepali" };
+  function nativeFor(x) {
+    const langs = new Set([x.o, ...(x.oo || []), x.l].filter(Boolean).flatMap(c => [c, ...(LANG_OF[c] || "").split(" ")]).filter(Boolean));
+    const own = NATIVE[fold(x.n)] || [], forms = [...own, ...soundAlikes(x.n).map(fold).flatMap(k => NATIVE[k] || [])], seen = new Set(), out = [];
+    // Chinese, Japanese and Korean characters only for a name from there (Japan writes the borrowed Sofia 麻日亜; that's not Sofia's own script)
+    const CJK = { Japanese: "Japanese", Chinese: "Chinese", Korean: "Korean" }, origin = x.o;
+    const from = originOf(x).split(" · ")[0];
+    if (from) langs.add(from);
+    forms.sort((a, b) => (b[1] === from) - (a[1] === from));
+    for (const [f, lang] of forms) if (langs.has(lang) && !(CJK[lang] && origin !== lang) && !seen.has(lang) && !seen.has(f)) { seen.add(lang); seen.add(f); out.push([f, lang]); }
+    if (out.length) return out.slice(0, 3);
+    // a name already in its own (Latin) letters shows its root instead (Nikodem ← Greek Νικόδημος), only when its own etymology names that language
+    const ROOT = ["Greek", "Hebrew", "Arabic", "Sanskrit", "Persian", "Aramaic"], root = own.find(([, l]) => ROOT.includes(l) && new RegExp(`\\b${l}\\b`).test(x.ety || x.src || ""));
+    return root ? [[root[0], `from ${root[1]}`]] : [];
+  }
+  // a rare spelling one or two letters from a well-known name: offer it, never assume it (Ashwariya → Aishwarya?)
+  function lev(a, b) { const d = Array.from({ length: b.length + 1 }, (_, j) => j); for (let i = 1; i <= a.length; i++) { let p = d[0]; d[0] = i;
+    for (let j = 1; j <= b.length; j++) { const t = d[j]; d[j] = Math.min(d[j] + 1, d[j - 1] + 1, p + (a[i - 1] === b[j - 1] ? 0 : 1)); p = t; } } return d[b.length]; }
+  function didYouMean(x, k) {
+    if (x.o || ((dbEntry(x.n) || {}).cnt || 0) > 50) return null;
+    let best = null;
+    for (const y of ALL_NAMED) {
+      const f = fold(y.n);
+      if (f[0] !== k[0] || Math.abs(f.length - k.length) > 2 || f === k || !y.o || !(y.m || NATIVE[f])) continue;
+      const d = lev(k, f), cnt = (dbEntry(y.n) || {}).cnt || 0;
+      if (d <= 2 && (!best || d < best.d || d === best.d && cnt > best.cnt)) best = { y, d, cnt };
+    }
+    return best && best.cnt >= 10 * (((dbEntry(x.n) || {}).cnt) || 1) ? best.y : null;
+  }
   // the name's card: where it's from (and how it's written there), what it means, how it charts
   function cardFor(v) {
     const first = (v || "").split(" ")[0], box = $("#heroCard"), k = first && fold(first);
     const x = k && ((BY_NAME.get(k) || [])[0] || dbEntry(first));
     if (!x) { box.innerHTML = ""; return; }
-    const nonLatin = t => t && !/^[\p{Script=Latin}\s'-]+$/u.test(t);
-    const nat = (sacredOf(x).find(r => nonLatin(r.orig)) || {}).orig || [(x.src || "").match(/Written ([^\s.,(]+)/)?.[1]].find(nonLatin);
+    const nat = nativeFor(x);
     const pop = popRanks(x.n, x.g).slice(0, 2).map(([c, r, , yr]) => `#${r} in ${c}, ${yr}`).join(" · ");
     const m = x.m || (MEAN[k] || {}).m || "";
     // where the meaning comes from, so it can be checked: the source named at the end of the note, else Wiktionary for fetched meanings
     const cite = m && ((x.src || "").match(/\(([^()]*(?:Wiktionary|Monier|Behind the Name|McGregor|Hitchcock|Wikidata)[^()]*)\)\s*$/)?.[1] || (MEAN[k] && MEAN[k].m === m ? "Wiktionary" : ""));
-    box.innerHTML = `<span class="hc-where">${nat ? `<span class="nat">${esc(nat)}</span>` : ""}${esc(whereOf(x))}</span>` +
+    // where it's from first; the other cultures that give it are "also given in" (Muhammad is Arabic, also given in Bengali and Filipino)
+    const where = whereOf(x);
+    const maybe = didYouMean(x, k);
+    box.innerHTML = (nat.length ? `<span class="hc-nat">${nat.map(([f, l]) => `<span class="nat" lang="${esc(l)}">${esc(f)}<small>${esc(l)}</small></span>`).join("")}</span>` : "") +
+      `<span class="hc-where">${esc(where)}</span>` +
+      (maybe ? `<span class="hc-maybe">Did you mean <button class="inline" data-hero-name="${esc(maybe.n)}">${esc(maybe.n)}</button>?</span>` : "") +
       (m ? `<span class="hc-mean">“${esc(m)}”</span>` : "") + (cite ? `<span class="hc-src">${esc(cite)}</span>` : "") + (pop ? `<span class="hc-chart">${esc(pop)}</span>` : "");
   }
   if (touched) $("#typeHint").classList.add("gone");
@@ -717,7 +781,7 @@ const Hero = (() => {
   inp.addEventListener("input", () => {
     takeOver();
     // no name repeats a letter three times running (Suhaniiii → Suhanii); 26 characters fits a first and last name
-    const clean = inp.value.replace(/^\s+/, "").replace(/\s{2,}/g, " ").replace(/(\p{L})\1{2,}/giu, "$1$1").slice(0, 26);
+    const clean = inp.value.replace(/[^\p{L}\p{M}\s'’-]/gu, "").replace(/^\s+/, "").replace(/\s{2,}/g, " ").replace(/(\p{L})\1{2,}/giu, "$1$1").slice(0, 26);
     if (clean !== inp.value) inp.value = clean;
     const v = capName(clean);
     show(v.trim(), true);
@@ -750,6 +814,7 @@ const Hero = (() => {
   $("#sylRow").addEventListener("pointerleave", () => { $("#why").textContent = ""; });
   $("#sylRow").addEventListener("click", e => { const c = e.target.closest(".cell"); if (c) { const p = MB.explain(typed.textContent)[+c.dataset.k]; $("#why").textContent = c.dataset.why; const ev = MB.melody(typed.textContent).ev.filter(x => x.kind === "main" && x.syl === +c.dataset.k); ev.forEach((x, g) => MB.pluck(x.i, .9, 0)); } });
   $("#heroPlay").onclick = play;
+  $("#heroCard").addEventListener("click", e => { const b = e.target.closest("[data-hero-name]"); if (b) { inp.value = b.dataset.heroName; inp.dispatchEvent(new Event("input")); play(); } });
   $("#heroSpell").onclick = () => Spell.open(typed.textContent.trim());
   $("#heroFind").onclick = $("#toFind").onclick = () => $("#find").scrollIntoView({ behavior: "smooth" });
   show("");
