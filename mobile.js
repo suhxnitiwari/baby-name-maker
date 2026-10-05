@@ -9,7 +9,10 @@
 const Mobile = (() => {
   const cv = document.getElementById("mobile");
   if (!cv) return null;
-  const ctx = cv.getContext("2d");
+  const main = cv.getContext("2d");
+  let ctx = main;
+  // the shadow the mobile casts on the wall: drawn small, then stretched back up, so it comes out soft
+  const sc = document.createElement("canvas"), sctx = sc.getContext("2d"), SK = .2;
   const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const TAU = Math.PI * 2;
   const WOOD = ["#e2c29d", "#d1a87c", "#b98c5e"];
@@ -25,11 +28,15 @@ const Mobile = (() => {
   const pendant = { len: 0, lenT: 0, v: 0, glow: 0, bob: 0, vb: 0 };
   let playing = null, last = performance.now(), visible = true, raf = 0;
   const noteFns = [], doneFns = [], sparks = [];
+  // dust turning in the window light; the mobile is lowered in when the page wakes
+  let landed = false, motes = [], lower = still ? 0 : 1, vlower = 0, awake = still;
 
   function size() {
     const r = cv.getBoundingClientRect();
     dpr = Math.min(devicePixelRatio || 1, 2); W = r.width; H = r.height;
-    cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cv.width = W * dpr; cv.height = H * dpr; main.setTransform(dpr, 0, 0, dpr, 0, 0);
+    sc.width = Math.max(1, Math.round(W * SK)); sc.height = Math.max(1, Math.round(H * SK));
+    motes = Array.from({ length: Math.round(Math.min(70, W * H / 16000)) }, () => ({ x: Math.random(), y: Math.random(), z: Math.random(), p: Math.random() * TAU }));
     narrow = W < 760;
     hx = narrow ? W * .5 : W * .665;                          // the mobile lives on the right; only the hoop's edge reaches toward the headline
     rx = narrow ? Math.min(W * .36, 190) : Math.min(W * .215, H * .4, 360);
@@ -194,9 +201,47 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
     return { x: hx + x * Math.cos(tilt) - y * Math.sin(tilt), y: ringY + x * Math.sin(tilt) + y * Math.cos(tilt), d: Math.sin(a + rot) };
   };
 
-  function draw() {
+  // the light comes from the window at the top right, so the shadow leans down and to the left, longer the lower it hangs
+  function castShadow(off) {
+    ctx = sctx;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = "source-over"; ctx.clearRect(0, 0, sc.width, sc.height);
+    const sh = narrow ? -.12 : -.3, dx = (narrow ? -14 : -46) * S, dy = (narrow ? 22 : 58) * S;
+    ctx.setTransform(SK, 0, 0, SK, 0, 0); ctx.transform(1, 0, sh, 1.04, -sh * hookY + dx, dy - .04 * hookY + off);
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#000"; ctx.lineWidth = 7 * S; ctx.beginPath(); ctx.ellipse(hx, ringY, rx, ry, tilt, 0, TAU); ctx.stroke();
+    ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(hx, hookY); ctx.lineTo(hx, hookY + 120 * S); ctx.stroke();
+    for (const s of strands) {
+      if (!s.sh || s.alpha <= 0) continue;
+      ctx.globalAlpha = Math.max(0, s.alpha) * (s.quiet ? .7 : 1);
+      ctx.strokeStyle = "#000"; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(s.sh.px, s.sh.py); ctx.lineTo(s.sh.ex, s.sh.ey); ctx.stroke();
+      if (s.sh.r > 1) charm(s.kind, s.sh.ex, s.sh.ey, s.sh.r, "#000000");
+    }
+    ctx.globalAlpha = 1;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = "source-in"; ctx.fillStyle = "rgb(96,66,44)"; ctx.fillRect(0, 0, sc.width, sc.height);
+    ctx.globalCompositeOperation = "source-over";
+    ctx = main;
+    ctx.save(); ctx.globalAlpha = .17; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high"; ctx.drawImage(sc, 0, 0, W, H); ctx.restore();
+  }
+  function dust(now) {
+    for (const m of motes) {
+      if (!still) { m.y -= (.004 + m.z * .006) / 60; m.x -= (.002 + m.z * .003) / 60; m.p += .01; }
+      if (m.y < -.02) m.y = 1.02; if (m.x < -.02) m.x = 1.02;
+      // only where the light falls: a broad beam from the top right toward the lower left
+      const bx = m.x - (1 - m.y) * .55, beam = Math.max(0, 1 - Math.abs(bx - .42) / .34);
+      if (beam <= 0) continue;
+      const a = beam * (.25 + .55 * (.5 + .5 * Math.sin(m.p + now / 900 * (.4 + m.z)))) * (.35 + m.z * .65);
+      const x = m.x * W + Math.sin(m.p * 1.3) * 8, y = m.y * H, r = .6 + m.z * 1.7;
+      ctx.fillStyle = `rgba(255,236,196,${a * .5})`; ctx.beginPath(); ctx.arc(x, y, r * 3.2, 0, TAU); ctx.fill();
+      ctx.fillStyle = `rgba(255,248,232,${a})`; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+    }
+  }
+  function draw(now) {
     ctx.clearRect(0, 0, W, H);
     const lift = Math.min(1, scrollY / (H || 1));
+    const off = -lower * (ringY + rx);                                       // lowered in from above the frame
+    castShadow(off);
+    dust(now);
+    ctx.save(); ctx.translate(0, off);
     // the mobile's soft shadow on the wall drifts as you scroll, like the light is moving
     let g = ctx.createRadialGradient(hx + 40 * S + lift * 60, ringY + 260 * S, 10, hx + 40 * S + lift * 60, ringY + 260 * S, rx * 1.7);
     g.addColorStop(0, `rgba(120,90,60,${.11 - lift * .05})`); g.addColorStop(1, "rgba(120,90,60,0)");
@@ -248,6 +293,7 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
       q.x += q.vx; q.y += q.vy; q.vy += .015;
       ctx.fillStyle = `rgba(201,154,76,${q.life})`; ctx.font = `${Math.round(13 * S + 4)}px serif`; ctx.textAlign = "center"; ctx.fillText(q.c, q.x, q.y);
     }
+    ctx.restore();
   }
   function drawStrand(s, p) {
     const depth = .8 + .2 * (p.d + 1) / 2, L = Math.max(0, s.len + s.bob);
@@ -274,7 +320,9 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
       charm(s.kind, ex, ey, r, s.color || TINT.none); ctx.restore();
     }
     ctx.globalAlpha = 1;
-    s.tip = { x: ex, y: ey + r * .6, r };
+    s.sh = { px: p.x, py: p.y, ex, ey, r };
+    const off = -lower * (ringY + rx);
+    s.tip = { x: ex, y: ey + r * .6 + off, r };
   }
   function drawBead(b, p) {
     ctx.globalAlpha = Math.max(0, b.alpha);
@@ -330,7 +378,13 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
       }
       if (el > mel.steps + 1) { playing = null; doneFns.forEach(f => f(name)); }
     }
-    draw();
+    if (awake && lower !== 0) {
+      // lowered on its string: eases down, overshoots a touch, and the charms swing as it stops
+      vlower += (-lower * 26 - vlower * 6.2) * dt; lower += vlower * dt;
+      if (lower < -.004 && !landed) { landed = true; for (const s of strands) s.vs += (Math.random() - .5) * .5; }
+      if (Math.abs(lower) < .0005 && Math.abs(vlower) < .002) lower = 0;
+    }
+    draw(now);
     raf = visible ? requestAnimationFrame(frame) : 0;
   }
   function play() {
@@ -363,7 +417,7 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
   size(); load("");
   raf = requestAnimationFrame(frame);
   return {
-    set: n => load(n), play, resize: size,
+    set: n => load(n), play, resize: size, wake: () => { awake = true; },
     onNote: f => noteFns.push(f), onDone: f => doneFns.push(f),
     get name() { return name; }, get playing() { return !!playing; }, get melody() { return mel; },
   };

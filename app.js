@@ -1215,11 +1215,15 @@ function enter(withSound) {
   if (withSound) [0, 4, 7].forEach((i, k) => MB.pluck(i + 2, .55, MB.ensure().currentTime + k * .12));
   $("#gate").classList.add("gone");
   store.set("lullabyte-entered", true);
-  setTimeout(() => { $("#gate").hidden = true; Hero.demo(); }, 500);
+  wake();
+  setTimeout(() => { $("#gate").hidden = true; }, 500);
+  setTimeout(Hero.demo, 2500);
 }
+// the page wakes: the mobile is lowered in on its string and the headline rises after it
+function wake() { document.body.classList.add("awake"); if (Mobile) Mobile.wake(); }
 $("#gateSound").onclick = () => enter(true);
 $("#gateQuiet").onclick = () => enter(false);
-if (store.get("lullabyte-entered", false)) { $("#gate").hidden = true; setTimeout(Hero.demo, 600); }
+if (store.get("lullabyte-entered", false)) { $("#gate").hidden = true; setTimeout(wake, 120); setTimeout(Hero.demo, 2600); }
 soundUI();
 
 // the top bar turns to paper once you leave the box

@@ -85,6 +85,21 @@
     -webkit-mask-image: linear-gradient(200deg, #000 0%, rgba(0,0,0,.55) 45%, transparent 85%); mask-image: linear-gradient(200deg, #000 0%, rgba(0,0,0,.55) 45%, transparent 85%); }
   #stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .08; mix-blend-mode: multiply;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  /* the curtain breathes: the light through it drifts a little, back and forth */
+  @media (prefers-reduced-motion: no-preference) {
+    #stage::before { animation: curtain 16s ease-in-out infinite alternate; }
+    @keyframes curtain { from { background-position: 0 0, 0 0; } to { background-position: 74px 0, -30px 0; } }
+    /* waking: the headline rises out of a soft blur, line by line, after the mobile is lowered in */
+    .hero-copy > *, .namer { opacity: 0; transform: translateY(22px); filter: blur(8px); }
+    body.awake .hero-copy > *, body.awake .namer { animation: wake 1.25s var(--ease) both; }
+    body.awake .hero-kick { animation-delay: .55s; }
+    body.awake .hero-copy h1 { animation-delay: .75s; }
+    body.awake .hero-lede { animation-delay: 1.05s; }
+    body.awake .namer { animation-delay: 1.3s; }
+    @keyframes wake { to { opacity: 1; transform: none; filter: none; } }
+    body:not(.awake) .anchor { opacity: 0; }
+    .anchor { transition: opacity 1s 2s; }
+  }
   #mobile { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: pan-y; cursor: grab; z-index: 1; }
   .hero-left { position: absolute; z-index: 3; left: 48px; top: 92px; bottom: 64px; width: min(41vw, 600px); display: flex; flex-direction: column; pointer-events: none; }
   .hero-left > * { pointer-events: auto; }
@@ -519,7 +534,7 @@
     .hero-copy { order: 0; padding: 78px 16px 0; position: relative; z-index: 3; }
     .namer { order: 2; padding: 0 16px 34px; margin-top: -10px; position: relative; z-index: 3; }
     .hero-copy h1 { font-size: clamp(2.8rem, 13vw, 4rem); }
-    .name-row { width: 100%; flex-wrap: wrap; } .anchor { display: none; } .namer::before { display: none; }
+    .name-row { width: 100%; flex-wrap: wrap; } #stage .anchor { display: none; } .namer::before { display: none; }
     .room { padding: 90px 16px 30px; } .room-head { grid-template-columns: 1fr; } .seg-wrap { justify-items: start; }
     .choices { gap: 4px 22px; }
     #spellSheet { padding: 22px 16px 30px; } #explore { padding: 14px 16px 24px; } footer { padding: 24px 16px 40px; }
@@ -760,11 +775,11 @@
 <script src="generator.js?v=5"></script>
 <script src="phonetics.js?v=7"></script>
 <script src="musicbox.js?v=6"></script>
-<script src="mobile.js?v=13"></script>
+<script src="mobile.js?v=15"></script>
 <script src="piano.js?v=3"></script>
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=59"></script>
+<script src="app.js?v=61"></script>
 </body>
 </html>
