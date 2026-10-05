@@ -625,7 +625,7 @@ const Duet = (() => {
   function keys() {
     const a = val(mom), b = val(dad), voices = [a && Piano.voice(a, "a"), b && Piano.voice(b, "b")].filter(Boolean);
     $("#duetPiano").innerHTML = Piano.html(voices);
-    $("#duetLegend").innerHTML = `<span class="lg a">${esc(a || "Mom")}</span><span class="lg b">${esc(b || "Dad")}</span><span class="lg both">both</span>`;
+    $("#duetLegend").innerHTML = a || b ? `<span class="lg a">${esc(a || "Mom")}</span><span class="lg b">${esc(b || "Dad")}</span><span class="lg both">both</span>` : `<span>type both names to hear them on the keys</span>`;
   }
   [mom, dad].forEach(el => el.addEventListener("input", () => { clearTimeout(el._t); el._t = setTimeout(keys, 200); }));
   [mom, dad].forEach(el => el.addEventListener("keydown", e => { if (e.key === "Enter") together(); }));
