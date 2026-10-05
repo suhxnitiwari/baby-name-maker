@@ -16,15 +16,17 @@ government records in 18 countries, tens of thousands of names with meanings and
 Mom + Dad compiler that shows exactly which letters came from whom. No server, no build step, no framework.
 
 ## How a name becomes a tune
-`musicbox.js` turns any name into a melody, the same way every time:
+`musicbox.js` turns how a name is *said* into a melody, the same way every time. `phonetics.js` first finds the pronunciation: the CMU Pronouncing Dictionary when it has the name, a hand-checked entry for names English spelling gets wrong (Niamh, Saoirse, Siobhán), and otherwise the sound rules of the name's own language (20 sets, from Irish and Hungarian to Spanish, Hindi and Arabic). Names said more than one way get a "how do you say it?" picker (Maya: MY-uh or MAH-yah), and each way plays its own song.
 
 | | Means |
 |---|---|
 | A note | one syllable |
-| Pitch | the vowel sound: "oo" low and dark, "oh", "ah" in the middle, "eh", "ee" high and bright; "ay" glides between two notes |
+| Pitch | the vowel sound: "oo" low and dark, "oh", "ah" in the middle, "eh", "ee" high and bright |
+| Glides | a gliding vowel ("ay", "eye", "oy", "ow") plays two notes, sliding from one to the next |
 | Nudge | the consonant before the vowel: lips (M, B, P) pull the note down, L and R lift it a step, the tongue tip (N, D, T, S) two, the back of the mouth (K, G, J) three |
-| Small holes | a hard K/T/D adds a pluck below the note, an S/SH adds a sparkle an octave up |
-| Rhythm | the first syllable is held longest; an open ending (-a, -i) rings out |
+| Touch | the consonant shapes the note itself: soft sounds (M, N, L) swell in, voiced stops (B, D, G) land warm, voiceless stops (P, T, K) pluck crisp, hissing sounds (S, F, SH) breathe |
+| Rhythm | the stressed syllable is held longest and played loudest, so SU-ha-ni and su-HA-ni sound different; an open ending (-a, -i) rings out |
+| Texture | round names (moon vowels, M, L, B) ring mellow; sharp names (ee, K, T, Z) ring bright |
 | The ring ○ | every tune comes home to the same low C: the Lullabyte signature |
 
 Notes sit on a two-octave pentatonic ladder, so no name can sound wrong. Spellings that sound alike make the same tune (Layla, Leila and Laila play one song; Lila is a different tune). The sound is synthesized in the browser with Web Audio: each note is a music-box chime, a stack of sine partials with a long ring and a small generated room. Three pictures of the same tune, each with one job:
@@ -42,6 +44,7 @@ Notes sit on a two-octave pentatonic ladder, so no name can sound wrong. Spellin
 - **The Mom + Dad compiler** (`compiler.js`). Parents' names (plus, optionally, family names to honor) are split into syllables and recombined in any order (Suhani + Kapil → Nika, not a front half glued to a back half); real names are found by sound, syllable by syllable (Monica sings NI like Suhani and CA like Kapil's KA); every candidate is scored on how well its melody bridges both parents' melodies, how widely the name is actually held, balance, ease and surname flow. A visible pipeline shows real counts at every step, and every name shows its provenance (which letters came from whom and the contribution %).
 - **Never an empty page.** When no name fits every blank of a search, it loosens the fewest, least important blanks by a cost table (feel and length first, letters last), says which ones it loosened, and composes new names that keep every letter, length and feel you asked for.
 - **Names built from roots** (`generator.js`). Sanskrit, Greek, Germanic and Norse names joined from two meaningful elements with vowel elision (Chandra + esh → Chandresh), and Arabic names formed from "servant of" one of the 99 names of God, each with its meaning.
+- **A canonical database** (`scripts/schema.sql`, `scripts/build_db.py`). Everything above is rebuilt into one SQLite file in layers: what a name is (spellings, scripts, meanings, cultures, faiths, references, relationships), how it sounds (pronunciations, syllables), where and when it's used (every official observation, in the spelling the agency printed, with that source's threshold, rounding and population), and what Lullabyte does with it (each lullaby with its algorithm version). "Unknown", "zero", "not published" and "below the threshold" never mean the same thing, and a census count of people aged 70–79 is never turned into a birth year. The build checks those rules every time.
 - **A reproducible data pipeline** (`scripts/`). Python scripts fetch and merge government open data, Wiktionary, Wikidata and JMnedict into compact TSV and JSON files the page loads on demand.
 
 ## Where the names come from
@@ -61,7 +64,7 @@ Overlapping names are merged, so the total on the page counts each name once.
 - **Find their lullaby:** one quick form, all optional: feel, roots, meaning, first and last letters, length, last name, and (tucked away) faith, sacred text and language. Once there are results, every change updates them. Results are quiet rows; open one and the toy piano plays it, with its meaning, story, chart rank and spellings.
 - **Not for me:** a turned-down name lets go and a new one takes its place. Lullabyte remembers it, sinks names that sound like it in every later search, and asks why (too popular, too long, too short, wrong roots, the sound) to learn more.
 - **Two names. Two melodies.** Mom's and Dad's names on one piano, played together, then the names the compiler makes from both, with which letters came from whom. Honoring someone, language, faith, sacred text, length and last name are optional extras.
-- **The names we once sang:** a year-by-year time machine from official birth records in 11 places (US 1880–2025, France 1900–2024, New Zealand 1900–2025, Norway, Canada, England & Wales, Scotland, Northern Ireland, Ireland, Austria, New South Wales). Turn the knob back and the years go with it; each year's #1 plays as it arrives, and each place shows its own publication rule.
+- **The names we once sang:** a time machine through official records in 23 places across five continents (US 1880–2025, France 1900–2024, Chile, New Zealand, Norway, Canada, England & Wales, Scotland, Northern Ireland, Ireland, Austria, Switzerland, Sweden, Poland, Denmark, Finland, Catalonia, Berlin, Moldova, New South Wales, Queensland, Brazil, South Africa). Turn the knob back and the years go with it; each year's #1 plays as it arrives. Every place wears a badge for what it really counts (full birth records, a ranked top list, or a population snapshot), and decades or multi-year periods show as spans, never as single years.
 - **The cradle:** every name you heart hangs here on a ribbon; play them all as one little playlist. Saved on your device.
 - **Explore:** the mobile unfolds; every charm is a room.
 
@@ -88,9 +91,16 @@ Every source, its license, and the countries we checked that don't publish (or t
 `data/culture-names.json` (built by `scripts/build_cultures.py` from Wiktionary and Wikidata) sorts **32,000+ names into 123 cultures**, from Yoruba, Igbo, Hausa and Akan to Tamil, Telugu, Bengali and Punjabi, Vietnamese, Filipino, Kazakh, Armenian, Georgian, Russian, Albanian and Māori, plus broad baskets (African, South Asian, Slavic, Central Asian, Pacific…). Names in other scripts get their usual Latin spelling, checked against registered names. Search with "with ⟨Yoruba / Tamil / Pacific…⟩ roots". Details: [docs/name-sources.md](docs/name-sources.md).
 
 ## Popularity data
-`data/years.json` (built by `scripts/build_years.py`) holds the top 12 girls' and boys' names of every year for 11 places, each with its publisher, license and publication rule (see [docs/name-sources.md](docs/name-sources.md)).
+`data/years.json` (built by `scripts/build_years.py`) holds the top girls' and boys' names of every year, decade or period for 23 places, each with its publisher, license and publication rule (see [docs/name-sources.md](docs/name-sources.md)).
 
 `data/popularity.json` (built by `scripts/build-popularity.py`) powers the Popular tab and rank badges: US, Canada, NSW, England & Wales and France.
+
+## Medieval names, more scripture, more pronunciations
+- `data/medieval-names.json`: Anglo-Norman, Old French, Medieval and Old English and Old Norse names (Jehane, Aliénor, Æthelflæd, Sigrídr) from Wiktionary, Wikidata and Domesday Book.
+- `data/bible-extra.json`: 372 more biblical people and 170 Christian saints' and traditional names.
+- `data/az-names.json`: Azerbaijan's official given-names list.
+- `data/pron.json`: 20,137 names with dictionary or hand-checked pronunciations; `data/meanings.json` and `data/relations.json` add meanings for 4,377 more names and 14,474 links (diminutives, short forms, cognates) from Wiktionary.
+- `data/census-names.json`: census name tables by age group (Montenegro 2023), kept apart from birth-year data.
 
 ## Generated names
 About 257,000 more names are generated in the browser: 12,105 built from Sanskrit, Greek, Germanic, Norse and Arabic roots (with meanings), and 245,015 invented from syllables (no meanings). Generated names never repeat a real name from the database.
