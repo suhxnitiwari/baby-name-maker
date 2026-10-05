@@ -47,6 +47,9 @@
 #   lu   STATEC "La démographie luxembourgeoise en chiffres" 2023-2025 editions (data years 2022-2024), top 5 table:
 #        raw/lu-statec-demographie-en-chiffres-*.pdf
 #   nl   SVB kindernamen, every name given 10+ times, 2017-2025 (the JSON behind svb.nl's tables): raw/nl-svb-(meisjes|jongens)namen-YYYY.json
+#   ru-moscow  Moscow Government open data (data.mos.ru datasets 2009 girls / 2011 boys, from the Moscow civil registry), the 100
+#        most popular names of each month since 2015: raw/ru/moscow-names-(2009|2011).(json|csv|zip), downloaded by
+#        fetch_moscow_names.py. Left out of years.json until those files are there (data.mos.ru only answers from Russia)
 import csv, glob, html, io, json, os, re, sys, unicodedata, zipfile, collections
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -401,6 +404,46 @@ def finland():
             for n, v in re.findall(r"\|\d+\.\|([^|]+)\|(\d[\d\s]*)(?=\|)", part): c[d][sex][n] = int(re.sub(r"\s", "", v))
     return c
 
+MOSCOW_MONTHS = "январь февраль март апрель май июнь июль август сентябрь октябрь ноябрь декабрь".split()
+MOSCOW_LATIN = {}
+
+def moscow_files():
+    return {ds: next(iter(sorted(glob.glob(f"{RAW}/ru/moscow-names-{ds}.*"))), None) for ds in ("2009", "2011")}
+
+def moscow_rows(path):
+    # the portal's JSON or CSV export (zipped or not), or rows read through apidata.mos.ru ({"Cells": {...}}); field names
+    # in English (Name, NumberOfPersons, Year, Month) or as the CSV captions print them (Имя, Количество человек, Год, Месяц)
+    raw = open(path, "rb").read()
+    if raw[:2] == b"PK":
+        z = zipfile.ZipFile(io.BytesIO(raw)); member = next(n for n in z.namelist() if n.lower().endswith((".json", ".csv")))
+        raw, path = z.read(member), member
+    for enc in ("utf-8-sig", "cp1251"):
+        try: t = raw.decode(enc); break
+        except UnicodeDecodeError: continue
+    if path.lower().endswith(".csv"):
+        recs = list(csv.DictReader(io.StringIO(t), delimiter=";" if t.count(";") > t.count(",") else ","))
+    else:
+        recs = [r.get("Cells", r) for r in json.loads(t)]
+    pick = lambda r, *ks: next((r[k] for k in ks if k in r and r[k] not in (None, "")), None)
+    for r in recs:
+        n, v, y, m = pick(r, "Name", "Имя"), pick(r, "NumberOfPersons", "Количество человек"), pick(r, "Year", "Год"), pick(r, "Month", "Месяц")
+        if n and str(v).strip().isdigit() and str(y).strip().isdigit(): yield n.strip(), int(v), int(y), str(m).strip().lower()
+
+def moscow():
+    # each month's top 100 per sex, summed into years. A year with fewer than 12 months published (the current one) is left out
+    from russian_latin import romanize
+    c, months = new(), collections.defaultdict(set)
+    for (ds, path), sex in zip(moscow_files().items(), ("girl", "boy")):
+        for n, v, y, m in moscow_rows(path):
+            c[y][sex][n] += v; months[(y, sex)].add(m)
+    for y in list(c):
+        if any(len(months[(y, s)] & set(MOSCOW_MONTHS)) < 12 for s in ("girl", "boy")): del c[y]
+    # the names as the registry prints them (Cyrillic), with a BGN/PCGN spelling for search
+    for y in c:
+        for s in ("girl", "boy"):
+            for n, _ in c[y][s].most_common(TOP): MOSCOW_LATIN[n] = romanize(n, "bgn_plain") or ""
+    return c
+
 # coverage: "all" = every name above a publication threshold; "top" = a ranked list only
 # badge: "full" (all names above a threshold, ongoing), "ranked" (top-N only), "ended" (series no longer updated),
 #        "population" (people counted in a register or census by when they were born, not newborn registrations)
@@ -467,6 +510,13 @@ PLACES = [
     dict(key="fi", label="Finland", group="", region="Europe", agency="Digital and Population Data Services Agency", dataset="Nimipalvelu: suosituimmat etunimet", license="CC BY 4.0",
          coverage="top", badge="population", decades=True, threshold=5, rule="People in the Finnish population register, by the decade they were born, counting every first name a person has (not only the one they go by). Names with fewer than 5 bearers aren't published.", fn=finland),
 ]
+if all(moscow_files().values()):
+    PLACES.append(dict(key="ru-moscow", label="Moscow (city)", group="Russia", region="Europe", agency="Moscow Government open data / Moscow civil registry (ZAGS)",
+         dataset="Сведения о наиболее популярных женских / мужских именах среди новорожденных (data.mos.ru datasets 2009 and 2011)",
+         license="Open data (Russian Government decree No. 583 of 10 July 2013); reuse with a link to data.mos.ru", coverage="top", badge="ranked", threshold=None,
+         script="Cyrillic", latin=MOSCOW_LATIN,
+         rule="One city, not all of Russia (Russia publishes no national list). The registry publishes the 100 most popular names of each month for girls and boys; a year here adds up the twelve months, so a name only counts in the months it made that month's top 100. Names are shown in Cyrillic as registered, with a BGN/PCGN spelling for search.",
+         fn=moscow))
 
 out = {"built": "official birth records only; each place keeps its own publication rules", "places": []}
 for p in PLACES:

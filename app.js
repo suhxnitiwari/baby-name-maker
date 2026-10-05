@@ -43,12 +43,13 @@ function eastAsian(d) {
 // from everywhere, come after it, so they only add cultures (Rani is Bengali, Hindi and Telugu first)
 // …then medieval England and France, Old Norse, and Azerbaijan's official list (data/medieval-names.json, data/az-names.json)
 const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=7", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=1",
-  "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1"]
+  "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1"]
   .map(u => fetch(u).then(r => r.json()).catch(() => [])))
-  .then(([a, bx, d, e, c, med, az, b]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b])).catch(e => console.error(e));
+  .then(([a, bx, d, e, c, med, az, b, ru]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru])).catch(e => console.error(e));
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
-  for (const [n, g, o, l, r, m, src, texts, kind, also] of rows) {
+  for (let [n, g, o, l, r, m, src, texts, kind, also] of rows) {
+    if (src) src = src.replace(/^A (?=[AEIOU])/, "An ");
     const x = texts ? texts.split(",") : [], k = fold(n), cur = have.get(k);
     if (cur) {
       if (o && o !== cur.o) cur.oo = [...new Set([...(cur.oo || []), o])];
@@ -180,9 +181,9 @@ function addMeanings() {
 // meanings from Wiktionary: by the Latin spelling (meanings.json), then by the name's own script (native-meanings.json)
 Promise.all([fetch("data/meanings.json?v=2").then(r => r.json()), fetch("data/native-meanings.json?v=1").then(r => r.json()).catch(() => ({})), dbReady])
   .then(([d, nat]) => { for (const [k, v] of Object.entries(nat)) if (!(d[k] && d[k].m)) d[k] = v; MEAN = d; addMeanings(); }).catch(() => {});
-const INVERSE = { diminutive: "diminutives", short_form: "short forms", feminine_form: "feminine forms", masculine_form: "masculine forms", variant: "other forms", cognate: "in other languages" };
-const RELATION = { diminutive: "a diminutive of", short_form: "a short form of", feminine_form: "the feminine of", masculine_form: "the masculine of", variant: "a form of", cognate: "the same name as" };
-fetch("data/relations.json?v=1").then(r => r.json()).then(rows => {
+const INVERSE = { diminutive: "diminutives", short_form: "short forms", feminine_form: "feminine forms", masculine_form: "masculine forms", variant: "other forms", cognate: "in other languages", romanization_variant: "other Latin spellings" };
+const RELATION = { diminutive: "a diminutive of", short_form: "a short form of", feminine_form: "the feminine of", masculine_form: "the masculine of", variant: "a form of", cognate: "the same name as", romanization_variant: "another Latin spelling of" };
+fetch("data/relations.json?v=2").then(r => r.json()).then(rows => {
   const add = (k, v) => (RELS.get(k) || RELS.set(k, []).get(k)).push(v);
   for (const [a, rel, b, lang] of rows) { add(fold(a), { dir: "to", rel, other: b, lang }); add(fold(b), { dir: "from", rel, other: a, lang }); }
 }).catch(() => {});
