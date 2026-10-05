@@ -28,7 +28,8 @@ const soundAlikes = n => SOUND_INDEX.get(soundKey(n)) || [];
 let DB = [], DB_READY = false;
 const DB_KEYS = new Map(), DB_G = { f: "girl", m: "boy", u: "either", "?": null };
 const CC_LABEL = { us: "US", ca: "Canada", qc: "Québec", au: "Australia", uk: "Eng & Wales", nir: "N. Ireland", ie: "Ireland", fr: "France", es: "Spain", ch: "Switzerland",
-  ar: "Argentina", br: "Brazil", cl: "Chile", pl: "Poland", de: "Germany", at: "Austria", no: "Norway", lu: "Luxembourg", pt: "Portugal", il: "Israel", fi: "Finland", be: "Belgium", sct: "Scotland", nz: "New Zealand" };
+  ar: "Argentina", br: "Brazil", cl: "Chile", pl: "Poland", de: "Germany", at: "Austria", no: "Norway", lu: "Luxembourg", pt: "Portugal", il: "Israel", fi: "Finland", be: "Belgium", sct: "Scotland", nz: "New Zealand",
+  dk: "Denmark", cz: "Czechia", cy: "Cyprus", hu: "Hungary", is: "Iceland", ro: "Romania", jp: "Japan", wd: "Wikidata", wikt: "Wiktionary" };
 function eastAsian(d) {
   const rows = [];
   for (const [n, g, kanji, kana, ways, m] of d.ja || [])
@@ -169,6 +170,19 @@ const dbReady = Promise.all([fetch("data/names-db.tsv?v=3").then(r => r.text()),
   DB_READY = true;
   fillSelects();
   dispatchEvent(new Event("namesdb"));
+  // the long tail (data/names-extra.tsv: Argentina 1922–2015, France's deaths file, Brazil 2022, official lists, Wikidata…) arrives once
+  // the page is idle; it counts, and any name typed is found, but Find only suggests those held by at least 5 people
+  (window.requestIdleCallback || (f => setTimeout(f, 1500)))(() => fetch("data/names-extra.tsv?v=1").then(r => r.text()).then(t => {
+    for (const line of t.split("\n")) {
+      if (!line) continue;
+      const [n, g, cc, cnt] = line.split("\t"), k = fold(n);
+      if (DB_KEYS.has(k)) continue;
+      const e = { n, g: DB_G[g], cc: cc.split(","), cnt: +cnt || 0, o: "", l: "", r: [], m: "", src: "", type: "attested", extra: true };
+      DB_KEYS.set(k, e); TAKEN.add(k); DB.push(e);
+    }
+    for (const g in INVENTED) delete INVENTED[g];
+    dispatchEvent(new Event("namesdb"));
+  }).catch(() => {}));
 }).catch(() => {});
 const dbEntry = n => DB_KEYS.get(fold(n));
 const INVENTED = {};
@@ -307,7 +321,7 @@ function buildPools(f) {
     real: shuffle(REAL.filter(x => matches(x, f))),
     root: shuffle(ROOT_NAMES.filter(x => matches(x, f))),
     // official records: weighted toward names more people actually have; they only know culture when it's Israel
-    db: !needsMeaning || (f.culture && !f.theme && !f.religion && !f.lang && !f.text) || ((f.religion || f.text) && f.close && !f.culture && !f.theme && !f.lang) ? DB.filter(x => matches(x, f)).map(x => [Math.random() ** (1 / (1 + Math.log10(x.cnt))), x]).sort((a, b) => b[0] - a[0]).map(p => p[1]) : [],
+    db: !needsMeaning || (f.culture && !f.theme && !f.religion && !f.lang && !f.text) || ((f.religion || f.text) && f.close && !f.culture && !f.theme && !f.lang) ? DB.filter(x => (!x.extra || x.cnt >= 5) && matches(x, f)).map(x => [Math.random() ** (1 / (1 + Math.log10(x.cnt))), x]).sort((a, b) => b[0] - a[0]).map(p => p[1]) : [],
     invented: !needsMeaning ? shuffle(invented(gender).filter(x => matches(x, f))) : [],
   };
   pools.ptr = { real: 0, db: 0, root: 0, invented: 0 };
@@ -532,7 +546,7 @@ function whereOf(x) {
   const all = [...new Set([x.o, ...(x.oo || [])].filter(Boolean))], named = all.filter(c => !BASKETS.has(c));
   const cultures = (named.length ? named : all).slice(0, 3);
   if (cultures.length > 1) return cultures.join(" · ");
-  return [cultures[0], x.l && x.l !== cultures[0] ? x.l : ""].filter(Boolean).join(" · ") || (x.type === "attested" ? "Recorded in " + cc.slice(0, 3).map(c => CC_LABEL[c]).join(", ") : "An original");
+  return [cultures[0], x.l && x.l !== cultures[0] ? x.l : ""].filter(Boolean).join(" · ") || (x.type === "attested" ? (cc.some(c => c !== "wd" && c !== "wikt") ? "Recorded in " : "Listed in ") + cc.slice(0, 3).map(c => CC_LABEL[c] || c.toUpperCase()).join(", ") : "An original");
 }
 function rowHTML(x, o = {}) {
   const r = reg(x), m = MB.melody(x.n, "", ownersOf(x)), syl = sylCount(x.n);
