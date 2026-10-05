@@ -3175,6 +3175,7 @@ Nupur|g|Hindi|Hindi||anklet|Written नूपुर, from Sanskrit नूपु�
 Kapil|b|Hindi|Hindi|Hindu|tawny, reddish-brown|Written कपिल, from Sanskrit कपिल (kapila): brown, tawny, reddish. Also the name of an ancient sage, identified by some with Vishnu and held to be the founder of the Sāṃkhya school of philosophy (Mahabharata, Bhagavad Gita). (Monier-Williams Sanskrit–English Dictionary)
 Sonal|g|Indian|Hindi||gold, golden|From Hindi सोना (sonā), Marathi सोन (son) or Gujarati સોનું (sonũ), “gold”, all from Sanskrit सुवर्ण (suvarṇa), literally “good colour”. (Behind the Name; Wiktionary)
 Ariana|g|Greek|Greek||most holy|A modern form of Ariadne: Cretan Greek ari “most” + adnos “holy”. Ariadne was the Cretan princess who gave Theseus the thread that led him out of the Labyrinth. (Wiktionary; Behind the Name)
+Saroj|e|Indian|Sanskrit||lotus|Written सरोज, from Sanskrit सरोज (saroja), “produced or found in lakes”, and so a lotus: saras “lake” + ja “born”. (Monier-Williams Sanskrit–English Dictionary)
 `;
 
 const REAL = REAL_RAW.trim().split("\n").map(line => {

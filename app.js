@@ -171,7 +171,9 @@ function addMeanings() {
     if (w && (w.m || w.ety)) { x.m = w.m || ""; x.ety = w.ety || ""; delete x.t; }
   }
 }
-Promise.all([fetch("data/meanings.json?v=1").then(r => r.json()), dbReady]).then(([d]) => { MEAN = d; addMeanings(); }).catch(() => {});
+// meanings from Wiktionary: by the Latin spelling (meanings.json), then by the name's own script (native-meanings.json)
+Promise.all([fetch("data/meanings.json?v=2").then(r => r.json()), fetch("data/native-meanings.json?v=1").then(r => r.json()).catch(() => ({})), dbReady])
+  .then(([d, nat]) => { for (const [k, v] of Object.entries(nat)) if (!(d[k] && d[k].m)) d[k] = v; MEAN = d; addMeanings(); }).catch(() => {});
 const INVERSE = { diminutive: "diminutives", short_form: "short forms", feminine_form: "feminine forms", masculine_form: "masculine forms", variant: "other forms", cognate: "in other languages" };
 const RELATION = { diminutive: "a diminutive of", short_form: "a short form of", feminine_form: "the feminine of", masculine_form: "the masculine of", variant: "a form of", cognate: "the same name as" };
 fetch("data/relations.json?v=1").then(r => r.json()).then(rows => {
