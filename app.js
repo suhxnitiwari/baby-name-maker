@@ -44,10 +44,10 @@ function eastAsian(d) {
 // the cultures list leads; the East Asian lists (some built from syllables) and Israel's records, which include names
 // from everywhere, come after it, so they only add cultures (Rani is Bengali, Hindi and Telugu first)
 // …then medieval England and France, Old Norse, and Azerbaijan's official list (data/medieval-names.json, data/az-names.json)
-const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=7", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=2",
-  "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1"]
+const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=8", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=2",
+  "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1"]
   .map(u => fetch(u).then(r => r.json()).catch(() => [])))
-  .then(([a, bx, d, e, c, med, az, b, ru]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru])).catch(e => console.error(e));
+  .then(([a, bx, d, e, c, med, az, b, ru, cb]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb])).catch(e => console.error(e));
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
   for (let [n, g, o, l, r, m, src, texts, kind, also] of rows) {
@@ -57,7 +57,9 @@ function addStoried(rows) {
       if (o && o !== cur.o) cur.oo = [...new Set([...(cur.oo || []), o])];
       if (also && also.length) cur.oo = [...new Set([...(cur.oo || []), ...also])].filter(c => c !== cur.o);
       if (!cur.o && o) { cur.o = o; cur.l = cur.l || l; }
-      cur.x = [...new Set([...(cur.x || []), ...x])]; cur.r = [...new Set([...cur.r, ...(r ? r.split(",") : [])])]; cur.m ||= m; cur.src = cur.src ? (src && !cur.src.includes(src) && src.startsWith("Given to") ? `${cur.src} ${src}` : cur.src) : src; continue; }
+      cur.x = [...new Set([...(cur.x || []), ...x])]; cur.r = [...new Set([...cur.r, ...(r ? r.split(",") : [])])];
+      // a Japanese, Korean or Chinese reading's meaning belongs to that reading, not to a Georgian Nino or an Italian Gino
+      if (!(["Japanese", "Korean", "Chinese"].includes(o) && cur.o && cur.o !== o)) cur.m ||= m; cur.src = cur.src ? (src && !cur.src.includes(src) && src.startsWith("Given to") ? `${cur.src} ${src}` : cur.src) : src; continue; }
     const e = { n, g: { g: "girl", b: "boy", e: "either" }[g], o, l, r: r ? r.split(",") : [], m, src, type: kind === "root" ? "root" : "real", x, oo: also || [] };
     (kind === "root" ? ROOT_NAMES : REAL).push(e); ALL_NAMED.push(e); have.set(k, e); TAKEN.add(k); indexName(e);
   }
@@ -201,8 +203,9 @@ function addMeanings() {
   }
 }
 // meanings from Wiktionary: by the Latin spelling (meanings.json), then by the name's own script (native-meanings.json)
-Promise.all([fetch("data/meanings.json?v=2").then(r => r.json()), fetch("data/native-meanings.json?v=1").then(r => r.json()).catch(() => ({})), dbReady])
-  .then(([d, nat]) => { for (const [k, v] of Object.entries(nat)) if (!(d[k] && d[k].m)) d[k] = v; MEAN = d; addMeanings(); }).catch(() => {});
+Promise.all([fetch("data/meanings.json?v=2").then(r => r.json()), fetch("data/native-meanings.json?v=1").then(r => r.json()).catch(() => ({})),
+  fetch("data/extra-meanings.json?v=1").then(r => r.json()).catch(() => ({})), dbReady])
+  .then(([d, nat, extra]) => { for (const more of [nat, extra]) for (const [k, v] of Object.entries(more)) if (!(d[k] && d[k].m)) d[k] = v; MEAN = d; addMeanings(); }).catch(() => {});
 const INVERSE = { diminutive: "diminutives", short_form: "short forms", feminine_form: "feminine forms", masculine_form: "masculine forms", variant: "other forms", cognate: "in other languages", romanization_variant: "other Latin spellings" };
 const RELATION = { diminutive: "a diminutive of", short_form: "a short form of", feminine_form: "the feminine of", masculine_form: "the masculine of", variant: "a form of", cognate: "the same name as", romanization_variant: "another Latin spelling of" };
 fetch("data/relations.json?v=2").then(r => r.json()).then(rows => {
@@ -679,7 +682,7 @@ const Hero = (() => {
   // the name in its own scripts (data/native-forms.json): only the languages of the name's own cultures, so Sofia gets Σοφία and
   // Софья but not a Japanese spelling of a borrowed name; same-sounding spellings share theirs (Fatima ← Fatimah's فاطمة)
   let NATIVE = {};
-  fetch("data/native-forms.json?v=5").then(r => r.json()).then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
+  fetch("data/native-forms.json?v=6").then(r => r.json()).then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
   const LANG_OF = { Arab: "Arabic", Arabic: "Arabic", Indian: "Hindi Sanskrit Marathi", "South Asian": "Hindi Sanskrit Urdu Bengali", Hindi: "Hindi Sanskrit",
     Israeli: "Hebrew", Hebrew: "Hebrew", Jewish: "Hebrew", Persian: "Persian", Iranian: "Persian", Chinese: "Chinese", Japanese: "Japanese", Korean: "Korean",
     Greek: "Greek", Russian: "Russian", Slavic: "Russian Ukrainian Bulgarian Serbian", Ukrainian: "Ukrainian", Armenian: "Armenian", Georgian: "Georgian",
@@ -690,7 +693,7 @@ const Hero = (() => {
   function nativeFor(x) {
     const langs = new Set([x.o, ...(x.oo || []), x.l].filter(Boolean).flatMap(c => [c, ...(LANG_OF[c] || "").split(" ")]).filter(Boolean));
     // same-sounding spellings share their script only when they're nearly the same word (Fatima ← Fatimah, never Hussain ← Hassan)
-    const k0 = fold(x.n), near = soundAlikes(x.n).map(fold).filter(k => k !== k0 && lev(k0, k) <= 2);
+    const k0 = fold(x.n), near = soundAlikes(x.n).map(fold).filter(k => k !== k0 && k[0] === k0[0] && lev(k0, k) <= 2);
     const own = NATIVE[k0] || [], forms = [...own, ...near.flatMap(k => NATIVE[k] || [])], seen = new Set(), out = [];
     if (ARABIC[k0] && (langs.has("Arabic") || originOf(x).startsWith("Arabic"))) forms.unshift([ARABIC[k0], "Arabic"]);
     // Chinese, Japanese and Korean characters only for a name from there (Japan writes the borrowed Sofia 麻日亜; that's not Sofia's own script)

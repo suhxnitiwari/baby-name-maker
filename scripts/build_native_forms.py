@@ -33,7 +33,7 @@ if os.path.exists(D("native-ety.json")):
             if l not in ("Chinese", "Japanese", "Korean"): add(k, f, l, first=True)   # Wiktionary's characters for "Wei" are the surname 魏; the name list has 伟
 
 # culture lists: "A Hindi name from Sanskrit. Written सुहानी."
-for f in ["culture-names.json", "also-cultures.json", "medieval-names.json", "az-names.json", "russia-cultures.json", "bible-extra.json", "scripture-names.json"]:
+for f in ["culture-names.json", "caucasus-balkan-names.json", "also-cultures.json", "medieval-names.json", "az-names.json", "russia-cultures.json", "bible-extra.json", "scripture-names.json"]:
     if not os.path.exists(D(f)):
         continue
     for r in json.load(open(D(f), encoding="utf-8")):
