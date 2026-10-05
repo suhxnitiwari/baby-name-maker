@@ -401,16 +401,42 @@ const Cradle = (() => {
     if (!root) return;
     $("#cradleEmpty").classList.toggle("hidden", !!list.length);
     $("#cradlePlay").classList.toggle("hidden", list.length < 2);
-    Hang.render(root, list.map((n, k) => ({ key: fold(n), len: 70 + (MB.melody(n).ev.find(e => e.kind === "main")?.i ?? 4) * -6 + 90 + (k % 3) * 26,
+    Hang.render(root, list.map((n, k) => ({ key: fold(n), len: 18 + (14 - (MB.melody(n).ev.find(e => e.kind === "main")?.i ?? 4)) * 3 + (k % 3) * 14,
       html: `<button class="charm" data-play-name="${esc(n)}"><svg class="bow" viewBox="0 0 40 22" aria-hidden="true"><path d="M20 11c-6-9-17-9-17 0s11 9 17 0c6-9 17-9 17 0s-11 9-17 0zM20 11l-5 10M20 11l5 10"/></svg><span>${esc(n)}</span></button><button class="untie" data-untie="${esc(n)}" aria-label="Take ${esc(n)} out of the cradle">×</button>` })));
   }
+  // a wooden rocking cradle: end posts with arched caps, slats, a linen mattress, rockers and one ribbon bow
+  function crib() {
+    const slats = Array.from({ length: 13 }, (_, k) => `<rect x="${176 + k * 44}" y="150" width="13" height="186" rx="5" fill="url(#cw)"/>`).join("");
+    return `<svg viewBox="0 0 900 470" aria-hidden="true">
+      <defs><linearGradient id="cw" x1="0" x2="1"><stop offset="0" stop-color="#f1dfbf"/><stop offset=".55" stop-color="#e3c697"/><stop offset="1" stop-color="#cda672"/></linearGradient>
+        <linearGradient id="cwd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8cc9e"/><stop offset="1" stop-color="#c29966"/></linearGradient>
+        <linearGradient id="linen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffbf3"/><stop offset="1" stop-color="#eee2cd"/></linearGradient>
+        <filter id="cshadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#5a3c28" flood-opacity=".16"/></filter></defs>
+      <ellipse cx="450" cy="452" rx="370" ry="12" fill="rgba(90,60,40,.12)"/>
+      <g filter="url(#cshadow)">
+        <path d="M58 398 Q450 476 842 398" stroke="url(#cwd)" stroke-width="17" fill="none" stroke-linecap="round"/>
+        <path d="M150 300 C260 268 640 268 750 300 L750 338 L150 338 Z" fill="url(#linen)"/>
+        <path d="M168 302 C280 276 620 276 732 302" stroke="rgba(150,120,95,.35)" stroke-dasharray="3 5" fill="none"/>
+        ${slats}
+        <rect x="128" y="138" width="644" height="16" rx="8" fill="url(#cwd)"/>
+        <rect x="128" y="330" width="644" height="20" rx="6" fill="url(#cwd)"/>
+        <rect x="140" y="374" width="620" height="11" rx="5" fill="url(#cw)" opacity=".9"/>
+        <rect x="108" y="116" width="26" height="296" rx="8" fill="url(#cw)"/><rect x="766" y="116" width="26" height="296" rx="8" fill="url(#cw)"/>
+        <path d="M96 124 Q121 74 146 124" stroke="url(#cwd)" stroke-width="13" fill="none" stroke-linecap="round"/>
+        <path d="M754 124 Q779 74 804 124" stroke="url(#cwd)" stroke-width="13" fill="none" stroke-linecap="round"/>
+        <g transform="translate(121 150)" fill="#a23d55" opacity=".9"><path d="M0 0c-10-9-24-8-24 0s14 9 24 0c10-9 24-8 24 0s-14 9-24 0z"/><path d="M0 0l-7 22 5-2 2 5zM0 0l7 22-5-2-2 5z"/><circle r="3.4"/></g>
+      </g></svg>`;
+  }
+  if ($("#cribArt")) $("#cribArt").innerHTML = crib();
   async function playAll() {
+    $("#crib").classList.add("rocking");
     for (const n of list) {
       const tag = $$("#cradleMobile .hc").find(el => el.dataset.key === fold(n));
       tag && tag.classList.add("lit"); tag && Hang.nudge(tag.firstChild, .15);
       await new Promise(r => setTimeout(r, MB.play(MB.melody(n)) * 1000 + 120));
       tag && tag.classList.remove("lit");
     }
+    $("#crib").classList.remove("rocking");
   }
   return { toggle, has, save, render, playAll, syncHearts, get list() { return list; } };
 })();
@@ -889,12 +915,18 @@ const Charts = (() => {
       const opts = by[r].map(p => `<option value="${p.key}">${esc(label(p))}</option>`).join("");
       return r ? `<optgroup label="${esc(r)}">${opts}</optgroup>` : opts;
     }).join("");
+    const name = p => `${p.label}${p.group ? ` (${p.group === "United Kingdom" ? "UK" : p.group})` : ""}`;
+    $("#chAtlas").innerHTML = `<div class="atlas-key">${Object.values(BADGE).map(([m, t]) => `<span><b>${m}</b>${esc(t.split(":")[0])}</span>`).join("")}</div>
+      <div class="atlas-cols">${order.map(r => `<div class="atlas-region">${r ? `<h4>${esc(r)}</h4>` : ""}${by[r].map(p =>
+        `<button class="atlas-place" data-k="${p.key}" title="${esc((BADGE[p.badge] || ["", ""])[1])}"><i>${(BADGE[p.badge] || [""])[0]}</i><span>${esc(name(p))}</span><small>${p.first}–${String(p.last)}</small></button>`).join("")}</div>`).join("")}</div>`;
     setPlace("us");
   }
   function setPlace(k) {
     const keepYear = place ? years[at] : null;
     place = YEARS.places.find(p => p.key === k);
-    $("#chCountry").value = k; fit($("#chCountry"));
+    $("#chCountry").value = k;
+    $("#chPlaceBtn").textContent = place.label.replace(/^the /, "the ") + (place.group && !place.label.includes(place.group) ? ` (${place.group === "United Kingdom" ? "UK" : place.group})` : "");
+    $$("#chAtlas .atlas-place").forEach(b => b.setAttribute("aria-current", b.dataset.k === k));
     years = Object.keys(place.years).map(Number).sort((a, b) => a - b);
     // stay in the same year if this place has it, else the nearest
     at = keepYear ? years.reduce((b, y, i) => Math.abs(y - keepYear) < Math.abs(years[b] - keepYear) ? i : b, 0) : years.length - 1;
@@ -948,6 +980,13 @@ const Charts = (() => {
   $("#chBack").onclick = () => go(at - 1);
   $("#chFwd").onclick = () => go(at + 1);
   $("#chCountry").onchange = e => setPlace(e.target.value);
+  // the atlas opens from the sentence and closes on a pick, a click outside, or Escape
+  const atlas = $("#chAtlas"), pbtn = $("#chPlaceBtn");
+  const openAtlas = on => { atlas.hidden = !on; pbtn.setAttribute("aria-expanded", on); if (on) (atlas.querySelector('[aria-current="true"]') || atlas.querySelector(".atlas-place")).focus({ preventScroll: true }); };
+  pbtn.onclick = e => { e.stopPropagation(); openAtlas(atlas.hidden); };
+  atlas.addEventListener("click", e => { e.stopPropagation(); const b = e.target.closest(".atlas-place"); if (b) { setPlace(b.dataset.k); openAtlas(false); pbtn.focus({ preventScroll: true }); } });
+  document.addEventListener("click", () => { if (!atlas.hidden) openAtlas(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !atlas.hidden) { openAtlas(false); pbtn.focus(); } });
   async function playYear() {
     MB.ensure();
     const tags = $$("#chMobile .hc:not(.rise)").slice(0, 5);

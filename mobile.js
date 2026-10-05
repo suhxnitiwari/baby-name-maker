@@ -207,21 +207,43 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
     if (!narrow) {
       const jx = Math.min(W - 40, hx + rx + 120 * S), jy = ringY + 70 * S, tx = hx + 30 * S, ty = Math.max(14, hookY + 12 * S);
       woodStroke(jx, H + 40, jx, jy, 13 * S); woodStroke(jx, jy, tx, ty, 9 * S); ball(jx, jy, 13 * S); ball(tx, ty, 9 * S);
-      ctx.strokeStyle = "#8d8f93"; ctx.lineWidth = 1.6 * S; ctx.beginPath(); ctx.moveTo(tx, ty + 6 * S); ctx.quadraticCurveTo(hx + 10 * S, box - pry - 14 * S, hx, box - pry); ctx.stroke();
-    } else { ctx.strokeStyle = "rgba(205,188,160,.9)"; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(hx, 0); ctx.lineTo(hx, box - pry); ctx.stroke(); }
-    // the wooden music box, with a winding key that turns while it plays
-    g = ctx.createLinearGradient(hx - prx, box, hx + prx, box); g.addColorStop(0, WOOD[2]); g.addColorStop(.35, "#ecd2b0"); g.addColorStop(1, WOOD[1]);
-    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(hx, box, prx, pry, 0, 0, TAU); ctx.fill();
-    ctx.strokeStyle = "rgba(140,100,60,.25)"; ctx.lineWidth = 1;
-    for (let k = -3; k <= 3; k++) { ctx.beginPath(); ctx.ellipse(hx + k * 2, box, prx * (.25 + Math.abs(k) * .2), pry * .92, 0, -1.2, 1.2); ctx.stroke(); }
-    const kx = hx + prx + 12 * S, ky = box - 4 * S, kw = Math.abs(Math.cos(keyA)) * 9 * S;
-    ctx.strokeStyle = "#a88a5c"; ctx.lineWidth = 3 * S; ctx.beginPath(); ctx.moveTo(hx + prx - 2 * S, ky); ctx.lineTo(kx, ky); ctx.stroke();
-    ctx.fillStyle = "#c9a46a"; ctx.beginPath(); ctx.ellipse(kx + 2 * S, ky - 9 * S, Math.max(1.5, kw), 9 * S, 0, 0, TAU); ctx.ellipse(kx + 2 * S, ky + 9 * S, Math.max(1.5, kw), 9 * S, 0, 0, TAU); ctx.fill();
-    ball(kx + 2 * S, ky, 4 * S);
+      ctx.strokeStyle = "#8d8f93"; ctx.lineWidth = 1.6 * S; ctx.beginPath(); ctx.moveTo(tx, ty + 6 * S); ctx.quadraticCurveTo(hx + 10 * S, box - pry - 14 * S, hx, box - pry * .8 - 6 * S); ctx.stroke();
+    } else { ctx.strokeStyle = "rgba(205,188,160,.9)"; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(hx, 0); ctx.lineTo(hx, box - pry * .8 - 6 * S); ctx.stroke(); }
+    // the music box: a small engraved wooden box with finger-jointed corners and a silver crank that turns while it plays
+    {
+      const w = prx * 1.55, h = pry * .8, d = 14 * S, x0 = hx - w, y0 = box - h, x1 = hx + w, y1 = box + h;
+      // right side, in shadow, with the crank's hole
+      ctx.fillStyle = "#b98e5c"; ctx.beginPath(); ctx.moveTo(x1, y0); ctx.lineTo(x1 + d, y0 - d * .55); ctx.lineTo(x1 + d, y1 - d * .55); ctx.lineTo(x1, y1); ctx.closePath(); ctx.fill();
+      // the lid, a shade lighter, with an engraved border
+      g = ctx.createLinearGradient(x0, y0 - d, x1, y0); g.addColorStop(0, "#e9cfa4"); g.addColorStop(1, "#dcb986");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + d, y0 - d * .55); ctx.lineTo(x1 + d, y0 - d * .55); ctx.lineTo(x1, y0); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(120,80,40,.35)"; ctx.lineWidth = .8; ctx.beginPath(); ctx.moveTo(x0 + 6 * S, y0 - 1.5 * S); ctx.lineTo(x0 + d + 3 * S, y0 - d * .45); ctx.lineTo(x1 + d - 6 * S, y0 - d * .45); ctx.lineTo(x1 - 3 * S, y0 - 1.5 * S); ctx.closePath(); ctx.stroke();
+      // the front, warm wood
+      g = ctx.createLinearGradient(x0, y0, x1, y1); g.addColorStop(0, "#e2c08e"); g.addColorStop(1, "#cba06a");
+      ctx.fillStyle = g; ctx.fillRect(x0, y0, w * 2, h * 2);
+      ctx.strokeStyle = "rgba(110,72,38,.5)"; ctx.lineWidth = 1; ctx.strokeRect(x0 + .5, y0 + .5, w * 2 - 1, h * 2 - 1);
+      // finger joints at the corners
+      ctx.fillStyle = "rgba(95,60,32,.55)";
+      for (let k = 0; k < 4; k++) { const ty = y0 + (k + .25) * h * .5; ctx.fillRect(x0, ty, 3 * S, h * .25); ctx.fillRect(x1 - 3 * S, ty + h * .25, 3 * S, h * .25); }
+      // engraved scrolls and a small diamond in the middle
+      ctx.strokeStyle = "rgba(120,78,40,.42)"; ctx.lineWidth = 1;
+      for (const sx of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(hx + sx * 5 * S, box); ctx.bezierCurveTo(hx + sx * 16 * S, box - 16 * S, hx + sx * 32 * S, box - 8 * S, hx + sx * 27 * S, box + 2 * S);
+        ctx.bezierCurveTo(hx + sx * 23 * S, box + 10 * S, hx + sx * 16 * S, box + 6 * S, hx + sx * 18 * S, box + 1 * S); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(hx + sx * 5 * S, box); ctx.bezierCurveTo(hx + sx * 14 * S, box + 14 * S, hx + sx * 30 * S, box + 12 * S, hx + sx * 38 * S, box + 4 * S); ctx.stroke();
+      }
+      ctx.beginPath(); ctx.moveTo(hx, box - 4 * S); ctx.lineTo(hx + 3.5 * S, box); ctx.lineTo(hx, box + 4 * S); ctx.lineTo(hx - 3.5 * S, box); ctx.closePath(); ctx.stroke();
+      // the crank: an arm that turns around its hole, with a silver handle
+      const cx = x1 + d * .5, cy = box - d * .3, L = 17 * S, ax = cx + Math.cos(keyA) * L * .55 + L * .55, ay = cy + Math.sin(keyA) * L * .9;
+      ctx.fillStyle = "#6f4b2c"; ctx.beginPath(); ctx.ellipse(cx, cy, 2.4 * S, 3 * S, 0, 0, TAU); ctx.fill();
+      ctx.strokeStyle = "#a9adb3"; ctx.lineWidth = 2.2 * S; ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + L * .55, cy); ctx.lineTo(ax, ay); ctx.stroke();
+      g = ctx.createLinearGradient(ax, ay - 3 * S, ax + 9 * S, ay + 3 * S); g.addColorStop(0, "#f2f3f5"); g.addColorStop(.5, "#b6babf"); g.addColorStop(1, "#8b8f95");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(ax, ay - 3 * S, 9 * S, 6 * S, 2.5 * S) : ctx.rect(ax, ay - 3 * S, 9 * S, 6 * S); ctx.fill();
+    }
 
     // strings from the box to the hoop
-    const knotY = box + pry + 24 * S;
-    ctx.strokeStyle = "#e9dcc6"; ctx.lineWidth = 2 * S; ctx.beginPath(); ctx.moveTo(hx, box + pry); ctx.lineTo(hx, knotY); ctx.stroke();
+    const knotY = box + pry * .8 + 30 * S;
+    ctx.strokeStyle = "#e9dcc6"; ctx.lineWidth = 2 * S; ctx.beginPath(); ctx.moveTo(hx, box + pry * .8); ctx.lineTo(hx, knotY); ctx.stroke();
     ctx.strokeStyle = "rgba(150,118,92,.55)"; ctx.lineWidth = 1.1;
     for (const a of [0, TAU / 4, TAU / 2, TAU * .75]) { const p = onRing(a); ctx.beginPath(); ctx.moveTo(hx, knotY); ctx.lineTo(p.x, p.y); ctx.stroke(); }
 
