@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────
 // TASTE MODEL: learns from names you love and don't, then recommends with reasons.
-// Uses globals from index.html (fold, vibeOf, popRanks, BY_NAME, POP, gender, render, esc, $, $$).
+// Uses globals from app.js (fold, vibeOf, popRanks, BY_NAME, gender, soundKey) and MB.
 // ─────────────────────────────────────────────────────────────
 const TASTE_KEY = "bnm-taste-v1";
 let taste = (() => { try { return JSON.parse(localStorage.getItem(TASTE_KEY)) || null; } catch { return null; } })()
@@ -102,85 +102,54 @@ function explain(p) {
   bits.push(p.medRank > 800 ? "rare names" : p.medRank > 150 ? "familiar-but-not-everywhere names" : "well-known names");
   return bits;
 }
-const bar = v => { const n = Math.round(v * 10); return "█".repeat(n) + "░".repeat(10 - n); };
-
-function profileHTML(p) {
-  const rows = [
-    ["Softness", p.soft], ["Modern", p.modern], ["Elegance", p.elegant], ["Rarity", p.rarity],
-    ["Brevity", Math.max(0, Math.min(1, 1 - (p.lenAvg - 3) / 8))],
-  ];
-  return `<div class="genome">
-    <div class="genome-head"><span>Your name profile</span><span>confidence ${p.confidence}%</span></div>
-    ${rows.map(([k, v]) => `<div class="g-row"><span>${k}</span><code>${bar(v)}</code><b>${Math.round(v * 100)}</b></div>`).join("")}
-    <div class="g-facts">
-      <div><span>Syllables</span><b>${p.sylMin === p.sylMax ? p.sylMin : `${p.sylMin}–${p.sylMax}`}</b></div>
-      <div><span>Ending</span><b>${p.endShare >= .5 ? { a: "-a", i: "-ee / -i", e: "-e", o: "-o", consonant: "consonant" }[p.endTop] : "mixed"}</b></div>
-      <div><span>Cultures</span><b>${p.cultures.slice(0, 3).join(" · ") || "open to anything"}</b></div>
-      <div><span>Popularity</span><b>${p.medRank > 800 ? "low tolerance" : p.medRank > 150 ? "medium" : "high"}</b></div>
-    </div>
-    <p class="g-why">You love names with ${explain(p).join(", ")}.</p>
-    ${taste.log.length ? `<div class="g-log">${taste.log.slice(-3).map(l => `<div>✓ ${esc(l)}</div>`).join("")}</div>` : ""}
-  </div>`;
+// ── 4. Use it ──
+// Every "love" and "not for me" anywhere on the site lands here, and quietly steers every later search.
+function tasteSet(n, how) {
+  n = cap1(n);
+  taste.love = taste.love.filter(x => fold(x) !== fold(n));
+  taste.hate = taste.hate.filter(x => fold(x) !== fold(n));
+  if (how === "love") taste.love.push(n);
+  if (how === "hate") taste.hate.push(n);
+  saveTaste();
 }
-
-function matchHTML(x) {
-  const s = x.match, P = s.parts;
-  const rows = [["Sound match", P.phon], ["Feel", P.feel], ["Length", P.lengthFit], ["Ending", P.endFit], ["Culture", P.culture], ["Rarity", P.rarity]];
-  return `<div class="match">
-    <div class="match-score"><span>match</span><b>${s.total.toFixed(1)}</b></div>
-    <details><summary>Why this name?</summary>
-      ${rows.map(([k, v]) => `<div class="m-row"><span>${k}</span><i style="--w:${Math.round(v * 100)}%"></i><b>${Math.round(v * 100)}</b></div>`).join("")}
-    </details>
-    <div class="taste-btns"><button data-love="${esc(x.n)}">♥ Love it</button><button data-nope="${esc(x.n)}">✕ Not for me</button></div>
-    <div class="nope-why hidden" data-for="${esc(x.n)}">
-      ${["too popular", "too long", "too short", "wrong culture", "don't like the sound", "bad association", "can't explain it"].map(r => `<button data-reason="${r}" data-n="${esc(x.n)}">${r}</button>`).join("")}
-    </div>
-  </div>`;
+const tasteHated = n => taste.hate.some(h => fold(h) === fold(n));
+// how much a name should sink because it sounds like ones you turned down (0 = not at all, 1 = gone)
+function tasteSink(n) {
+  if (!taste.hate.length) return 0;
+  if (tasteHated(n)) return 1;
+  const sk = soundKey(n), bg = bigrams(n);
+  let worst = 0;
+  for (const h of taste.hate) worst = Math.max(worst, soundKey(h) === sk ? .9 : dice(bg, bigrams(h)));
+  return worst > .55 ? worst : 0;
 }
-
-// ── 4. Run ──
-let tasteResults = [];
-function showTaste() {
-  $("#more").classList.add("hidden");
-  $("#loveIn").value = taste.love.join(", ");
-  $("#hateIn").value = taste.hate.join(", ");
-  const p = buildProfile();
-  if (!p) { $("#tasteOut").innerHTML = ""; $("#count").textContent = ""; return render([], "Type a few names you love (3–5 is great), then tap Learn my taste."); }
-  $("#tasteOut").innerHTML = profileHTML(p);
-  const scored = candidates().map(x => ({ x, s: scoreName(x, p) })).sort((a, b) => b.s.total - a.s.total).slice(0, 12);
-  tasteResults = scored.map(({ x, s }) => Object.assign(Object.create(x), x, { match: s }));
-  $("#count").innerHTML = `ranked <b>${candidates().length.toLocaleString()}</b> names against your profile · top 12`;
-  render(tasteResults, "No matches yet.");
-}
-
-function learn() {
-  taste.love = parseNames($("#loveIn").value);
-  taste.hate = parseNames($("#hateIn").value);
-  if (taste.love.length) taste.log.push(`profile trained on ${taste.love.length} loved and ${taste.hate.length} disliked names`);
-  saveTaste(); showTaste();
-}
-
-// "Not for me" reasons update the model in visible ways.
+// "not for me", with a reason: the model changes in a way you can see
 function reject(name, reason) {
-  const x = tasteResults.find(r => r.n === name) || nameObj(name), len = fold(name).length, r = bestRank(name);
+  const x = nameObj(name), len = fold(name).length, r = bestRank(name);
+  tasteSet(name, "hate");
   const msg = {
-    "too popular": () => { taste.popCap = Math.max(taste.popCap, Math.min(r, 3000) + 50); return `popularity tolerance lowered (avoiding the top ${taste.popCap})`; },
-    "too long": () => { taste.maxLen = len - 1; return `max length set to ${len - 1} letters`; },
-    "too short": () => { taste.minLen = len + 1; return `min length set to ${len + 1} letters`; },
-    "wrong culture": () => { if (x.o) taste.banCultures.push(x.o); return x.o ? `${x.o} names moved down` : "noted"; },
-    "don't like the sound": () => { taste.hate.push(name); return `sounds like “${name}” moved down`; },
-    "bad association": () => { taste.hate.push(name); return `“${name}” removed`; },
-    "can't explain it": () => { taste.hate.push(name); return `“${name}” removed, similar names moved down a little`; },
-  }[reason]();
-  taste.log.push(`model updated: ${msg}`);
-  saveTaste(); showTaste();
+    "too popular": () => { taste.popCap = Math.max(taste.popCap, Math.min(r, 3000) + 50); return `skipping the top ${taste.popCap} most popular names`; },
+    "too long": () => { taste.maxLen = len - 1; return `names up to ${len - 1} letters`; },
+    "too short": () => { taste.minLen = len + 1; return `names of ${len + 1} letters or more`; },
+    "wrong roots": () => { if (x.o) taste.banCultures.push(x.o); return x.o ? `fewer ${x.o} names` : "noted"; },
+    "the sound": () => `fewer names that sound like ${name}`,
+  }[reason];
+  const said = msg ? msg() : `fewer names like ${name}`;
+  taste.log.push(said); saveTaste();
+  return said;
 }
-
-$("#learnBtn").onclick = learn;
-$("#tasteReset").onclick = () => { taste = { love: [], hate: [], banCultures: [], maxLen: 0, minLen: 0, popCap: 0, log: [] }; saveTaste(); showTaste(); };
-$("#results").addEventListener("click", e => {
-  const love = e.target.closest("[data-love]"), nope = e.target.closest("[data-nope]"), why = e.target.closest("[data-reason]");
-  if (love) { taste.love.push(love.dataset.love); taste.log.push(`added “${love.dataset.love}” to loved names`); saveTaste(); showTaste(); }
-  if (nope) $(`.nope-why[data-for="${CSS.escape(nope.dataset.nope)}"]`)?.classList.toggle("hidden");
-  if (why) reject(why.dataset.n, why.dataset.reason);
-});
+const tasteReset = () => { taste = { love: [], hate: [], banCultures: [], maxLen: 0, minLen: 0, popCap: 0, log: [] }; saveTaste(); };
+// does a melody climb, fall or stay level? (the shape of its last step)
+function contour(n) {
+  const t = MB.melody(n).ev.filter(e => e.kind === "main").map(e => e.i);
+  if (t.length < 2) return 0;
+  return Math.sign(t[t.length - 1] - t[0]);
+}
+function tasteMatches(k = 6) {
+  const p = buildProfile();
+  if (!p) return { p: null, list: [] };
+  const list = candidates().map(x => ({ x, s: scoreName(x, p) })).sort((a, b) => b.s.total - a.s.total).slice(0, k)
+    .map(({ x, s }) => Object.assign(Object.create(x), x, { match: s }));
+  const c = taste.love.map(contour), up = c.filter(v => v > 0).length, down = c.filter(v => v < 0).length;
+  p.melody = up > down * 1.5 ? "melodies that rise" : down > up * 1.5 ? "melodies that settle down" : "melodies that stay close to home";
+  return { p, list };
+}

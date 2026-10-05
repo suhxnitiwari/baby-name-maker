@@ -145,10 +145,12 @@ const MB = (() => {
     return ctx;
   }
   // a music-box tine: bright attack, glassy partials, long soft ring
-  function pluck(i, v = 1, when = 0) {
+  const pluck = (i, v = 1, when = 0) => tone(COMB[i], v, when);
+  // any key on the toy piano, black keys included (midi note number)
+  function tone(midi, v = 1, when = 0) {
     if (!on || !ensure()) return;
     const t = Math.max(ctx.currentTime, when || ctx.currentTime) + .005;
-    const f = 440 * 2 ** ((COMB[i] - 69) / 12), ring = 2.4 - i * .07;
+    const f = 440 * 2 ** ((midi - 69) / 12), ring = 2.4 - (midi - 72) * .045;
     for (const [r, a] of [[1, 1], [2.001, .34], [3.02, .1], [4.17, .05], [5.43, .025]]) {
       const o = ctx.createOscillator(), g = ctx.createGain();
       o.type = "sine"; o.frequency.value = f * r;
@@ -221,6 +223,68 @@ const MB = (() => {
   }
   const label = m => m.ev.filter(e => e.kind === "main").map(e => NOTE_NAMES[e.i]).join(" ");
 
+  // Why each syllable plays the note it does, in plain words: "NI · 'ee' is bright, the N lifts it two steps → E6"
+  const SOUND = { 2: "“oo” is low and dark", 3: "“oh” sits low", 4: "“ah” is the middle of the comb", 5: "“eh” sits above the middle", 7: "“ee” is high and bright" };
+  const LEAN = { "-1": "the lips pull it down a step", 1: "the L or R lifts it a step", 2: "the tongue tip lifts it two steps", 3: "the back of the mouth lifts it three" };
+  function explain(name) {
+    const m = melody(name), out = [];
+    for (const wd of name.split(/[\s-]+/).filter(Boolean)) for (const x of syllables(wd).syl) out.push(x);
+    return out.map((x, k) => {
+      const r = nucleus(x.nuc, x.magic), l = lean(x.on);
+      const notes = m.ev.filter(e => e.kind === "main" && e.syl === k).map(e => NOTE_NAMES[e.i]);
+      const sound = r.length > 1 ? `“${x.magic ? x.nuc[0] + "…e" : x.nuc}” glides between two notes` : SOUND[r[0]] || "an open vowel";
+      return { text: (x.on + x.nuc + x.co).toUpperCase(), notes, why: [sound, LEAN[l]].filter(Boolean).join(", ") };
+    });
+  }
+
+  // ── the punched paper strip: what a real music box reads. Rows are teeth (high notes on top), columns are steps.
+  // Every hole is one note; names that sound alike punch the same holes. labels: the syllables, under their notes.
+  function paperSVG(m, o = {}) {
+    const cw = o.cw || 30, rh = o.rh || 5.4, top = 15, bot = o.labels ? 30 : 15, H = top + rh * 15 + bot;
+    const W = Math.ceil((m.steps + 1.4) * cw);
+    const X = e => cw * 1.1 + e.t * cw + (e.kind === "home" ? cw * .3 : 0), Y = i => top + (14 - i) * rh + rh / 2;
+    const r = Math.min(rh * 1.15, cw * .3);
+    let s = `<rect class="paper" x="0" y="0" width="${W}" height="${H}" rx="3"/>`;
+    for (let i = 0; i < 15; i++) s += `<line class="${i % 7 === 0 ? "row c" : "row"}" x1="${cw * .6}" x2="${W - 8}" y1="${Y(i)}" y2="${Y(i)}"/>`;
+    for (let x = 9; x < W - 6; x += 15) s += `<rect class="sprocket" x="${x}" y="4" width="6" height="4" rx="1"/><rect class="sprocket" x="${x}" y="${top + rh * 15 + 6}" width="6" height="4" rx="1"/>`;
+    m.ev.forEach((e, k) => {
+      const x = X(e).toFixed(1), y = Y(e.i).toFixed(1);
+      if (e.kind === "home") s += `<g class="h home" data-k="${k}"><circle class="glow" cx="${x}" cy="${y}" r="${r * 2.6}"/><circle class="punch" cx="${x}" cy="${y}" r="${r * .9}"/><circle class="core" cx="${x}" cy="${y}" r="${r * .35}"/></g>`;
+      else s += `<g class="h ${e.kind}" data-k="${k}"${e.own ? ` data-own="${e.own}"` : ""}><circle class="glow" cx="${x}" cy="${y}" r="${r * 2.6}"/><circle class="punch" cx="${x}" cy="${y}" r="${e.kind === "main" ? r : r * .55}"/></g>`;
+    });
+    if (o.labels) {
+      const syl = {};
+      m.ev.forEach(e => { if (e.kind === "main" && !(e.syl in syl)) syl[e.syl] = X(e); });
+      Object.entries(syl).forEach(([k, x]) => { if (o.labels[k]) s += `<text class="syl" data-syl="${k}" x="${x.toFixed(1)}" y="${H - 9}">${o.labels[k]}</text>`; });
+    }
+    return { svg: `<svg class="paper-svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${s}</svg>`, W, H, cw };
+  }
+  // Light a paper strip's holes as it plays. Returns its length in seconds.
+  function playPaper(el, m, speed = 1, opt = {}) {
+    if (playing) playing.stop();
+    const holes = {}; el.querySelectorAll(".h").forEach(n => holes[n.dataset.k] = n);
+    const dur = opt.silent ? m.steps * STEP / speed : play(m, speed), t0 = performance.now() + 60;
+    el.querySelectorAll(".h.lit").forEach(h => h.classList.remove("lit"));
+    el.classList.add("playing");
+    let raf = 0, done = false;
+    const lit = new Set();
+    const frame = now => {
+      const s = (now - t0) / 1000 / (STEP / speed);
+      m.ev.forEach((e, k) => {
+        if (e.t <= s && !lit.has(k)) {
+          lit.add(k);
+          const h = holes[k]; if (h) h.classList.add("lit");
+          if (e.kind === "main" || e.kind === "home") opt.onNote && opt.onNote(e);
+        }
+      });
+      if ((now - t0) / 1000 < dur + .3 && !done) raf = requestAnimationFrame(frame); else stop();
+    };
+    const stop = () => { if (done) return; done = true; cancelAnimationFrame(raf); el.classList.remove("playing"); setTimeout(() => el.querySelectorAll(".h.lit").forEach(h => h.classList.remove("lit")), 1100); if (playing && playing.el === el) playing = null; opt.onDone && opt.onDone(); };
+    raf = requestAnimationFrame(frame);
+    playing = { el, stop };
+    return dur;
+  }
+
   // Play a strip element: holes light up as a soft beam of light crosses the paper.
   let playing = null;
   function playEl(el, m, speed = 1) {
@@ -250,6 +314,6 @@ const MB = (() => {
     return dur;
   }
 
-  return { melody, syllables, stripSVG, play, playEl, pluck, tick, ensure, label, STEP, COMB, NOTE_NAMES,
+  return { melody, syllables, stripSVG, paperSVG, playPaper, explain, play, playEl, pluck, tone, tick, ensure, label, STEP, COMB, NOTE_NAMES,
     get on() { return on; }, setOn, stopAll: () => playing && playing.stop() };
 })();

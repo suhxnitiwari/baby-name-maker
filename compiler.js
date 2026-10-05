@@ -7,12 +7,6 @@ let locks = { start: "", end: "" };
 const capW = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 const COMMON_ENDINGS = { girl: "a ia ya na ra la ira ina ana ika iya elle", boy: "an en on ar el ir av ansh esh ian o", either: "i y en an ar el is o" };
 
-function familyInputs() {
-  const a = $("#mom").value.trim(), b = $("#dad").value.trim();
-  const extra = $("#familyIn").value.split(/[,;]+|\s+/).map(t => t.trim()).filter(t => /^[\p{L}'-]{2,}$/u.test(t)).map(capW);
-  return { a: capW(a), b: capW(b), extra, honor: +$("#honor").value, mode: $("#synthMode").value };
-}
-
 // 1. Splice two names at syllable-ish cut points, remembering which letters came from where.
 function cutsOf(w) {
   const c = [];
@@ -121,12 +115,10 @@ function attestedPool() {
 }
 
 // 5. Compile
-function blend() {
-  const fam = familyInputs(), { a, b } = fam;
-  $("#more").classList.add("hidden");
-  renderLocks();
-  if (!a || !b) { $("#count").textContent = ""; return render([], "Type Mom's and Dad's names, then tap Generate names 💞"); }
-  const f = filters(), last = lastName(), names = [a, b, ...fam.extra];
+// fam: { a, b, extra: [names to honor], honor: .5 | 1, mode: "both" | "real" | "new" }, f: the same filters as Find, last: surname
+function blend(fam, f, last = "") {
+  const a = capW(fam.a), b = capW(fam.b), extra = (fam.extra || []).map(capW), names = [a, b, ...extra];
+  fam = { honor: .5, mode: "both", ...fam, extra };
   const log = [];
   const parentSet = new Set(names.map(fold));
 
@@ -205,7 +197,7 @@ function blend() {
   }
   cands.sort((p, q) => q.score - p.score);
   log.push(["ranking", `${cands.length.toLocaleString()} survived`]);
-  if (!cands.length) { $("#count").textContent = ""; return render([{ pipeline: log }], "No names survived. Try another mode, fewer filters or a different lock."); }
+  if (!cands.length) return { picks: [], rest: [], log, total: 0 };
 
   // top picks (each a different objective)
   const picks = [], used = new Set(), top = cands.slice(0, Math.max(10, Math.ceil(cands.length * .4)));
@@ -223,17 +215,9 @@ function blend() {
   pick("Wildcard", shuffle(top.filter(x => x.badge === "New blend")));
   picks[0].featured = true;
 
-  const rest = cands.filter(x => !used.has(x.n)).slice(0, 24);
+  const rest = cands.filter(x => !used.has(x.n)).slice(0, 40);
   log.push(["showing", `${picks.length} top picks + ${rest.length} more`]);
-  $("#count").innerHTML = `<b>${cands.length.toLocaleString()}</b> candidates survived the compiler`;
-  render([
-    { formula: [a, b] }, picks[0],
-    { pipeline: log },
-    { share: true },
-    { heading: "Top picks" }, ...picks.slice(1),
-    { heading: `All candidates · top ${rest.length}` }, ...rest,
-  ], "Couldn't compile those names. Try different spellings!");
-  revealAll();
+  return { picks, rest, log, total: cands.length };
 }
 
 function makeCand(n, segs, method, att, names) {
@@ -246,7 +230,7 @@ function makeCand(n, segs, method, att, names) {
   });
 }
 
-// 6. Provenance view on each card
+// 6. Provenance: which letters came from whom
 function provHTML(x) {
   const { segs, method, names } = x.prov;
   const rows = names.map((p, i) => {
@@ -256,47 +240,18 @@ function provHTML(x) {
     for (const s of [...mine].sort((u, v) => u.s - v.s)) { html += esc(p.slice(k, s.s)) + `<mark>${esc(p.slice(s.s, s.e))}</mark>`; k = s.e; }
     html += esc(p.slice(k));
     const who = i === 0 ? "Mom" : i === 1 ? "Dad" : "Family";
-    return `<div class="prow"><span class="pl">${who}</span><span class="pw">${html}</span><b>${Math.round(x.contrib[i] * 100)}%</b></div>`;
+    return `<div class="prow p${i < 2 ? i : 2}"><span class="pl">${who}</span><span class="pw">${html}</span><b>${Math.round(x.contrib[i] * 100)}%</b></div>`;
   }).join("");
   const lockSeg = segs.find(s => s.lock), addSeg = segs.find(s => s.add);
-  const pieces = segs.map(s => s.lock ? `🔒${s.lock}` : s.add ? `+${s.add}` : s.from.slice(s.s, s.e)).join(" + ");
+  const pieces = segs.map(s => s.lock ? s.lock : s.add ? `+${s.add}` : s.from.slice(s.s, s.e)).join(" + ");
   const first = segs[0], lastSeg = segs[segs.length - 1];
   const startPiece = first.lock || first.add || (first.from && first.from.slice(first.s, first.e));
   const endPiece = lastSeg.lock || lastSeg.add || (lastSeg.from && lastSeg.from.slice(lastSeg.s, lastSeg.e));
   const canLock = x.badge === "New blend" || method === "splice" || method.startsWith("locked");
   return `<div class="prov">
     ${rows}
-    ${lockSeg || addSeg ? `<div class="prow"><span class="pl">${lockSeg ? "Locked" : "Added"}</span><span class="pw"><mark>${esc((lockSeg || addSeg).lock || (lockSeg || addSeg).add)}</mark></span><b></b></div>` : ""}
-    <div class="pmethod">${method === "splice" ? `built by splicing: ${esc(pieces)} → ${esc(x.n)}` : method.startsWith("locked") ? `built around your lock: ${esc(pieces)} → ${esc(x.n)}` : `${esc(method)}`}</div>
-    ${canLock ? `<div class="locks">
-      <button data-lock-start="${esc(startPiece)}">🔒 keep “${esc(startPiece)}…”</button>
-      <button data-lock-end="${esc(endPiece)}">🔒 keep “…${esc(endPiece)}”</button></div>` : ""}
+    ${lockSeg || addSeg ? `<div class="prow"><span class="pl">${lockSeg ? "Kept" : "Added"}</span><span class="pw"><mark>${esc((lockSeg || addSeg).lock || (lockSeg || addSeg).add)}</mark></span><b></b></div>` : ""}
+    <div class="pmethod">${method === "splice" ? `spliced: ${esc(pieces)} → ${esc(x.n)}` : method.startsWith("locked") ? `built around what you kept: ${esc(pieces)} → ${esc(x.n)}` : esc(method)}</div>
+    ${canLock ? `<div class="locks"><button data-lock-start="${esc(startPiece)}">keep “${esc(startPiece)}…”</button><button data-lock-end="${esc(endPiece)}">keep “…${esc(endPiece)}”</button></div>` : ""}
   </div>`;
 }
-
-function pipelineHTML(log, title = "name compiler") {
-  const dots = (a, b) => ".".repeat(Math.max(3, 52 - a.length - b.length));
-  return `<div class="pipeline">
-    <div class="pipe-head">${esc(title)} · ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
-    ${log.map(([a, b], i) => `<div class="pipe-line" style="animation-delay:${i * 140}ms"><span>${esc(a)}</span><i>${dots(a, b)}</i><b>${esc(b)}</b></div>`).join("")}
-    ${title === "name compiler" ? `<div class="pipe-note">scores are heuristics: balance, how easy it is to say, surname flow, real-name evidence, length</div>` : ""}
-  </div>`;
-}
-
-function renderLocks() {
-  const row = $("#lockRow");
-  const chips = [];
-  if (locks.start) chips.push(`<button data-unlock="start">🔒 starts with “${esc(locks.start)}” ✕</button>`);
-  if (locks.end) chips.push(`<button data-unlock="end">🔒 ends with “${esc(locks.end)}” ✕</button>`);
-  row.innerHTML = chips.join("");
-  row.classList.toggle("hidden", !chips.length);
-}
-
-$("#results").addEventListener("click", e => {
-  const ls = e.target.closest("[data-lock-start]"), le = e.target.closest("[data-lock-end]");
-  if (ls) { locks.start = ls.dataset.lockStart; blend(); window.scrollTo({ top: $("#panel").offsetTop, behavior: "smooth" }); }
-  if (le) { locks.end = le.dataset.lockEnd; blend(); window.scrollTo({ top: $("#panel").offsetTop, behavior: "smooth" }); }
-});
-$("#lockRow").addEventListener("click", e => { const u = e.target.closest("[data-unlock]"); if (u) { locks[u.dataset.unlock] = ""; blend(); } });
-["#familyIn"].forEach(s => $(s).addEventListener("keydown", e => { if (e.key === "Enter") blend(); }));
-["#honor", "#synthMode"].forEach(s => $(s).addEventListener("change", () => tab === "blend" && blend()));

@@ -27,13 +27,19 @@ Mom + Dad compiler that shows exactly which letters came from whom. No server, n
 | Rhythm | the first syllable is held longest; an open ending (-a, -i) rings out |
 | The ring ○ | every tune comes home to the same low C: the Lullabyte signature |
 
-Notes sit on a two-octave pentatonic ladder, so no name can sound wrong. Spellings that sound alike make the same tune (Layla, Leila and Laila play one song; Lila is a different tune). The sound is synthesized in the browser with Web Audio: each note is a music-box chime, a stack of sine partials with a long ring and a small generated room. `mobile.js` draws the mobile on a canvas: it turns slowly, you drag sideways to spin it and tap to play.
+Notes sit on a two-octave pentatonic ladder, so no name can sound wrong. Spellings that sound alike make the same tune (Layla, Leila and Laila play one song; Lila is a different tune). The sound is synthesized in the browser with Web Audio: each note is a music-box chime, a stack of sine partials with a long ring and a small generated room. Three pictures of the same tune, each with one job:
+
+| | Shows | File |
+|---|---|---|
+| **The mobile** | what a name *looks* like. Every letter threads a bead onto the hoop; every syllable drops a felt charm whose shape is its vowel (oo moon, oh sun, ah cloud, eh drop, ee star, a glide is a bird), whose color is the consonant before it, and whose string length is its note. No two names build the same mobile. | `mobile.js` |
+| **The toy piano** | what a name *sounds* like. Fifteen ivory keys, C5 to C7 (exactly the music box's comb); a dot marks each key the name uses and the syllables float over their notes, pressing each key as it plays. Every key plays by hand. | `piano.js` |
+| **The paper strip** | how the algorithm *encodes* it: the punched strip a real music box reads, one hole per note. Spellings that punch the same holes sing the same song. | `musicbox.js` |
 
 ## How it's built
 
 - **A sound-alike key.** `soundKey()` in `generator.js` normalizes spelling to sound (ph → f, soft c → s, doubled letters collapsed, silent final e and h dropped) so Layla, Leila and Laila share one melody and one spelling family, and your taste results never hand you a respelling of a name you already typed.
-- **A taste model** (`taste.js`). From the names you love it learns a profile: softness, modernity and elegance, syllable range, favorite ending, cultures and how rare you like names. Each candidate is scored on six weighted signals, led by sound similarity (Dice coefficient on letter bigrams against every name you love), then feel, length, ending, culture and rarity on a log scale. Names that sound like ones you rejected, cultures you ruled out, and lengths or popularity you said no to are penalized. It ranks every name with a meaning, every official-record name held by 30+ people, and 25,000 invented ones, shows a confidence score and a "why this name?" breakdown, and remembers your taste in `localStorage`.
-- **The Mom + Dad compiler** (`compiler.js`). Parents' names (plus family names to honor) are spliced at syllable cut points with every letter's origin tracked, real names are scanned for both parents' sounds, then results are filtered for pronounceability, tested with your surname and ranked. A visible pipeline shows real counts at every step, and every name shows its provenance (which letters came from whom and the contribution %).
+- **A taste model** (`taste.js`). From the names you love it learns a profile: softness, modernity and elegance, syllable range, favorite ending, cultures and how rare you like names. Each candidate is scored on six weighted signals, led by sound similarity (Dice coefficient on letter bigrams against every name you love), then feel, length, ending, culture and rarity on a log scale. Names that sound like ones you rejected, cultures you ruled out, and lengths or popularity you said no to are penalized. It ranks every name with a meaning, every official-record name held by 30+ people, and 25,000 invented ones, shows each match as a percentage of your ear, and remembers your taste in `localStorage`. Every "not for me" anywhere on the site feeds it, and Find sinks names that sound like the ones you turned down.
+- **The Mom + Dad compiler** (`compiler.js`). Parents' names (plus, optionally, family names to honor) are spliced at syllable cut points with every letter's origin tracked, real names are scanned for both parents' sounds, then results are filtered for pronounceability, tested with your surname and ranked. A visible pipeline shows real counts at every step, and every name shows its provenance (which letters came from whom and the contribution %).
 - **Never an empty page.** When no name fits every blank of a search, it loosens the fewest, least important blanks by a cost table (feel and length first, letters last), says which ones it loosened, and composes new names that keep every letter, length and feel you asked for.
 - **Names built from roots** (`generator.js`). Sanskrit, Greek, Germanic and Norse names joined from two meaningful elements with vowel elision (Chandra + esh → Chandresh), and Arabic names formed from "servant of" one of the 99 names of God, each with its meaning.
 - **A reproducible data pipeline** (`scripts/`). Python scripts fetch and merge government open data, Wiktionary, Wikidata and JMnedict into compact TSV and JSON files the page loads on demand.
@@ -50,19 +56,15 @@ Notes sit on a two-octave pentatonic ladder, so no name can sound wrong. Spellin
 Overlapping names are merged, so the total on the page counts each name once.
 
 ## Features
-- **Mom + Dad compiler:** every name gets a badge (Real name / Rare real name / Built from roots / New blend) and top picks by category (best overall, most equal blend, best real name, rarest, easiest to say, best with surname, wildcard). Lock a start or ending and it rebuilds around it.
-- **Your taste:** type names you love and don't, get ranked matches with a "why this name?" breakdown. Telling it why you reject a name updates the model.
-- **Feminine / Masculine / Gender neutral**
-- **Spelling variations:** common real-world spellings and forms (Mohammed → Muhammad, Mohamed, Mehmet; Leila → Layla, Laila), names that sound alike, and possible letter-swap spellings (Jayden → Jaiden, Suhani → Suhaani)
-- **Vibes:** every card has a color aura, vibe words (dreamy, regal, fierce, timeless…) and Soft↔Strong, Classic↔Modern, Playful↔Elegant meters
-- **Meaning groups:** Beautiful, Feminine & graceful, Kind & gentle, Strong, Brave & fierce, Wise, Divine & faith, Royal & noble, Light & sun, Moon & stars, Nature, Love & joy, and more. Girl themes are listed first for girls, boy themes first for boys.
-- **Religion filter:** Christian, Islamic, Jewish, Hindu, Sikh, Buddhist, Jain, Zoroastrian, Greek, Norse and Celtic myth
-- **Sacred texts:** names from the Torah, the Bible, the Quran, the Bhagavad Gita, the Mahabharata, the Ramayana, the Puranas and the Vedas
-- **Culture / ethnicity** and **language** filters
-- **Letter filters:** starts with a letter, first 2 letters, ends with
-- **Mom + Dad:** blends both parents' names, and suggests names that use both their initials
-- **Popular:** top names this year and over the last 5, 50 and 100 years, by country
-- **Popularity badges:** each card and spelling shows its real rank, like #3 US 2024
+- **The box:** type any name and the mobile builds it letter by letter; play it and each charm lights with its syllable and note (SU · HA · NI → A5 · A5 · A6). Point at a syllable to see why it plays that note.
+- **Same song, different letters:** paper strips slide out for every spelling and play in turn (Layla, Leila, Laila: one song).
+- **Find their lullaby:** one wish at a time (feel, roots, what it should carry, then letters, length, surname, faith, sacred text, language), then wind the music box. Results are quiet rows; open one and the toy piano plays it, with its meaning, story, chart rank and spellings.
+- **Not for me:** a turned-down name lets go and a new one takes its place. Lullabyte remembers it, sinks names that sound like it in every later search, and asks why (too popular, too long, too short, wrong roots, the sound) to learn more.
+- **What sounds like love to you?** one name at a time; after eight it describes your ear (syllables, endings, softness, roots, rarity, whether your melodies rise or settle) and plays your matches.
+- **Two names. Two melodies.** Mom's and Dad's names on one piano, played together, then the names the compiler makes from both, with which letters came from whom. Honoring someone, language, faith, sacred text, length and last name are optional extras.
+- **The names we once sang:** a time machine of the most-given names by decade (US 1880s–2020s, New South Wales 1950s–2020s). Turn the knob back and the decades go with it; each decade's #1 plays as it arrives.
+- **The cradle:** every name you heart hangs here on a ribbon; play them all as one little playlist. Saved on your device.
+- **Explore:** the mobile unfolds; every charm is a room.
 
 ## Real names database
 `data/names-db.tsv` holds **529,563 real first names** from official government records in **18 countries**: the US, Canada (national, Québec, BC, Alberta, Ontario), the UK (England & Wales, Northern Ireland), Ireland, France, Spain, Switzerland (national, Zürich), Germany (~1,000 city open-data files), Austria, Norway, Poland (the PESEL register), Portugal, Luxembourg, Australia (NSW, SA, Victoria, Queensland, Tasmania), Argentina, Chile, Brazil and Israel (Hebrew-script names turned into verified Latin spellings by `scripts/hebrew_names.py`). Columns: name, gender (f / m / u = used for both / ? = registry has no sex), countries, people recorded.
@@ -87,6 +89,8 @@ Every source, its license, and the countries we checked that don't publish (or t
 `data/culture-names.json` (built by `scripts/build_cultures.py` from Wiktionary and Wikidata) sorts **32,000+ names into 123 cultures**, from Yoruba, Igbo, Hausa and Akan to Tamil, Telugu, Bengali and Punjabi, Vietnamese, Filipino, Kazakh, Armenian, Georgian, Russian, Albanian and Māori, plus broad baskets (African, South Asian, Slavic, Central Asian, Pacific…). Names in other scripts get their usual Latin spelling, checked against registered names. Search with "with ⟨Yoruba / Tamil / Pacific…⟩ roots". Details: [docs/name-sources.md](docs/name-sources.md).
 
 ## Popularity data
+`data/decades.json` (built by `scripts/build_decades.py`) holds the top 12 girls' and boys' names of every decade for the time machine: US Social Security Administration records 1880–2017 (via the babynames R package) plus 2020–2024, and New South Wales 1952–2025.
+
 `data/popularity.json` (built by `scripts/build-popularity.py`) powers the Popular tab and rank badges: US, Canada, NSW, England & Wales and France.
 
 ## Generated names
