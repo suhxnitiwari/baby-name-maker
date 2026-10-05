@@ -1,7 +1,10 @@
 // ─────────────────────────────────────────────────────────────
 // MOM + DAD COMPILER
-// family inputs → splice + scan real names → validate → test with surname → rank → top picks
-// Every name shows where its letters came from. Uses globals from index.html.
+// Not halves glued together. Each parent's name is split into syllables (SU·HA·NI, KA·PIL);
+//  · new names are built from syllables of both, in any order and from any position (NI·KA, HA·NI·KA, KA·HA·NI)
+//  · real names are found by SOUND: any real name whose syllables sound like one of Mom's and one of Dad's (A·NI·KA)
+//  · every candidate is scored on how well its melody bridges both parents' melodies (the notes it shares with each)
+// Every name shows which syllables came from whom. Uses globals from app.js.
 // ─────────────────────────────────────────────────────────────
 let locks = { start: "", end: "" };
 const capW = s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
@@ -13,13 +16,78 @@ function cutsOf(w) {
   for (let i = 2; i < w.length - 1; i++) if (/[aeiouy]/i.test(w[i - 1]) || /[aeiouy]/i.test(w[i])) c.push(i);
   return c.length ? c : [Math.ceil(w.length / 2)];
 }
-function splices(x, y) {
-  const out = [];
-  for (const i of cutsOf(x)) for (const j of cutsOf(y)) {
-    if (x[i - 1].toLowerCase() === y[j].toLowerCase()) continue;
-    out.push({ n: capW(x.slice(0, i) + y.slice(j)), segs: [{ from: x, s: 0, e: i }, { from: y, s: j, e: y.length }], method: "splice" });
+// 1. Syllables, and what they sound like (spelling aside: Ca = Ka, Pha = Fa)
+function syllablesOf(name) {
+  const { w, syl } = MB.syllables(name);
+  return syl.map((x, i) => ({ t: w.slice(x.s, x.e), core: w.slice(x.s, x.ne), s: x.s, e: x.e, on: x.on, nuc: x.nuc, co: x.co, i, n: syl.length }));
+}
+const vowelClass = v => /^(ai|ay|ei|ey|ae)/.test(v) ? "A" : /^(oi|oy)/.test(v) ? "O" : /^(oo|ou|u|ew)/.test(v) ? "u" : /^(ee|ea|ie|i|y)/.test(v) ? "i" : /^(au|aw)/.test(v) || v[0] === "o" ? "o" : v[0] === "e" ? "e" : "a";
+const onsetKey = on => (on.replace(/^h(?=.)/, "").replace(/ph/g, "f").replace(/^c(?=[eiy])/, "s").replace(/ck|c|q/g, "k").replace(/z/g, "s").replace(/([kgtdbp])h/g, "$1") || "-");
+const sylKey = x => onsetKey(x.on) + vowelClass(x.nuc);
+// a name's notes (comb teeth), for the melody bridge
+const teethOf = n => MB.melody(n).ev.filter(e => e.kind === "main").map(e => e.i);
+function bridgeOf(n, a, b) {
+  const t = teethOf(n), A = new Set(teethOf(a)), B = new Set(teethOf(b));
+  if (!t.length) return { score: 0, a: [], b: [] };
+  const fromA = t.filter(x => A.has(x)), fromB = t.filter(x => B.has(x));
+  const sa = fromA.length / t.length, sb = fromB.length / t.length;
+  // it has to echo both: the weaker side counts most
+  return { score: Math.min(sa, sb) * .7 + (sa + sb) / 2 * .3, a: [...new Set(fromA)].map(i => MB.NOTE_NAMES[i]), b: [...new Set(fromB)].map(i => MB.NOTE_NAMES[i]) };
+}
+
+// 2. New names from both parents' syllables, any order. A syllable that isn't last can drop its closing consonant (PIL → PI).
+function syllableBlends(names) {
+  const P = names.map(n => ({ n, syl: syllablesOf(n) })), out = [];
+  const units = P.flatMap((p, pi) => p.syl.map(x => ({ ...x, pi, from: p.n })));
+  const text = (u, last) => last ? u.t : u.core;
+  const build = seq => {
+    let n = "", segs = [];
+    seq.forEach((u, k) => {
+      const piece = text(u, k === seq.length - 1);
+      const glued = join([n || "", piece].filter(Boolean));
+      const at = glued.length - piece.length;
+      segs.push({ from: u.from, s: u.s, e: u.s + piece.length, at: Math.max(0, at) });
+      n = glued;
+    });
+    return { n: capW(n), segs, seq };
+  };
+  // every name carries at least one syllable of Mom's (0) and one of Dad's (1); a family name can add a third
+  const both = seq => seq.some(u => u.pi === 0) && seq.some(u => u.pi === 1);
+  for (const u of units) for (const v of units) {
+    if (u === v) continue;
+    if (both([u, v])) out.push(build([u, v]));
+    for (const x of units) {
+      if (x === u || x === v) continue;
+      const ps = new Set([u.pi, v.pi, x.pi]);
+      if (!(ps.has(0) && ps.has(1))) continue;
+      out.push(build([u, v, x]));
+    }
   }
-  return out;
+  return out.map(c => {
+    // a straight "front of one + back of the other" join is the least imaginative kind
+    const [f, l] = [c.seq[0], c.seq[c.seq.length - 1]];
+    const plain = c.seq.length === 2 && f.i === 0 && l.i === l.n - 1;
+    const where = c.seq.map(u => `${u.t.toUpperCase()} (${u.from})`).join(" + ");
+    return { n: c.n, segs: c.segs, method: `syllables: ${where}`, novelty: plain ? .45 : 1 };
+  });
+}
+
+// 3. Real names that sound like both parents: syllable by syllable, by sound, in any order
+function soundsLikeBoth(name, A, B) {
+  const syl = syllablesOf(name);
+  if (syl.length < 2) return null;
+  const keysA = new Map(A.map(x => [sylKey(x), x])), keysB = new Map(B.map(x => [sylKey(x), x]));
+  const hits = []; let gotA = false, gotB = false;
+  for (const x of syl) {
+    const k = sylKey(x), ha = keysA.get(k), hb = keysB.get(k);
+    const h = ha && (!hb || !gotA) ? ["a", ha] : hb ? ["b", hb] : null;
+    if (!h) continue;
+    if (h[0] === "a") gotA = true; else gotB = true;
+    hits.push({ who: h[0], p: h[1], c: x });
+  }
+  // both parents, and at most one syllable that belongs to neither
+  if (!gotA || !gotB || syl.length - hits.length > 1) return null;
+  return hits;
 }
 // Lock-driven builds: keep a locked start (or end) and attach pieces of every family name.
 function lockBuilds(names) {
@@ -125,11 +193,11 @@ function blend(fam, f, last = "") {
   // synthesize
   let raw = [];
   if (fam.mode !== "real") {
-    for (let p = 0; p < names.length; p++) for (let q = 0; q < names.length; q++) if (p !== q) raw.push(...splices(names[p], names[q]));
-    raw.push(...lockBuilds(names));
-    log.push([`splicing ${names.join(" × ")}`, `${raw.length.toLocaleString()} candidates`]);
+    raw.push(...syllableBlends(names), ...lockBuilds(names));
+    log.push([`recombining syllables of ${names.map(n => syllablesOf(n).map(x => x.t.toUpperCase()).join("·")).join(" × ")}`, `${raw.length.toLocaleString()} candidates`]);
     const seen = new Set();
-    const dedup = raw.filter(c => { const k = fold(c.n); if (seen.has(k) || parentSet.has(k)) return false; seen.add(k); return true; });
+    // no duplicates, and nothing that just is (or contains) a parent's whole name
+    const dedup = raw.filter(c => { const k = fold(c.n); if (seen.has(k) || [...parentSet].some(p => k.includes(p) || soundKey(k) === soundKey(p))) return false; seen.add(k); return true; });
     log.push(["removing duplicates & copies of parents", `−${(raw.length - dedup.length).toLocaleString()}`]);
     raw = dedup.filter(c => sayable(c.n));
     log.push(["removing hard-to-say clusters", `−${(dedup.length - raw.length).toLocaleString()}`]);
@@ -137,17 +205,20 @@ function blend(fam, f, last = "") {
   // scan real names
   let real = [];
   if (fam.mode !== "new") {
-    const pool = attestedPool();
-    // quick prefilter: the name must share at least 3 letters in a row with one parent
-    const grams = new Set(); for (const p of [a, b]) { const w = fold(p); for (let i = 0; i + 3 <= w.length; i++) grams.add(w.slice(i, i + 3)); }
+    const pool = attestedPool(), A = syllablesOf(a), B = syllablesOf(b);
+    // quick prefilter: the name must contain the sound-core of one of Mom's syllables and one of Dad's
+    const cores = arr => [...new Set(arr.map(x => onsetKey(x.on).replace("-", "") + x.nuc[0]).filter(c => c.length >= 2))];
+    const cA = cores(A), cB = cores(B);
+    const norm = w => w.replace(/ph/g, "f").replace(/c(?=[eiy])/g, "s").replace(/ck|c|q/g, "k").replace(/z/g, "s").replace(/([kgtdbp])h/g, "$1");
     for (const n of pool) {
-      const w = fold(n); let ok = false;
-      for (let i = 0; i + 3 <= w.length && !ok; i++) ok = grams.has(w.slice(i, i + 3));
-      if (!ok || parentSet.has(w) || wrongGender(n)) continue;
+      const w = fold(n), nw = norm(w);
+      if (parentSet.has(w) || !cA.some(c => nw.includes(c)) || !cB.some(c => nw.includes(c)) || wrongGender(n)) continue;
+      const hits = soundsLikeBoth(n, A, B);
+      if (hits) { real.push({ n, hits, method: "real name" }); continue; }
       const hit = carryBoth(n, a, b);
       if (hit) real.push({ n, hit, method: "real name" });
     }
-    log.push([`scanning ${pool.length.toLocaleString()} real names for both parents' sounds`, `${real.length} carry both`]);
+    log.push([`listening to ${pool.length.toLocaleString()} real names for a syllable of each parent`, `${real.length} sound like both`]);
   }
 
   // build candidate objects
@@ -157,12 +228,18 @@ function blend(fam, f, last = "") {
     if (wrongGender(c.n)) continue;
     const att = attestation(c.n);
     synthKeys.add(fold(c.n));
-    cands.push(makeCand(c.n, c.segs, c.method, att, names));
+    cands.push(Object.assign(makeCand(c.n, c.segs, c.method, att, names), { novelty: c.novelty ?? 1 }));
   }
   for (const r of real) {
     if (synthKeys.has(fold(r.n))) continue;
-    const segs = r.hit.map(([p, h]) => ({ from: p, s: h.j, e: h.j + h.len, at: h.i }));
-    cands.push(makeCand(r.n, segs, "real name carrying both parents' sounds", attestation(r.n), names));
+    if (r.hits) {
+      const segs = r.hits.map(h => ({ from: h.who === "a" ? a : b, s: h.p.s, e: h.p.e, at: h.c.s, len: h.c.e - h.c.s }));
+      const said = r.hits.map(h => `${h.c.t.toUpperCase()} like ${h.p.t.toUpperCase()} (${h.who === "a" ? a : b})`).join(", ");
+      cands.push(makeCand(r.n, segs, `a real name that sings ${said}`, attestation(r.n), names));
+    } else {
+      const segs = r.hit.map(([p, h]) => ({ from: p, s: h.j, e: h.j + h.len, at: h.i }));
+      cands.push(makeCand(r.n, segs, "a real name carrying both parents' letters", attestation(r.n), names));
+    }
   }
   const attestedN = cands.filter(c => c.badge === "Real name" || c.badge === "Rare real name").length;
   log.push(["checking official records & name list", `${attestedN} are real names`]);
@@ -191,12 +268,16 @@ function blend(fam, f, last = "") {
     const balance = 1 - Math.abs(cA - cB) / Math.max(cA + cB, .01);
     const coverage = Math.min(1, cA + cB + ex * fam.honor);
     const flow = last ? (flowCheck(x.n, last).ok ? 1 : .45) : .8;
-    const att = x.badge === "Real name" ? 1 : x.badge === "Rare real name" ? .92 : x.badge === "Built from roots" ? .85 : .72;
-    x.parts = { balance, coverage, ease: ease(x.n), flow, att, len: lengthFit(x.n), gfit: genderFit(x.n) };
-    x.score = 100 * (.2 * balance + .18 * coverage + .18 * x.parts.ease + .12 * flow + .14 * att + .08 * x.parts.len + .1 * x.parts.gfit) + (ex ? 2 * fam.honor : 0);
+    // real-name evidence grows with how many people actually have it (a name held by 20,000 counts more than one held by 20)
+    const held = (dbEntry(x.n) || {}).cnt || 0, story = (BY_NAME.get(fold(x.n)) || []).some(y => y.m);
+    const att = x.badge === "New blend" ? .62 : x.badge === "Built from roots" ? .8 : Math.min(1, .45 + .4 * Math.min(1, Math.log10(held + 1) / 4.3) + (story ? .15 : 0));
+    const br = bridgeOf(x.n, a, b);
+    x.bridge = br;
+    x.parts = { balance, coverage, bridge: br.score, ease: ease(x.n), flow, att, len: lengthFit(x.n), gfit: genderFit(x.n), novelty: x.novelty ?? 1 };
+    x.score = 100 * (.18 * br.score + .13 * balance + .08 * coverage + .12 * x.parts.ease + .07 * flow + .2 * att + .05 * x.parts.len + .09 * x.parts.gfit + .08 * x.parts.novelty) + (ex ? 2 * fam.honor : 0);
   }
   cands.sort((p, q) => q.score - p.score);
-  log.push(["ranking", `${cands.length.toLocaleString()} survived`]);
+  log.push(["ranking by melody bridge, balance, real-name evidence, ease", `${cands.length.toLocaleString()} survived`]);
   if (!cands.length) return { picks: [], rest: [], log, total: 0 };
 
   // top picks (each a different objective)
@@ -204,6 +285,7 @@ function blend(fam, f, last = "") {
   // each category takes its best name that no earlier category already claimed
   const pick = (label, list) => { const x = list.find(c => !used.has(c.n)); if (x) { used.add(x.n); picks.push(Object.assign(Object.create(x), x, { pick: label })); } };
   pick("Best overall", cands);
+  pick("Most musical", [...top].sort((p, q) => q.parts.bridge - p.parts.bridge || q.score - p.score));
   pick("Most equal blend", [...top].filter(x => x.badge === "New blend").sort((p, q) => q.parts.balance - p.parts.balance || q.score - p.score));
   const isReal = x => x.badge === "Real name" || x.badge === "Rare real name";
   // real-name picks favor names typical for the chosen gender (official records include some cross-gender use)
@@ -223,7 +305,7 @@ function blend(fam, f, last = "") {
 function makeCand(n, segs, method, att, names) {
   // contribution = share of the new name's letters that came from each family name
   const L = fold(n).length || 1;
-  const contrib = names.map(p => segs.filter(s => s.from === p).reduce((t, s) => t + (s.e - s.s), 0) / L);
+  const contrib = names.map(p => Math.min(1, segs.filter(s => s.from === p).reduce((t, s) => t + (s.len ?? s.e - s.s), 0) / L));
   const base = att && att.obj ? att.obj : { n, g: gender, o: "", l: "", r: [], m: "", src: "", type: att ? "attested" : "invented" };
   return Object.assign(Object.create(base), base, {
     n, prov: { segs, method, names }, contrib, badge: att ? att.badge : "New blend", rank: att ? att.rank : 99999,
@@ -247,11 +329,12 @@ function provHTML(x) {
   const first = segs[0], lastSeg = segs[segs.length - 1];
   const startPiece = first.lock || first.add || (first.from && first.from.slice(first.s, first.e));
   const endPiece = lastSeg.lock || lastSeg.add || (lastSeg.from && lastSeg.from.slice(lastSeg.s, lastSeg.e));
-  const canLock = x.badge === "New blend" || method === "splice" || method.startsWith("locked");
+  const canLock = x.badge === "New blend" || method.startsWith("syllables") || method.startsWith("locked");
   return `<div class="prov">
     ${rows}
     ${lockSeg || addSeg ? `<div class="prow"><span class="pl">${lockSeg ? "Kept" : "Added"}</span><span class="pw"><mark>${esc((lockSeg || addSeg).lock || (lockSeg || addSeg).add)}</mark></span><b></b></div>` : ""}
-    <div class="pmethod">${method === "splice" ? `spliced: ${esc(pieces)} → ${esc(x.n)}` : method.startsWith("locked") ? `built around what you kept: ${esc(pieces)} → ${esc(x.n)}` : esc(method)}</div>
+    <div class="pmethod">${method.startsWith("locked") ? `built around what you kept: ${esc(pieces)} → ${esc(x.n)}` : esc(method)}</div>
+    ${x.bridge && (x.bridge.a.length || x.bridge.b.length) ? `<div class="pmethod">its melody borrows ${esc(x.bridge.a.join(", ") || "nothing")} from ${esc(names[0])} and ${esc(x.bridge.b.join(", ") || "nothing")} from ${esc(names[1])}</div>` : ""}
     ${canLock ? `<div class="locks"><button data-lock-start="${esc(startPiece)}">keep “${esc(startPiece)}…”</button><button data-lock-end="${esc(endPiece)}">keep “…${esc(endPiece)}”</button></div>` : ""}
   </div>`;
 }

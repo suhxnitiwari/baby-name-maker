@@ -330,7 +330,10 @@
   .knob i::after { content: ""; position: absolute; left: 50%; top: 10px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--rose); box-shadow: 0 0 0 3px rgba(255,255,255,.4); }
   .knob-row .link { font-size: 1rem; border: 0; }
   .knob-hint { font: italic 400 1.05rem var(--serif); color: var(--muted); margin: 0; }
-  .ticks { display: flex; flex-wrap: wrap; gap: 2px 4px; }
+  .years { width: 100%; accent-color: var(--rose); }
+  .tm-source { font: .58rem/1.6 var(--mono); color: var(--muted); letter-spacing: .04em; margin: 0; }
+  .tm-list li.none { display: block; font: italic 400 1.2rem var(--serif); border: 0; }
+  .ticks { display: flex; flex-wrap: wrap; gap: 2px 4px; justify-content: space-between; width: 100%; margin-top: -10px; }
   .ticks button { all: unset; cursor: pointer; font: .62rem var(--mono); color: var(--muted); padding: 2px 4px; border-bottom: 1px solid transparent; }
   .ticks button:hover { color: var(--ink); }
   .ticks button[aria-current="true"] { color: var(--rose); border-color: var(--rose); }
@@ -385,7 +388,12 @@
   @media (hover: none) { .ex-charm .lbl { opacity: 1; } }
   .ex-foot { font: .7rem/1.9 var(--mono); letter-spacing: .06em; color: var(--muted); max-width: 820px; margin: 0 auto; text-align: center; }
 
-  footer { max-width: 1240px; margin: 80px auto 0; padding: 30px 40px 60px; font: .64rem/1.9 var(--mono); color: var(--muted); border-top: 1px solid var(--rule); }
+  footer { max-width: 1240px; margin: 80px auto 0; padding: 26px 40px 50px; font: .64rem/1.9 var(--mono); color: var(--muted); border-top: 1px solid var(--rule); }
+  .foot-line { margin: 0; }
+  .sources summary { cursor: pointer; display: inline-block; margin-top: 6px; color: var(--rose); letter-spacing: .14em; text-transform: uppercase; list-style: none; border-bottom: 1px solid currentColor; }
+  .sources summary::-webkit-details-marker { display: none; }
+  .sources summary::after { content: " +"; } .sources[open] summary::after { content: " −"; }
+  .sources a { color: var(--rose); }
 
   @media (max-width: 900px) {
     .row-more { grid-template-columns: 1fr; } .row-more .piano { grid-row: auto; } .row-acts { grid-column: 1; }
@@ -557,17 +565,19 @@
 <!-- 05 · the charts -->
 <section class="room" id="charts" aria-labelledby="chartsTitle">
   <div class="room-head">
-    <div><p class="kick">04 · official birth records</p><h2 id="chartsTitle">The names we once <i>sang.</i></h2><p class="lede">The most-given names in <select class="slot" id="chCountry" aria-label="Country"></select>, decade by decade.</p></div>
+    <div><p class="kick">04 · official birth records</p><h2 id="chartsTitle">The names we once <i>sang.</i></h2><p class="lede">The most-given names in <select class="slot" id="chCountry" aria-label="Place"></select>, year by year, from official birth records.</p></div>
     <div class="seg-wrap"><small>names for</small><div class="seg"><button data-gender="girl" aria-pressed="true">girls</button><button data-gender="boy" aria-pressed="false">boys</button></div></div>
   </div>
   <div class="tm">
     <div class="tm-dial">
-      <p class="tm-year" id="chYear">1980s</p>
+      <p class="tm-year" id="chYear">2025</p>
       <p class="tm-note" id="chNote"></p>
-      <div class="knob-row"><button class="link" id="chBack" aria-label="Earlier decade">←</button><button class="knob" id="chKnob" role="slider" aria-label="Turn back the mobile to change the decade"><i></i></button><button class="link" id="chFwd" aria-label="Later decade">→</button></div>
+      <div class="knob-row"><button class="link" id="chBack" aria-label="Year before">←</button><button class="knob" id="chKnob" role="slider" aria-label="Turn the knob to change the year"><i></i></button><button class="link" id="chFwd" aria-label="Year after">→</button></div>
       <p class="knob-hint">Turn it back. The years go with it.</p>
+      <input type="range" class="years" id="chRange" aria-label="Year">
       <div class="ticks" id="chTicks"></div>
-      <button class="go" id="chPlay">▶ Play the decade</button>
+      <button class="go" id="chPlay">▶ Play the year</button>
+      <p class="tm-source" id="chSource"></p>
     </div>
     <div>
       <div class="hang" id="chMobile"></div>
@@ -587,18 +597,19 @@
 </section>
 
 <footer>
-  Real names &amp; popularity from official government records, used with attribution: US Social Security Administration (decades 1880–2017 via the babynames R package) · Statistics Canada (Open Government Licence – Canada) ·
-  Retraite Québec (CC BY 4.0) · BC Vital Statistics (Open Government Licence – BC) · Alberta Vital Statistics (Open Government Licence – Alberta) · ServiceOntario (Open Government Licence – Ontario) ·
-  Office for National Statistics, England &amp; Wales (Open Government Licence v3.0) · NISRA, Northern Ireland (Open Government Licence) · Central Statistics Office Ireland (CC BY 4.0) ·
-  INSEE France (Licence Ouverte) · INE Spain · Swiss Federal Statistical Office (FSO) · Stadt Zürich (CC0) · Statistik Austria (CC BY 4.0) · German municipal open-data portals via GovData.de ·
-  Statistics Norway (NLOD) · PESEL register, Poland (dane.gov.pl) · IRN, Portugal (dados.gov.pt) · RNPP Luxembourg (data.public.lu) ·
-  NSW, Victoria, Queensland, South Australia &amp; Tasmania birth registries (CC BY) · Central Bureau of Statistics, Israel (via babynamesIL; Latin spellings checked against Wikidata, CC0) · RENAPER Argentina · Registro Civil de Chile (via the guaguas dataset, CC0) · IBGE Census 2010, Brazil (via Brasil.io).
-  Names from sacred texts: STEPBible TIPNR, Tyndale House (CC BY 4.0) · Hitchcock's Bible Names Dictionary (1869, public domain) ·
-  Cologne Digital Sanskrit Dictionaries, The Sanskrit Library: Sørensen's Index to the Names in the Mahābhārata, Dikshitar's Purāṇa Index, Vettam Mani's Purāṇic Encyclopaedia,
-  Macdonell &amp; Keith's Vedic Index, Mehendale's Mahābhārata Cultural Index (CC BY-NC-SA 3.0) · Bhagavad Gita text, gita/gita (public domain) · Quranic Arabic Corpus, Kais Dukes (GPL), text by Tanzil.
-  Cultures: Wiktionary (CC BY-SA 4.0) · Wikidata (CC0).
-  Japanese, Korean &amp; Chinese names: JMnedict &amp; KANJIDIC2, Electronic Dictionary Research and Development Group (CC BY-SA 4.0) · CC-CEDICT, MDBG (CC BY-SA 4.0).
-  Generated names are invented by Lullabyte and have no recorded meaning. Tunes are generated from how each name sounds.
+  <p class="foot-line">Real names from official birth records in 20+ countries, sacred texts and open dictionaries. Tunes are made from how each name sounds; invented names have no recorded meaning.</p>
+  <details class="sources"><summary>Sources &amp; licenses</summary>
+    <p><b>Birth records.</b> US Social Security Administration (public domain; 1880–2017 via the babynames R package) · Statistics Canada (Open Government Licence – Canada) · Retraite Québec (CC BY 4.0) · BC Vital Statistics (OGL – BC) · Alberta Vital Statistics (OGL – Alberta) · ServiceOntario (OGL – Ontario) ·
+    Office for National Statistics, England &amp; Wales (OGL v3.0) · National Records of Scotland (OGL v3.0) · NISRA, Northern Ireland (OGL) · Central Statistics Office Ireland (CC BY 4.0) ·
+    INSEE France (Licence Ouverte) · INE Spain · Swiss Federal Statistical Office · Stadt Zürich (CC0) · Statistik Austria (CC BY 4.0) · German municipal open-data portals via GovData.de ·
+    Statistics Norway (NLOD) · PESEL register, Poland (dane.gov.pl) · IRN, Portugal (dados.gov.pt) · RNPP Luxembourg (data.public.lu) · Department of Internal Affairs, New Zealand (CC BY 4.0) ·
+    NSW, Victoria, Queensland, South Australia &amp; Tasmania registries (CC BY) · Central Bureau of Statistics, Israel (via babynamesIL; Latin spellings checked against Wikidata, CC0) · RENAPER Argentina · Registro Civil de Chile (via guaguas, CC0) · IBGE Census 2010, Brazil (via Brasil.io).</p>
+    <p><b>Sacred texts.</b> STEPBible TIPNR, Tyndale House (CC BY 4.0) · Hitchcock's Bible Names Dictionary (1869, public domain) ·
+    Cologne Digital Sanskrit Dictionaries, The Sanskrit Library: Sørensen's Index to the Names in the Mahābhārata, Dikshitar's Purāṇa Index, Vettam Mani's Purāṇic Encyclopaedia,
+    Macdonell &amp; Keith's Vedic Index, Mehendale's Mahābhārata Cultural Index (CC BY-NC-SA 3.0) · Bhagavad Gita text, gita/gita (public domain) · Quranic Arabic Corpus, Kais Dukes (GPL), text by Tanzil.</p>
+    <p><b>Cultures and scripts.</b> Wiktionary (CC BY-SA 4.0) · Wikidata (CC0) · JMnedict &amp; KANJIDIC2, EDRDG (CC BY-SA 4.0) · CC-CEDICT, MDBG (CC BY-SA 4.0).</p>
+    <p><a href="https://github.com/suhxnitiwari/baby-name-maker/blob/main/docs/name-sources.md">How every source was collected and cleaned →</a></p>
+  </details>
 </footer>
 
 <script src="names.js?v=10"></script>
@@ -608,7 +619,7 @@
 <script src="piano.js?v=2"></script>
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
-<script src="compiler.js?v=8"></script>
-<script src="app.js?v=10"></script>
+<script src="compiler.js?v=9"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>

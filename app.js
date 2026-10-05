@@ -86,11 +86,11 @@ const INVENTED = {};
 const invented = g => INVENTED[g] || (INVENTED[g] = buildInvented(g, TAKEN));
 const KIND_LABEL = { attested: "Real name", real: "Real name", root: "Built from roots", invented: "Invented" };
 
-// official popularity: rank badges, and the decades for the time machine
-let POP = null, DECADES = null;
+// official popularity: rank badges, and every year's top names for the time machine
+let POP = null, YEARS = null;
 const SHORT = { us: "US", ca: "Canada", au: "NSW", ew: "Eng & Wales", fr: "France" };
 fetch("data/popularity.json?v=6").then(r => r.json()).then(d => { POP = d; }).catch(() => {});
-fetch("data/decades.json?v=1").then(r => r.json()).then(d => { DECADES = d; Charts.ready(); }).catch(() => {});
+fetch("data/years.json?v=1").then(r => r.json()).then(d => { YEARS = d; Charts.ready(); }).catch(() => {});
 function popRanks(name, g) {
   if (!POP) return [];
   const sexes = g === "either" ? ["g", "b"] : [(g || gender)[0]], out = [];
@@ -682,37 +682,52 @@ const Duet = (() => {
 })();
 
 // ─────────────────────────────────────────────────────────────
-// THE NAMES WE ONCE SANG: a time machine. Turn the mobile back and the decades go with it
+// THE NAMES WE ONCE SANG: a time machine, year by year, from official birth records only.
+// Turn the knob back and the years go with it. Each place keeps its own publication rules,
+// so a name that isn't listed reads "not published", never "0 babies".
 // ─────────────────────────────────────────────────────────────
 const Charts = (() => {
-  let country = "us", dec = 0, decs = [], timer = 0, angle = 0;
-  const sex = () => gender === "boy" ? "boy" : "girl";
+  let place = null, years = [], at = 0, timer = 0, angle = 0;
+  const STEP = .35;                                                // radians of knob turn per year
+  const sex = () => gender === "boy" ? 1 : 0;
   function ready() {
-    $("#chCountry").innerHTML = DECADES.countries.map(c => `<option value="${c.key}">${esc(c.label)}</option>`).join(""); fit($("#chCountry"));
-    setCountry("us");
+    const groups = {};
+    YEARS.places.forEach(p => (groups[p.group] = groups[p.group] || []).push(p));
+    $("#chCountry").innerHTML = Object.entries(groups).map(([g, ps]) => {
+      const opts = ps.map(p => `<option value="${p.key}">${esc(p.label)}</option>`).join("");
+      return g ? `<optgroup label="${esc(g)}">${opts}</optgroup>` : opts;
+    }).join("");
+    setPlace("us");
   }
-  function setCountry(k) {
-    country = k;
-    const c = DECADES.countries.find(c => c.key === k);
-    decs = Object.keys(c.decades).map(Number).sort((a, b) => a - b);
-    dec = decs.indexOf(1980) >= 0 ? decs.indexOf(1980) : decs.length - 1;
-    $("#chTicks").innerHTML = decs.map((d, i) => `<button data-dec="${i}">${i === 0 || d % 100 === 0 ? d : "’" + String(d).slice(2)}s</button>`).join("");
+  function setPlace(k) {
+    const keepYear = place ? years[at] : null;
+    place = YEARS.places.find(p => p.key === k);
+    $("#chCountry").value = k; fit($("#chCountry"));
+    years = Object.keys(place.years).map(Number).sort((a, b) => a - b);
+    // stay in the same year if this place has it, else the nearest
+    at = keepYear ? years.reduce((b, y, i) => Math.abs(y - keepYear) < Math.abs(years[b] - keepYear) ? i : b, 0) : years.length - 1;
+    const range = $("#chRange");
+    range.min = 0; range.max = years.length - 1; range.value = at;
+    $("#chTicks").innerHTML = years.filter((y, i) => i === 0 || y % 20 === 0 || i === years.length - 1).map(y => `<button data-year="${y}">${y}</button>`).join("");
+    $("#chSource").innerHTML = `${esc(place.agency)} · ${esc(place.dataset)} · ${esc(place.license)}`;
     draw(true);
   }
   function draw(quiet) {
-    if (!DECADES) return;
-    const c = DECADES.countries.find(c => c.key === country), d = c.decades[decs[dec]], list = d[sex()].slice(0, 7);
-    $("#chYear").textContent = decs[dec] + "s";
-    $("#chNote").textContent = `${d.note ? d.note + " · " : ""}${c.source}`;
-    $$("#chTicks button").forEach((b, i) => b.setAttribute("aria-current", i === dec));
-    const max = list[0][1];
-    Hang.render($("#chMobile"), list.map(([n, ct], k) => ({ key: decs[dec] + n, len: 40 + k * 22 + (k % 2) * 14,
-      html: `<button class="charm" data-play-name="${esc(n)}"><small>${k + 1}</small><span>${esc(n)}</span><em>${ct.toLocaleString()}</em></button>` })), { stagger: 70 });
-    $("#chList").innerHTML = d[sex()].map(([n, ct], k) => `<li><span>${k + 1}</span><b>${esc(n)}</b><i style="--w:${(ct / max * 100).toFixed(1)}%"></i><em>${ct.toLocaleString()}</em></li>`).join("");
+    if (!YEARS || !place) return;
+    const y = years[at], full = place.years[y][sex()], list = full.slice(0, 7);
+    $("#chYear").textContent = y;
+    $("#chRange").value = at;
+    $("#chNote").textContent = place.rule;
+    $$("#chTicks button").forEach(b => b.setAttribute("aria-current", +b.dataset.year === y));
+    if (!full.length) { Hang.render($("#chMobile"), []); $("#chList").innerHTML = `<li class="none">Not published for ${y}.</li>`; return; }
+    const max = full[0][1];
+    Hang.render($("#chMobile"), list.map(([n, ct], k) => ({ key: y + n, len: 40 + k * 22 + (k % 2) * 14,
+      html: `<button class="charm" data-play-name="${esc(n)}"><small>${k + 1}</small><span>${esc(n)}</span><em>${ct.toLocaleString()}</em></button>` })), { stagger: 60 });
+    $("#chList").innerHTML = full.map(([n, ct], k) => `<li><span>${k + 1}</span><b>${esc(n)}</b><i style="--w:${(ct / max * 100).toFixed(1)}%"></i><em>${ct.toLocaleString()}${place.rounded ? "*" : ""}</em></li>`).join("");
     clearTimeout(timer);
-    if (!quiet && MB.on) timer = setTimeout(() => playName(list[0][0]), 700);
+    if (!quiet && MB.on) timer = setTimeout(() => playName(list[0][0]), 650);
   }
-  function step(dir) { const n = Math.max(0, Math.min(decs.length - 1, dec + dir)); if (n !== dec) { dec = n; MB.tick(.7); draw(); } }
+  function go(i, quiet) { i = Math.max(0, Math.min(years.length - 1, i)); if (i !== at) { angle += (i - at) * STEP; $("#chKnob").style.setProperty("--a", angle + "rad"); at = i; MB.tick(.6); draw(quiet); } }
   // the crank: turn it counterclockwise to go back in time
   const knob = $("#chKnob");
   let drag = null;
@@ -721,25 +736,29 @@ const Charts = (() => {
     if (!drag) return;
     const a = Math.atan2(e.clientY - drag.cy, e.clientX - drag.cx);
     let d = a - drag.a; if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI;
-    drag.a = a; drag.acc += d; angle += d;
-    knob.style.setProperty("--a", angle + "rad");
-    while (drag.acc > .8) { drag.acc -= .8; step(1); }
-    while (drag.acc < -.8) { drag.acc += .8; step(-1); }
+    drag.a = a; drag.acc += d;
+    while (drag.acc > STEP) { drag.acc -= STEP; go(at + 1); }
+    while (drag.acc < -STEP) { drag.acc += STEP; go(at - 1); }
   });
   const up = () => { drag = null; };
   knob.addEventListener("pointerup", up); knob.addEventListener("pointercancel", up);
-  knob.addEventListener("keydown", e => { if (e.key === "ArrowLeft" || e.key === "ArrowDown") { e.preventDefault(); angle -= .8; knob.style.setProperty("--a", angle + "rad"); step(-1); } if (e.key === "ArrowRight" || e.key === "ArrowUp") { e.preventDefault(); angle += .8; knob.style.setProperty("--a", angle + "rad"); step(1); } });
-  $("#chTicks").addEventListener("click", e => { const b = e.target.closest("[data-dec]"); if (b) { const to = +b.dataset.dec; angle += (to - dec) * .8; knob.style.setProperty("--a", angle + "rad"); dec = to; MB.tick(.7); draw(); } });
-  $("#chBack").onclick = () => { angle -= .8; knob.style.setProperty("--a", angle + "rad"); step(-1); };
-  $("#chFwd").onclick = () => { angle += .8; knob.style.setProperty("--a", angle + "rad"); step(1); };
-  $("#chCountry").onchange = e => setCountry(e.target.value);
-  async function playDecade() {
+  knob.addEventListener("keydown", e => {
+    const d = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1, PageDown: -10, PageUp: 10 }[e.key];
+    if (d) { e.preventDefault(); go(at + d); }
+  });
+  $("#chRange").addEventListener("input", e => go(+e.target.value, true));
+  $("#chRange").addEventListener("change", () => draw());
+  $("#chTicks").addEventListener("click", e => { const b = e.target.closest("[data-year]"); if (b) go(years.indexOf(+b.dataset.year)); });
+  $("#chBack").onclick = () => go(at - 1);
+  $("#chFwd").onclick = () => go(at + 1);
+  $("#chCountry").onchange = e => setPlace(e.target.value);
+  async function playYear() {
     MB.ensure();
     const tags = $$("#chMobile .hc:not(.rise)").slice(0, 5);
     for (const t of tags) { t.classList.add("lit"); Hang.nudge(t.firstChild, .12); await new Promise(r => setTimeout(r, MB.play(MB.melody(t.querySelector("span").textContent)) * 1000 + 80)); t.classList.remove("lit"); }
   }
-  $("#chPlay").onclick = playDecade;
-  return { ready, draw: () => DECADES && draw(true) };
+  $("#chPlay").onclick = playYear;
+  return { ready, draw: () => draw(true) };
 })();
 function playName(n) {
   MB.ensure();

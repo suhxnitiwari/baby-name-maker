@@ -106,14 +106,34 @@ Biggest baskets: Turkish 2,053, Icelandic 1,963, Albanian 1,489, Italian 1,486, 
 
 Country lists checked for this step, all top-10 to top-50 only (PDFs): Philippines (PSA), South Africa (Stats SA), Turkey (TÜİK), Kazakhstan, Kyrgyzstan, Armenia (Armstat), Hungary (KSH).
 
+## ⏳ The time machine: every year, from official birth records
+
+`data/years.json` (built by `scripts/build_years.py`) holds the top 12 girls' and boys' names of **every year** for 11 places, with each publisher's own rules kept beside the numbers, so a name that isn't listed reads "not published", never "0 babies".
+
+| Place | Publisher | Years | Publication rule |
+|---|---|---|---|
+| 🇺🇸 United States | Social Security Administration | 1880–2025 | names given to fewer than 5 babies a year aren't published |
+| 🇫🇷 France | INSEE (fichier des prénoms 2024) | 1900–2024 | counts rounded to the nearest 5; rare names grouped |
+| 🇳🇴 Norway | Statistics Norway, table 10467 | 1945–2025 | names used by 200+ people; fewer than 4 a year hidden; counts before 1945 not given |
+| 🇨🇦 Canada | Statistics Canada, table 17-10-0147-01 | 1991–2025 | small counts suppressed |
+| 🏴 England & Wales | ONS | 1996–2025 | 2 or fewer redacted |
+| 🏴 Scotland | National Records of Scotland | 1974–2025 | every first forename |
+| Northern Ireland | NISRA full list | 1997–2025 | fewer than 3 not shown |
+| 🇮🇪 Ireland | CSO, VSA50 / VSA60 | 1964–2025 | 3 or more occurrences |
+| 🇦🇹 Austria | Statistik Austria | 1984–2025 | before 2010, Austrian nationals only |
+| 🇳🇿 New Zealand | Department of Internal Affairs | 1900–2025 | 10+ registrations a year; registration years |
+| 🇦🇺 New South Wales | NSW Registry | 1952–2025 | ranked list only |
+
+How the hard ones were reached: **ssa.gov** and **data.govt.nz** block scripts, so their official files were opened in a browser and only each year's top names were kept (`raw/us-top20-2018-2025.tsv`, `raw/nz-top12-1900-2025.txt`). US 1880–2017 comes from the babynames R package, which is built from the same SSA files.
+
+Not in the time machine (no official yearly newborn file): India, China, Japan, Korea, Mexico, Brazil, Germany (national rankings come from private researchers), Denmark (lookup only), the Netherlands (no bulk file), Belgium and Finland (manual downloads, see below). Spain and Italy publish rankings or lookups only.
+
 ## ⏳ Found, not in yet (needs a manual download or more work)
 
 | Country | Source | What it has | Why it's not in |
 |---|---|---|---|
 | 🇫🇮 Finland | Digital and Population Data Services Agency (avoindata.fi), `etunimitilasto` xlsx | every first name with 5+ living bearers | The portal returns 403 to this network. Download the xlsx by hand into `raw/fi.xlsx`. CC BY 4.0. |
 | 🇧🇪 Belgium | Statbel open data | first names of the whole population and of newborns, by municipality, 5+ occurrences | Statbel shows a CAPTCHA. Download by hand into `raw/be-*.zip`. |
-| 🏴 Scotland | National Records of Scotland | full lists of babies' first names since 1974 (CSV) | NRS reorganized its site; the old links 404. Find the new CSV links and save as `raw/sct-*.csv`. OGL. |
-| 🇳🇿 New Zealand | Department of Internal Affairs (data.govt.nz) | every name registered 10+ times a year since 1900 | Bot protection blocks scripts. Download by hand into `raw/nz-*.csv`. |
 | 🇳🇱 Netherlands | Meertens Institute, Nederlandse Voornamenbank (from the national population register) | ~500,000 first names | Lookup site only, no bulk download. Would need to ask Meertens for the data. |
 | 🇸🇮 Slovenia | SURS (SiStat) | 64,000 names in the population | Not checked yet. SiStat may only have top names. |
 | 🇮🇸 Iceland | Statistics Iceland (PxWeb) | name tables | Not checked yet. Likely top names only. |
