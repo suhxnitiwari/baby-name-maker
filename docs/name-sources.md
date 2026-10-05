@@ -157,3 +157,44 @@ The build script picks up any file you drop into `raw/` with a known prefix (`fi
 | 🇲🇽 Mexico · 🇺🇾 Uruguay | registries exist, no open data |
 | 🇹🇼 Taiwan | PDF report only (Chinese script) |
 | 🇯🇵 Japan · 🇰🇷 Korea · 🇨🇳 China · 🇮🇳 India | nothing official |
+
+## 🏰 Medieval names
+
+Names used in England, France and Scandinavia between about 1050 and 1500, kept in their medieval spelling (Aliénor, Hawise, Drogo, Ælfric, Sigríðr). Built by `python3 scripts/build_medieval.py` into `data/medieval-names.json` (3,120 names). Downloads are cached in `raw/medieval/`.
+
+| Source | What it gives | Names | License |
+|---|---|---|---|
+| **Wiktionary** | every entry in the Middle English, Old French, Middle French, Old English, Old Norse and Old Swedish male/female given-name categories, with the etymology, meaning and (for Norse names) the modern form | 1,346 | CC BY-SA 4.0 |
+| **Domesday Book (1086)** | every landholder named in 1066 and 1086, from the Hull Domesday Project data by Prof. J.J.N. Palmer, as listed on opendomesday.org | 1,634 | CC BY-NC-SA |
+| **Wikidata** | given names of people born 1050–1500 in the Kingdom of England, the Kingdom of France or the Duchy of Normandy, with the century of the earliest one | 375 | CC0 |
+
+| Culture | Names |
+|---|---|
+| Medieval English | 1,095 |
+| Old English | 1,040 |
+| Anglo-Norman | 538 |
+| Old French (incl. Middle French) | 270 |
+| Old Norse (149 Old Norse + 28 Old Swedish) | 177 |
+
+- A Domesday name held mostly after the Conquest is counted as **Anglo-Norman** (Drogo, Ivo, Warin); one held mostly in 1066 is **Old English** when Wiktionary lists it, otherwise **Medieval English**.
+- Old Norse names keep their letters (Þorsteinn, Ingibjǫrg) and give the modern form when Wiktionary has one (Sigríðr → Sigrid). Wiktionary has no Old Icelandic, Old Danish or Old Norwegian given-name categories.
+- Wiktionary has no Anglo-Norman given-name categories, so Anglo-Norman names come from Domesday and Wikidata.
+- ⚠️ The Domesday data is **non-commercial** (CC BY-NC-SA). Fine for a portfolio; not if Lullabyte ever makes money.
+- Not used: the *Dictionary of Medieval Names from European Sources* (dmnes.org). It shows "© 2015–2023 The Editors" and has no open license. Behind the Name and similar sites are also not used.
+
+## ✝️ More biblical and Christian names
+
+Built by `python3 scripts/build_bible_extra.py` into `data/bible-extra.json` (571 rows, same row format as `scripture-names.json`). Downloads are cached in `raw/bible-extra/`.
+
+| Source | What it gives | Rows | License |
+|---|---|---|---|
+| **Wikipedia, List of biblical names starting with A … Z** | biblical people we didn't have, mostly King James spellings and second names (Abram, Cephas, Dorcas, Hadassah), each checked against STEPBible TIPNR; plus meanings for names we had without one | 285 new · 29 meanings | CC BY-SA 4.0 |
+| **Wikidata** | the people on that list that TIPNR doesn't know, kept only when Wikidata calls them a human biblical figure and gives their sex (Barjesus, Benoni, Yehezkel) | 22 | CC0 |
+| **STEPBible TIPNR** | KJV, ESV and NIV spellings of well-known people that the Wikipedia list leaves out (Elisabeth, Rebecca, Marcus, Josias) | 65 | CC BY 4.0 |
+| **Wikipedia, Virtue name** | Puritan and Christian virtue names (Grace, Faith, Felicity, Prudence, Verity, Gloria) | 32 | CC BY-SA 4.0 |
+| **Wikidata (saints) + Wikipedia (titles of Mary)** | names of widely venerated saints, each saint checked on Wikidata (Clare, Augustine, Bernadette, Gerard), and names from titles of the Virgin Mary (Stella, Dolores, Carmen) | 130 saints · 9 Marian and other | CC0 · CC BY-SA 4.0 |
+| **Wiktionary** | meanings of the virtue and saints' names, from each English entry's etymology | (meanings) | CC BY-SA 4.0 |
+
+- Only personal names of people from the Wikipedia list get in. Places, peoples, books, titles and epithets are left out (Abana, Philippi, Galilee, Genesis, Caesar, Iscariot, Boanerges). If neither TIPNR nor Wikidata gives a person's sex, the name is left out instead of guessed.
+- Christian names that aren't biblical have `texts` set to `""` (never "Bible"), and the story says where the name comes from: a virtue word, a saint, or a title of Mary. Saints whose stories are close to the Bible say so plainly: Anne and Joachim come from the Gospel of James, Dismas from later tradition, Raphael from the Book of Tobit (Catholic and Orthodox Bibles only).
+- Not used: Pinterest, FirstCry, parentalquestions.com and other baby-name sites.

@@ -11,7 +11,7 @@ const PH = (() => {
   const KEY = "lullabyte-say";
   let chosen = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } })();
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(chosen)); } catch {} };
-  const fold = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+  const fold = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[æǣǽ]/g, "a").replace(/[øǿ]/g, "o").replace(/œ/g, "oe").replace(/[ðđ]/g, "th").replace(/þ/g, "th").replace(/ß/g, "ss").replace(/ł/g, "l").replace(/ı/g, "i").replace(/ŋ/g, "ng").replace(/[^a-z]/g, "");   // for sound: Bjørn is bjorn, Þóra and Sigríðr have a th, Ælfric's æ is the a in cat
 
   // ── the sounds ──
   const VOWELS = new Set("AA AE AH AO AW AY EH ER EY IH IY OW OY UH UW O E".split(" "));
@@ -70,7 +70,8 @@ const PH = (() => {
   const PROFILE = {};
   for (const [p, list] of Object.entries(PROFILE_OF)) for (const c of list.split(" ")) PROFILE[c] = p;
   // multi-word culture names
-  Object.assign(PROFILE, { "Latin American": "es", "Puerto Rican": "es", "South Asian": "in", "Central Asian": "tr", "Serbian & Croatian": "slavic", "South Sudanese": "ar", "Taiwanese Indigenous": "even" });
+  Object.assign(PROFILE, { "Old French": "fr", "Anglo-Norman": "fr", "Medieval English": "en", "Old English": "en", "Old Norse": "nordic", "Old Swedish": "nordic", "Azerbaijani": "tr",
+    "Latin American": "es", "Puerto Rican": "es", "South Asian": "in", "Central Asian": "tr", "Serbian & Croatian": "slavic", "South Sudanese": "ar", "Taiwanese Indigenous": "even" });
   const LANG_NAME = { en: "English", ga: "Irish", es: "Spanish", it: "Italian", pt: "Portuguese", fr: "French", de: "German", nordic: "Nordic", pl: "Polish", slavic: "Slavic", hu: "Hungarian", gr: "Greek", tr: "Turkish", fa: "Persian", ar: "Arabic", he: "Hebrew", in: "South Asian", even: "", pac: "Pacific", af: "African" };
 
   // stress: where each language puts it
@@ -166,7 +167,7 @@ const PH = (() => {
     const n = syl.length, heavy = s => s.co.length > 0 || /^(AY|EY|OY|AW|OW|IY|UW)$/.test(s.v);
     let at = -1;
     const accented = accents.length ? (() => { const vs = (acc.match(/[aeiouy]́?/g) || []); const idx = vs.findIndex(v => v.length > 1); return idx; })() : -1;
-    if (accented >= 0 && accented < n) at = accented;
+    if (accented >= 0 && accented < n && /^(es|pt|it|gr)$/.test(prof)) at = accented;          // only there does an accent mark stress
     else if (n === 1 || rule === "first") at = 0;
     else if (rule === "final") at = n - 1;
     else if (rule === "penult") at = n - 2;

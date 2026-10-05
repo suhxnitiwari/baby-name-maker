@@ -6,7 +6,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 if ("scrollRestoration" in history) history.scrollRestoration = "manual"; // always open on the box
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-const fold = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[\s-]/g, "");
+const fold = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[æǣǽ]/g, "ae").replace(/[øǿ]/g, "o").replace(/œ/g, "oe").replace(/[ðđ]/g, "d").replace(/þ/g, "th").replace(/ß/g, "ss").replace(/ł/g, "l").replace(/ı/g, "i").replace(/ŋ/g, "ng").replace(/[\s-]/g, "");
 const capName = s => s.replace(/(^|[\s-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
 const uniq = arr => [...new Set(arr)].filter(Boolean).sort((a, b) => a.localeCompare(b));
 const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [a[i], a[j]] = [a[j], a[i]]; } return a; };
@@ -41,9 +41,11 @@ function eastAsian(d) {
 // names from sacred texts, Hebrew names from Israel, Japanese/Korean/Chinese names, and 120+ cultures
 // the cultures list leads; the East Asian lists (some built from syllables) and Israel's records, which include names
 // from everywhere, come after it, so they only add cultures (Rani is Bengali, Hindi and Telugu first)
-const storied = Promise.all(["data/scripture-names.json?v=1", "data/culture-names.json?v=7", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=1", "data/hebrew-names.json?v=1"]
+// …then medieval England and France, Old Norse, and Azerbaijan's official list (data/medieval-names.json, data/az-names.json)
+const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=7", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=1",
+  "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1"]
   .map(u => fetch(u).then(r => r.json()).catch(() => [])))
-  .then(([a, d, e, c, b]) => addStoried([...a, ...d, ...e, ...eastAsian(c), ...b])).catch(e => console.error(e));
+  .then(([a, bx, d, e, c, med, az, b]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b])).catch(e => console.error(e));
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
   for (const [n, g, o, l, r, m, src, texts, kind, also] of rows) {
@@ -52,7 +54,7 @@ function addStoried(rows) {
       if (o && o !== cur.o) cur.oo = [...new Set([...(cur.oo || []), o])];
       if (also && also.length) cur.oo = [...new Set([...(cur.oo || []), ...also])].filter(c => c !== cur.o);
       if (!cur.o && o) { cur.o = o; cur.l = cur.l || l; }
-      cur.x = [...new Set([...(cur.x || []), ...x])]; cur.m ||= m; cur.src = cur.src ? (src && !cur.src.includes(src) && src.startsWith("Given to") ? `${cur.src} ${src}` : cur.src) : src; continue; }
+      cur.x = [...new Set([...(cur.x || []), ...x])]; cur.r = [...new Set([...cur.r, ...(r ? r.split(",") : [])])]; cur.m ||= m; cur.src = cur.src ? (src && !cur.src.includes(src) && src.startsWith("Given to") ? `${cur.src} ${src}` : cur.src) : src; continue; }
     const e = { n, g: { g: "girl", b: "boy", e: "either" }[g], o, l, r: r ? r.split(",") : [], m, src, type: kind === "root" ? "root" : "real", x, oo: also || [] };
     (kind === "root" ? ROOT_NAMES : REAL).push(e); ALL_NAMED.push(e); have.set(k, e); TAKEN.add(k); indexName(e);
   }
@@ -724,12 +726,18 @@ const Charts = (() => {
   let place = null, years = [], at = 0, timer = 0, angle = 0;
   const STEP = .35;                                                // radians of knob turn per year
   const sex = () => gender === "boy" ? 1 : 0;
+  // coverage badges: what kind of record each place keeps, so gaps are part of the method, not hidden
+  const BADGE = { full: ["●", "full series: nearly every name above a small threshold, every year"], ranked: ["◐", "ranked list: only the top names are published"],
+    ended: ["◌", "historical archive: the series has stopped"], population: ["◇", "population data: people alive at a census, by when they were born"] };
+  const REGIONS = ["North America", "Latin America", "Europe", "Africa", "Middle East & West Asia", "South Asia", "East Asia", "Southeast Asia", "Oceania"];
   function ready() {
-    const groups = {};
-    YEARS.places.forEach(p => (groups[p.group] = groups[p.group] || []).push(p));
-    $("#chCountry").innerHTML = Object.entries(groups).map(([g, ps]) => {
-      const opts = ps.map(p => `<option value="${p.key}">${esc(p.label)}</option>`).join("");
-      return g ? `<optgroup label="${esc(g)}">${opts}</optgroup>` : opts;
+    const by = {};
+    YEARS.places.forEach(p => (by[p.region || (p.group === "Australia" ? "Oceania" : "")] ||= []).push(p));
+    const label = p => `${(BADGE[p.badge] || [""])[0]} ${p.label}${p.group ? ` (${p.group === "United Kingdom" ? "UK" : p.group})` : ""} · ${p.first}–${p.last}`.trim();
+    const order = [...REGIONS.filter(r => by[r]), ...Object.keys(by).filter(r => !REGIONS.includes(r))];
+    $("#chCountry").innerHTML = order.map(r => {
+      const opts = by[r].map(p => `<option value="${p.key}">${esc(label(p))}</option>`).join("");
+      return r ? `<optgroup label="${esc(r)}">${opts}</optgroup>` : opts;
     }).join("");
     setPlace("us");
   }
@@ -743,21 +751,23 @@ const Charts = (() => {
     const range = $("#chRange");
     range.min = 0; range.max = years.length - 1; range.value = at;
     $("#chTicks").innerHTML = years.filter((y, i) => i === 0 || y % 20 === 0 || i === years.length - 1).map(y => `<button data-year="${y}">${y}</button>`).join("");
-    $("#chSource").innerHTML = `${esc(place.agency)} · ${esc(place.dataset)} · ${esc(place.license)}`;
+    $("#chSource").innerHTML = `${place.badge && BADGE[place.badge] ? `${BADGE[place.badge][0]} ${esc(BADGE[place.badge][1])}<br>` : ""}${esc(place.agency)} · ${esc(place.dataset)} · ${esc(place.license)}`;
     draw(true);
   }
   function draw(quiet) {
     if (!YEARS || !place) return;
-    const y = years[at], full = place.years[y][sex()], list = full.slice(0, 7);
-    $("#chYear").textContent = y;
+    const y = years[at], full = place.years[y][sex()] || [], list = full.slice(0, 7);
+    const snapshot = (place.snapshots || []).includes(y);
+    $("#chYear").textContent = place.decades ? (y < 1930 && at === 0 && place.key === "br" ? "before 1930" : y + "s") : y;
     $("#chRange").value = at;
-    $("#chNote").textContent = place.rule;
+    $("#chNote").textContent = snapshot ? "A ten-year snapshot: the official top 100 for this year, ranks only (no counts)." : place.rule;
     $$("#chTicks button").forEach(b => b.setAttribute("aria-current", +b.dataset.year === y));
     if (!full.length) { Hang.render($("#chMobile"), []); $("#chList").innerHTML = `<li class="none">Not published for ${y}.</li>`; return; }
-    const max = full[0][1];
+    const max = full[0][1] || 1, counted = full[0][1] != null;
     Hang.render($("#chMobile"), list.map(([n, ct], k) => ({ key: y + n, len: 40 + k * 22 + (k % 2) * 14,
-      html: `<button class="charm" data-play-name="${esc(n)}"><small>${k + 1}</small><span>${esc(n)}</span><em>${ct.toLocaleString()}</em></button>` })), { stagger: 60 });
-    $("#chList").innerHTML = full.map(([n, ct], k) => `<li><span>${k + 1}</span><b>${esc(n)}</b><i style="--w:${(ct / max * 100).toFixed(1)}%"></i><em>${ct.toLocaleString()}${place.rounded ? "*" : ""}</em></li>`).join("");
+      html: `<button class="charm" data-play-name="${esc(n)}"><small>${k + 1}</small><span>${esc(n)}</span><em>${ct != null ? ct.toLocaleString() : ""}</em></button>` })), { stagger: 60 });
+    // with no counts (ranked snapshots) the bar shows rank instead
+    $("#chList").innerHTML = full.map(([n, ct], k) => `<li><span>${k + 1}</span><b>${esc(n)}</b><i style="--w:${(counted ? ct / max * 100 : 100 - k * 100 / full.length).toFixed(1)}%"></i><em>${counted ? ct.toLocaleString() + (place.rounded ? "*" : "") : "rank " + (k + 1)}</em></li>`).join("");
     clearTimeout(timer);
     if (!quiet && MB.on) timer = setTimeout(() => playName(list[0][0]), 650);
   }

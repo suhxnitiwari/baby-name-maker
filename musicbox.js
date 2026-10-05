@@ -9,7 +9,7 @@ const MB = (() => {
   const COMB = [72, 74, 76, 77, 79, 81, 83, 84, 86, 88, 89, 91, 93, 95, 96];
   const NOTE_NAMES = ["C5", "D5", "E5", "F5", "G5", "A5", "B5", "C6", "D6", "E6", "F6", "G6", "A6", "B6", "C7"];
   const STEP = 0.21; // seconds per step: an unhurried lullaby
-  const flat = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z]/g, "");
+  const flat = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[æǣǽ]/g, "ae").replace(/[øǿ]/g, "o").replace(/œ/g, "oe").replace(/[ðđ]/g, "d").replace(/þ/g, "th").replace(/ß/g, "ss").replace(/ł/g, "l").replace(/ı/g, "i").replace(/ŋ/g, "ng").replace(/[^a-z]/g, "");   // Bjørn is bjorn, Þóra is thora, Ælfric is aelfric
   const V = "aeiouy";
   const isV = (w, i) => V.includes(w[i]) && !(w[i] === "y" && (i === 0 || V.includes(w[i + 1] || "") && w[i + 1] !== "y"));
   const ONSET2 = new Set("bl br ch cl cr dr fl fr gl gr kh kl kr ph pl pr sc sh sk sl sm sn sp st sw th tr tw wh bh dh gh jh".split(" "));
