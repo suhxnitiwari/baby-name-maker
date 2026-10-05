@@ -735,7 +735,8 @@ const Hero = (() => {
     // where it's from first; the other cultures that give it are "also given in" (Muhammad is Arabic, also given in Bengali and Filipino)
     const where = whereOf(x);
     const maybe = didYouMean(x, k);
-    box.innerHTML = (nat.length ? `<span class="hc-nat">${nat.map(([f, l]) => `<span class="nat" lang="${esc(l)}">${esc(f)}<small>${esc(l)}</small></span>`).join("")}</span>` : "") +
+    // the script's language is only named when it isn't already the line below (सुहानी, then Hindi once)
+    box.innerHTML = (nat.length ? `<span class="hc-nat">${nat.map(([f, l]) => `<span class="nat" lang="${esc(l)}">${esc(f)}${l.toLowerCase() === where.toLowerCase() ? "" : `<small>${esc(l)}</small>`}</span>`).join("")}</span>` : "") +
       `<span class="hc-where">${esc(where)}</span>` +
       (maybe ? `<span class="hc-maybe">Did you mean <button class="inline" data-hero-name="${esc(maybe.n)}">${esc(maybe.n)}</button>?</span>` : "") +
       (m ? `<span class="hc-mean">“${esc(m)}”</span>` : "") + (cite ? `<span class="hc-src">${esc(cite)}</span>` : "") + (pop ? `<span class="hc-chart">${esc(pop)}</span>` : "");
