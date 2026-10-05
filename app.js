@@ -575,6 +575,7 @@ const Hero = (() => {
   function show(v, user) {
     typed.textContent = v;
     field.classList.toggle("empty", !v);
+    field.classList.toggle("long", v.length > 8); field.classList.toggle("longer", v.length > 11);
     Mobile.set(v);
     const parts = v ? MB.explain(v) : [];
     $("#heroPlay").innerHTML = `<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg><span>${v && v === lastPlayed ? "Play again" : "Hear it ♪"}</span>`;
@@ -638,7 +639,10 @@ const Hero = (() => {
   inp.addEventListener("pointerdown", takeOver);
   inp.addEventListener("input", () => {
     takeOver();
-    const v = capName(inp.value.replace(/^\s+/, "").replace(/\s{2,}/g, " "));
+    // no name repeats a letter three times running (Suhaniiii → Suhanii), and 16 characters covers Mary-Elizabeth
+    const clean = inp.value.replace(/^\s+/, "").replace(/\s{2,}/g, " ").replace(/(\p{L})\1{2,}/giu, "$1$1").slice(0, 16);
+    if (clean !== inp.value) inp.value = clean;
+    const v = capName(clean);
     show(v.trim(), true);
     if (v.trim() && !touched) { touched = true; store.set("lullabyte-typed", true); $("#typeHint").classList.add("gone"); }
   });

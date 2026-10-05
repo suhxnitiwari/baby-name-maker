@@ -91,6 +91,7 @@
   .field { position: relative; flex: 1; display: inline-flex; align-items: baseline; font: 400 clamp(3.1rem, 6.2vw, 5.3rem)/1.05 var(--serif); min-width: 4ch; max-width: 100%;
     padding: 0 4px 6px; border-bottom: 1.5px solid rgba(70,45,40,.45); cursor: text; transition: border-color .3s, font-size .45s var(--ease); }
   .field.empty { font-size: clamp(1.7rem, 2.3vw, 2.2rem); }
+  .field.long { font-size: clamp(2.4rem, 4.6vw, 4rem); } .field.longer { font-size: clamp(2rem, 3.6vw, 3.1rem); }
   .field-label { font: 500 .78rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--rose); margin-bottom: -4px; }
   .field:focus-within { border-color: var(--rose); }
   .field #typed { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
@@ -337,6 +338,10 @@
   .add-opts button:hover { color: var(--rose); }
   .add-opts button + button::before { content: "·"; color: var(--muted); margin-right: 12px; font-style: normal; }
   .duet-result { margin-top: 36px; }
+  .duet-cta { display: flex; align-items: center; gap: 16px; margin-top: 26px; }
+  .duet-cta span { font: .74rem var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .nowrap { white-space: nowrap; }
+  .duet-cta .go { background: var(--rose); color: #fff7ee; box-shadow: 0 12px 26px -12px rgba(120,30,50,.6); }
   .duet-result.descend { animation: descend 1s var(--drop) both; }
   .duet-name { font: 400 clamp(4rem, 13vw, 10rem)/.9 var(--serif); letter-spacing: -.02em; margin: 6px 0 6px; }
   .duet-name .o-a { color: var(--mom); } .duet-name .o-b { color: var(--dad); } .duet-name .o-f { color: #a5803c; }
@@ -520,7 +525,7 @@
       <p class="field-label">Type a name</p>
       <div class="name-row">
         <label class="field empty">
-          <input id="heroName" spellcheck="false" autocomplete="off" autocapitalize="words" maxlength="24" aria-label="Type a name to hear it">
+          <input id="heroName" spellcheck="false" autocomplete="off" autocapitalize="words" maxlength="16" aria-label="Type a name to hear it">
           <span id="typed" aria-hidden="true"></span><i class="caret" aria-hidden="true"></i><span class="ph" aria-hidden="true">your name…</span>
         </label>
         <button class="play" id="heroPlay" disabled></button>
@@ -616,12 +621,13 @@
   </div>
   <p class="wishes"><input class="slot" id="mom" placeholder="Mom’s name" size="9" aria-label="Mom's name"> + <input class="slot" id="dad" placeholder="Dad’s name" size="9" aria-label="Dad's name">, looking for
     <select class="slot" id="dShare" aria-label="How much of each"><option value="little">a little of both</option><option value="lot">a lot of both</option></select> in
-    <select class="slot" id="dMode" aria-label="Kinds of names"><option value="both">real names + new blends</option><option value="real">real names only</option><option value="new">new blends only</option></select>.</p>
+    <span class="nowrap"><select class="slot" id="dMode" aria-label="Kinds of names"><option value="both">real names + new blends</option><option value="real">real names only</option><option value="new">new blends only</option></select>.</span></p>
   <p class="wishes">We’re dreaming of a <select class="slot g-select" aria-label="Gender"><option value="girl">girl’s</option><option value="boy">boy’s</option><option value="either">gender-neutral</option></select> name that feels
     <select class="slot" id="dVibe" aria-label="Feel"><option value="">any way</option><option value="soft">soft &amp; sweet</option><option value="bold">strong &amp; bold</option><option value="elegant">romantic</option><option value="timeless">timeless</option><option value="modern">modern</option><option value="playful">playful</option><option value="celestial">dreamy</option><option value="earthy">earthy</option><option value="regal">regal</option><option value="rare">rare</option></select>,
     means <select class="slot" id="dTheme" data-fill="theme" aria-label="Meaning"></select>, and has <select class="slot" id="dRoots" data-fill="culture" aria-label="Roots"></select> roots<span id="x-honor" hidden>, honoring <input class="slot" id="dHonor" placeholder="grandma, a sibling" size="12"></span><span id="x-lang" hidden>, in <select class="slot" id="dLang" data-fill="lang"></select></span><span id="x-faith" hidden>, from <select class="slot" id="dFaith" data-fill="religion"></select></span><span id="x-text" hidden>, named in <select class="slot" id="dText"><option value="">any sacred text</option><option value="Torah">the Torah</option><option value="Bible">the Bible</option><option value="Quran">the Quran</option><option value="Bhagavad Gita">the Bhagavad Gita</option><option value="Mahabharata">the Mahabharata</option><option value="Ramayana">the Ramayana</option><option value="Vedas">the Vedas</option></select></span><span id="x-len" hidden>, <select class="slot" id="dLen"><option value="">any length</option><option value="3-4">short</option><option value="5-6">medium</option><option value="7-8">long</option></select></span><span id="x-last" hidden>, to go with <input class="slot" id="dLast" placeholder="your last name" size="12"></span>.</p>
   <p class="add-wrap" id="duetAddWrap"><span class="add">+ Add something meaningful</span><span class="add-opts" id="duetAdd">
     <button data-extra="honor">Honor someone</button><button data-extra="lang">Language</button><button data-extra="faith">Faith or tradition</button><button data-extra="text">Sacred text</button><button data-extra="len">Length</button><button data-extra="last">Last name</button></span></p>
+  <div class="duet-cta"><button class="go duet-go" id="duetTogether">Play them together ♫</button><span>or press Enter</span></div>
   <div class="duet-result" id="duetResult" hidden>
     <div class="duet-best" id="duetBest"></div>
     <div class="rows" id="duetRows"></div>
@@ -631,7 +637,6 @@
   <div class="duet-piano">
     <div id="duetPiano" style="width:100%"></div>
     <div class="legend" id="duetLegend"></div>
-    <button class="go duet-go" id="duetTogether">Play them together ♫</button>
   </div>
 </section>
 
@@ -689,11 +694,11 @@
 <script src="generator.js?v=4"></script>
 <script src="phonetics.js?v=7"></script>
 <script src="musicbox.js?v=6"></script>
-<script src="mobile.js?v=10"></script>
+<script src="mobile.js?v=11"></script>
 <script src="piano.js?v=3"></script>
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=28"></script>
+<script src="app.js?v=29"></script>
 </body>
 </html>

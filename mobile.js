@@ -42,7 +42,7 @@ const Mobile = (() => {
   }
   // string length from the note: low notes hang long, so the melody is the mobile's silhouette
   // desktop strings run from ~half the screen to near the floor, so you stand underneath it
-const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .3 + (14 - i) / 14 * .52) * (rest ? .95 : 1);
+const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .17 + (14 - i) / 14 * .36) * (rest ? .9 : 1);
   const pendantLen = () => (H - ringY) * (.08 + Math.min(10, name.replace(/[^a-z]/gi, "").length) * .012);
 
   // ── a name → its parts ──
@@ -63,18 +63,30 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
     if (!n) {
       // at rest: six quiet felt charms, the mobile before it has a name
       strands.filter(s => !s.dying && !s.rest).forEach(retire);
-      if (!strands.some(s => s.rest && !s.dying)) REST.forEach(([kind, i, color], j) => strands.push(makeStrand({ rest: true, kind, i, color, a: j / REST.length * TAU, lenT: lenFor(i, true), r: 1, born: performance.now() + 200 + j * 110 })));
+      const rests = strands.filter(s => s.rest && !s.dying);
+      REST.forEach(([kind, i, color], j) => {
+        const s = rests[j] || strands[strands.push(makeStrand({ rest: true, kind, i, color, a: j / REST.length * TAU, born: performance.now() + 200 + j * 110 })) - 1];
+        Object.assign(s, { kind, i, color, aT: j / REST.length * TAU, lenT: lenFor(i, true), r: 1, quiet: false });
+      });
     } else {
-      strands.filter(s => s.rest && !s.dying).forEach(retire);
       const mine = strands.filter(s => !s.dying && !s.rest), N = syl.length;
+      // a short name still makes a whole mobile: its charms take evenly spaced places and smaller, paler companions fill the rest
+      const M = Math.max(N, 5), slot = j => Math.round(j * M / N) % M, used = new Set(syl.map((_, j) => slot(j)));
+      const free = [...Array(M).keys()].filter(k => !used.has(k)), rests = strands.filter(s => s.rest && !s.dying);
+      rests.slice(free.length).forEach(retire);
+      free.forEach((k, q) => {
+        const [kind, i, color] = REST[(k + 2) % REST.length];
+        const c = rests[q] || strands[strands.push(makeStrand({ rest: true, kind, i, color, a: k / M * TAU, born: performance.now() + 150 })) - 1];
+        Object.assign(c, { kind, i, color, aT: k / M * TAU + .001, lenT: lenFor(i, true) * .72, r: .62, quiet: true });
+      });
       syl.forEach((x, j) => {
         const i = x.teeth.length ? x.teeth[0] : 4;
         const kind = x.glide ? "bird" : SHAPE_OF(x.v);
         const r = 1;
         let s = mine[j];
-        if (!s) { s = makeStrand({ i, a: j / N * TAU + .001 }); strands.push(s); }
+        if (!s) { s = makeStrand({ i, a: slot(j) / M * TAU + .001 }); strands.push(s); }
         if (s.kind && s.kind !== kind) s.vs += .25;                        // a charm that changes shape swings
-        Object.assign(s, { i, kind, color: TINT[x.place] || TINT.none, r: r * (x.stress === 1 ? 1.08 : 1), lenT: lenFor(i), aT: j / N * TAU, syl: j });
+        Object.assign(s, { i, kind, color: TINT[x.place] || TINT.none, r: r * (x.stress === 1 ? 1.08 : 1), lenT: lenFor(i), aT: slot(j) / M * TAU, syl: j });
         // beads: one per letter of the syllable, falling into place on its string
         const lt = x.text.toLowerCase();
         [...lt].forEach((c, b) => { if (!s.beads[b]) s.beads.push({ c, y: -.3, vy: 0 }); else s.beads[b].c = c; });
@@ -243,15 +255,24 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
     const ex = p.x + Math.sin(s.swing) * L, ey = p.y + Math.cos(s.swing) * L;
     ctx.globalAlpha = Math.max(0, s.alpha) * (.6 + .4 * depth);
     ctx.strokeStyle = "rgba(140,108,84,.6)"; ctx.lineWidth = 1.15; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(ex, ey); ctx.stroke();
+    for (const side of [-1, 1]) {
+      ctx.save(); ctx.translate(p.x, p.y + 2 * S); ctx.rotate(side * .85);
+      ctx.fillStyle = felt("#a9b89c", side * 4 * S, 5 * S, 7 * S);
+      ctx.beginPath(); ctx.ellipse(0, 7 * S, 3.6 * S * depth, 8 * S * depth, 0, 0, TAU); ctx.fill(); ctx.restore();
+    }
     const nb = s.beads.length;
     s.beads.forEach((b, k) => {
       const slot = .16 + (k + .5) / Math.max(nb, 1) * .5, f = b.y * slot;                 // b.y runs from above the hoop (<0) to its slot (1)
       const bx = b.y < 0 ? p.x : p.x + (ex - p.x) * f, by = b.y < 0 ? p.y + b.y * 140 * S : p.y + (ey - p.y) * f;
       bead(bx, by, ("aeiouy".includes(b.c) ? 10 : 8) * S * depth, beadColor(b.c));
     });
-    const r = (s.rest ? 50 : 64) * (narrow ? 1.3 : 1) * S * depth * (s.r || 1) * (1 + s.glow * .18) * Math.min(1, L / (40 * S));
+    const r = (s.rest ? 46 : 54) * (narrow ? 1.3 : 1) * S * depth * (s.r || 1) * (1 + s.glow * .18) * Math.min(1, L / (40 * S));
     if (s.glow > .02) { const gl = ctx.createRadialGradient(ex, ey + r * .6, 0, ex, ey + r * .6, r * 2.4); gl.addColorStop(0, `rgba(255,226,170,${.6 * s.glow})`); gl.addColorStop(1, "rgba(255,226,170,0)"); ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(ex, ey + r * .6, r * 2.4, 0, TAU); ctx.fill(); }
-    if (r > 1) charm(s.kind, ex, ey, r, s.color || TINT.none);
+    if (r > 1) {
+      if (s.quiet) ctx.globalAlpha *= .72;
+      ctx.save(); ctx.shadowColor = "rgba(90,60,40,.2)"; ctx.shadowBlur = 16 * S; ctx.shadowOffsetY = 9 * S;
+      charm(s.kind, ex, ey, r, s.color || TINT.none); ctx.restore();
+    }
     ctx.globalAlpha = 1;
     s.tip = { x: ex, y: ey + r * .6, r };
   }
