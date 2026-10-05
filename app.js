@@ -77,7 +77,7 @@ const PERSONLIKE = new Set(["human", "prophet", "sage", "saint", "disciple", "ro
 const SACRED = new Map(), SACRED_SEX = new Map(); // folded name → cited references; the sex of the people the text gives that name
 let SACRED_FIG = {};
 const FIG_FORMS = new Map(); // figure → every name form it carries, across traditions (Abraham, Avraham, Ibrahim)
-const sacredReady = Promise.all([fetch("data/sacred.json?v=2").then(r => r.ok ? r.json() : null).catch(() => null), storied]).then(([d]) => {
+const sacredReady = Promise.all([fetch("data/sacred.json?v=4").then(r => r.ok ? r.json() : null).catch(() => null), storied]).then(([d]) => {
   if (!d) return;
   SACRED_FIG = d.f;
   const have = new Map(ALL_NAMED.map(x => [fold(x.n), x]));
@@ -569,8 +569,8 @@ const Hero = (() => {
   let auto = null, touched = store.get("lullabyte-typed", false), lastStrip = "", lastPlayed = "";
   // the name's card: where it's from (and how it's written there), what it means, how it charts
   function cardFor(v) {
-    const box = $("#heroCard"), k = v && fold(v);
-    const x = k && ((BY_NAME.get(k) || [])[0] || dbEntry(v));
+    const first = (v || "").split(" ")[0], box = $("#heroCard"), k = first && fold(first);
+    const x = k && ((BY_NAME.get(k) || [])[0] || dbEntry(first));
     if (!x) { box.innerHTML = ""; return; }
     const nonLatin = t => t && !/^[\p{Script=Latin}\s'-]+$/u.test(t);
     const nat = (sacredOf(x).find(r => nonLatin(r.orig)) || {}).orig || [(x.src || "").match(/Written ([^\s.,(]+)/)?.[1]].find(nonLatin);
@@ -583,13 +583,14 @@ const Hero = (() => {
   function show(v, user) {
     typed.textContent = v;
     field.classList.toggle("empty", !v);
-    field.classList.toggle("long", v.length > 8); field.classList.toggle("longer", v.length > 11);
+    field.classList.toggle("long", v.length > 8); field.classList.toggle("longer", v.length > 12);
     Mobile.set(v);
     const parts = v ? MB.explain(v) : [];
     $("#heroPlay").innerHTML = `<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg><span>${v && v === lastPlayed ? "Play again" : "Hear it ♪"}</span>`;
     cardFor(v);
     $("#heroPlay").disabled = !v;
-    $("#sylRow").innerHTML = parts.map((p, k) => `<button class="cell${p.stress === 1 ? " stress" : ""}" data-k="${k}" data-why="${esc(p.text + " · " + p.why + " → " + p.notes.join("–"))}"><b>${esc(p.text)}</b><code>${p.notes.join("–") || "·"}</code></button>`).join(`<i class="sep">·</i>`);
+    const firstSyl = v.includes(" ") ? MB.explain(v.split(" ")[0]).length : parts.length;
+    $("#sylRow").innerHTML = parts.map((p, k) => `<button class="cell${p.stress === 1 ? " stress" : ""}${k >= firstSyl ? " sur" : ""}" data-k="${k}" data-why="${esc(p.text + " · " + p.why + " → " + p.notes.join("–"))}"><b>${esc(p.text)}</b><code>${p.notes.join("–") || "·"}</code></button>`).join(`<i class="sep">·</i>`);
     $("#why").textContent = "";
     sayLine(v);
     $("#heroActs").classList.toggle("hidden", !v || !user);
@@ -647,8 +648,8 @@ const Hero = (() => {
   inp.addEventListener("pointerdown", takeOver);
   inp.addEventListener("input", () => {
     takeOver();
-    // no name repeats a letter three times running (Suhaniiii → Suhanii), and 16 characters covers Mary-Elizabeth
-    const clean = inp.value.replace(/^\s+/, "").replace(/\s{2,}/g, " ").replace(/(\p{L})\1{2,}/giu, "$1$1").slice(0, 16);
+    // no name repeats a letter three times running (Suhaniiii → Suhanii); 26 characters fits a first and last name
+    const clean = inp.value.replace(/^\s+/, "").replace(/\s{2,}/g, " ").replace(/(\p{L})\1{2,}/giu, "$1$1").slice(0, 26);
     if (clean !== inp.value) inp.value = clean;
     const v = capName(clean);
     show(v.trim(), true);
