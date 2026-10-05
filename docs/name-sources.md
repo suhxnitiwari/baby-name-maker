@@ -108,7 +108,7 @@ Country lists checked for this step, all top-10 to top-50 only (PDFs): Philippin
 
 ## ⏳ The time machine: every year, from official birth records
 
-`data/years.json` (built by `scripts/build_years.py`) holds the top 12 girls' and boys' names of **every year** for 11 places, with each publisher's own rules kept beside the numbers, so a name that isn't listed reads "not published", never "0 babies".
+`data/years.json` (built by `scripts/build_years.py`) holds the top 12 girls' and boys' names of **every year** for 27 places, with each publisher's own rules kept beside the numbers, so a name that isn't listed reads "not published", never "0 babies".
 
 | Place | Publisher | Years | Publication rule |
 |---|---|---|---|
@@ -116,29 +116,45 @@ Country lists checked for this step, all top-10 to top-50 only (PDFs): Philippin
 | 🇫🇷 France | INSEE (fichier des prénoms 2024) | 1900–2024 | counts rounded to the nearest 5; rare names grouped |
 | 🇳🇴 Norway | Statistics Norway, table 10467 | 1945–2025 | names used by 200+ people; fewer than 4 a year hidden; counts before 1945 not given |
 | 🇨🇦 Canada | Statistics Canada, table 17-10-0147-01 | 1991–2025 | small counts suppressed |
-| 🏴 England & Wales | ONS | 1996–2025 | 2 or fewer redacted |
+| 🏴 England & Wales | ONS | 1996–2025; top 100 every ten years 1904–1994 | 2 or fewer redacted; 1904–1994 ranks only |
 | 🏴 Scotland | National Records of Scotland | 1974–2025 | every first forename |
 | Northern Ireland | NISRA full list | 1997–2025 | fewer than 3 not shown |
 | 🇮🇪 Ireland | CSO, VSA50 / VSA60 | 1964–2025 | 3 or more occurrences |
 | 🇦🇹 Austria | Statistik Austria | 1984–2025 | before 2010, Austrian nationals only |
 | 🇳🇿 New Zealand | Department of Internal Affairs | 1900–2025 | 10+ registrations a year; registration years |
 | 🇦🇺 New South Wales | NSW Registry | 1952–2025 | ranked list only |
+| 🇦🇺 Queensland | Queensland Registry of BDM (data.qld.gov.au) | 1960–2025 | top 100 only |
+| 🇸🇪 Sweden | Statistics Sweden, TAB619 (to 2022) · Skatteverket, Namn på nyfödda (from 2023) | 1998–2025 | top 100 to 2022 with spellings grouped; Skatteverket's list from 2023, spellings apart |
+| 🇵🇱 Poland | dane.gov.pl, Imiona nadawane dzieciom w Polsce (PESEL) | 2000–2025 | fewer than 5 hidden to 2012, fewer than 2 from 2013 |
+| 🇩🇰 Denmark | Statistics Denmark, Navne til nyfødte | 1985–2025 | top 25 to 1992, top 50 from 1993; before 1996 Danish citizens only |
+| 🇨🇭 Switzerland | Federal Statistical Office, DF_BEVNAT_PRENOMS (stats.swiss) | 2000–2025 | names given in the latest year, counted back to 2000 |
+| Catalonia | Idescat, Noms dels nadons | 1997–2025 | top 100; accented and unaccented spellings counted together |
+| 🇩🇪 Berlin | Berlin Open Data, Liste der häufigen Vornamen | 2012–2023 | one city, not Germany; first names only from 2017 |
+| 🇳🇱 Netherlands | SVB, kindernamen | 2017–2025 | fewer than 10 hidden |
+| 🇲🇩 Moldova | Public Services Agency (dataset.gov.md) | 2016–2023 | top 20–100 registered newborn names |
+| 🇱🇻 Latvia | Central Statistical Bureau, 100 most popular newborn names | 1918–2026 in five-year periods | top 100, ranks only; before 1990 only people still in the register |
+| 🇨🇱 Chile | Registro Civil (via guaguas) | 1920–2021 | every name, even once; series ended |
+| 🇿🇦 South Africa | Stats SA, Recorded live births (P0305) | 2014–2024 | top 10 only |
+| 🇧🇷 Brazil | IBGE, Censo 2010 names | decades of birth, before 1930 to 2000s | people alive at the 2010 census, top 20 |
+| 🇫🇮 Finland | DVV Nimipalvelu | decades of birth, 1900s–2020s | people in the population register, all first names; fewer than 5 hidden |
 
-How the hard ones were reached: **ssa.gov** and **data.govt.nz** block scripts, so their official files were opened in a browser and only each year's top names were kept (`raw/us-top20-2018-2025.tsv`, `raw/nz-top12-1900-2025.txt`). US 1880–2017 comes from the babynames R package, which is built from the same SSA files.
+How the hard ones were reached: **ssa.gov** and **data.govt.nz** block scripts, so their official files were opened in a browser and only each year's top names were kept (`raw/us-top20-2018-2025.tsv`, `raw/nz-top12-1900-2025.txt`). US 1880–2017 comes from the babynames R package, which is built from the same SSA files. **data.qld.gov.au** challenges scripts on its download links, so Queensland was read through the portal's own CKAN datastore API. Denmark's top 50 comes from the HTML endpoint behind dst.dk's "Top 50" selector, South Africa's top 10 from the tables inside each P0305 PDF, Moldova's from the yearly reports (PDF, DOCX, XLSX), and Catalonia's accented spellings (Martí, Adrià) from each name's Idescat page because the API drops accents.
 
-Not in the time machine (no official yearly newborn file): India, China, Japan, Korea, Mexico, Brazil, Germany (national rankings come from private researchers), Denmark (lookup only), the Netherlands (no bulk file), Belgium and Finland (manual downloads, see below). Spain and Italy publish rankings or lookups only.
+Not ingested: **Belgium** (every statbel.fgov.be URL, file downloads included, returns a CAPTCHA page), **Philippines** (psa.gov.ph returns a Cloudflare challenge), **Argentina 2012–2024** (datosabiertos.renaper.gob.ar times out from here; the 1922–2015 RENAPER file is downloaded as `raw/ar-renaper-historico-nombres-1922-2015.zip` but not ingested yet), **Lithuania** (data.gov.lt and registrucentras.lt block this network), **Iceland** (the PxWeb API only has names born in 2021 and population snapshots by age, no birth-year series or census tables), **Andorra** (the Observatori de la infància reports checked carry birth counts but no name rankings).
+
+Montenegro's 2023 census names by age group and municipality (MONSTAT release 149/2024, names only) are kept apart in `data/census-names.json`, because an age group isn't a birth year.
+
+Not in the time machine (no official yearly newborn file): India, China, Japan, Korea, Mexico, Germany as a whole (national rankings come from private researchers), Belgium (CAPTCHA). Spain and Italy publish rankings or lookups only.
 
 ## ⏳ Found, not in yet (needs a manual download or more work)
 
 | Country | Source | What it has | Why it's not in |
 |---|---|---|---|
-| 🇫🇮 Finland | Digital and Population Data Services Agency (avoindata.fi), `etunimitilasto` xlsx | every first name with 5+ living bearers | The portal returns 403 to this network. Download the xlsx by hand into `raw/fi.xlsx`. CC BY 4.0. |
 | 🇧🇪 Belgium | Statbel open data | first names of the whole population and of newborns, by municipality, 5+ occurrences | Statbel shows a CAPTCHA. Download by hand into `raw/be-*.zip`. |
-| 🇳🇱 Netherlands | Meertens Institute, Nederlandse Voornamenbank (from the national population register) | ~500,000 first names | Lookup site only, no bulk download. Would need to ask Meertens for the data. |
+| 🇳🇱 Netherlands | Meertens Institute, Nederlandse Voornamenbank (KNAW; BRP register 1 Jan 2018 plus 19th-century marriage records) | ~443,800 first names, first vs later given name, under 5 hidden; popularity 1790–2017 (before 1880 rebuilt from marriage records) | Lookup site only; no bulk download or open dataset found (DANS included), so it isn't crawled. Newborn counts come from SVB instead (time machine). |
 | 🇸🇮 Slovenia | SURS (SiStat) | 64,000 names in the population | Not checked yet. SiStat may only have top names. |
-| 🇮🇸 Iceland | Statistics Iceland (PxWeb) | name tables | Not checked yet. Likely top names only. |
+| 🇮🇸 Iceland | Statistics Iceland (PxWeb) | names of the whole population by age group (1 Jan 2023); names of children born in 2021 | Checked: no series by year of birth and no census tables in the API. |
 | 🇭🇺 Hungary | Research Centre for Linguistics, official register of allowed first names | every name a baby may legally be given | Not frequency data, but it is the official list. Not fetched yet. |
-| 🇪🇸 Catalonia / Basque Country | Idescat · Eustat | newborn names by region | Mostly covered by Spain's INE. The Idescat API needs per-name IDs. |
 | 🇷🇺 Russia (Moscow) | data.mos.ru, newborn names | all names given in Moscow by month | Cyrillic script, and the portal didn't respond from here. |
 
 The build script picks up any file you drop into `raw/` with a known prefix (`fi`, `be`, `sct`, `nz`) automatically.
@@ -147,11 +163,8 @@ The build script picks up any file you drop into `raw/` with a known prefix (`fi
 
 | Country | What exists |
 |---|---|
-| 🇸🇪 Sweden | Statistics Sweden stopped name statistics in 2024; the Tax Agency only has a lookup |
-| 🇩🇰 Denmark | Statistics Denmark: lookup tool ("Hvor mange hedder…?") only |
 | 🇨🇿 Czechia | The Ministry of the Interior stopped publishing name frequencies (no legal basis) |
-| 🇱🇻 Latvia | PMLP name lookup only |
-| 🇱🇹 Lithuania · 🇧🇬 Bulgaria · 🇷🇸 Serbia · 🇭🇺 Hungary (KSH) | top 10–50 lists only |
+| 🇱🇹 Lithuania · 🇧🇬 Bulgaria · 🇷🇸 Serbia · 🇭🇺 Hungary (KSH) | top 10–50 lists only (Lithuania's register top 20 / top 50 on data.gov.lt is blocked from this network) |
 | 🇮🇹 Italy | ISTAT "Contanomi" lookup only |
 | 🇭🇷 Croatia · 🇪🇪 Estonia | nothing found |
 | 🇲🇽 Mexico · 🇺🇾 Uruguay | registries exist, no open data |

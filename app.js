@@ -245,6 +245,7 @@ function fit(el) {
   el.classList.toggle("set", !!el.value);
 }
 const fitAll = () => $$(".slot").forEach(fit);
+addEventListener("resize", () => { clearTimeout(fitAll._t); fitAll._t = setTimeout(fitAll, 150); }); // the blanks scale with the window, so measure again
 document.addEventListener("input", e => fit(e.target));
 document.addEventListener("change", e => fit(e.target));
 

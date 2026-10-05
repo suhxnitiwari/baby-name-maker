@@ -32,8 +32,17 @@
 #   cl   Servicio de Registro Civil e Identificación, every first name registered 1920-2021 (via the guaguas package): raw/cl.csv
 #   za   Stats SA "Recorded live births" (P0305) 2014-2024; the top-ten tables were read out of the PDFs
 #        (raw/za-P0305-*.pdf) into raw/za-top10-2014-2024.tsv
+#   ba-fbih  Federal Statistical Office of the Federation of BiH, top 100 newborn names 2012-2025 (one PDF per sex and year,
+#        raw/ba-fbih-YYYY-top100-[fm].pdf), read into raw/ba-fbih-fzs-top100-2012-2025.tsv
 #   br   IBGE Censo 2010 names API, top 20 per sex per decade of birth: raw/br-ibge-censo2010-ranking-by-decade.json
 #   fi   DVV Nimipalvelu, most popular first names by decade of birth (population register): raw/fi-dvv-top-etunimet-*.html
+#   md   Public Services Agency, most frequent first names of newborns 2016-2023 (dataset.gov.md 16943 / 16944):
+#        raw/md-asp-prenume-YYYY-[fm].(pdf|docx|xlsx)
+#   lv   Central Statistical Bureau "100 most popular newborn names", ranks by five-year period (tools.stat.gov.lv/names/api):
+#        raw/lv-csp-top100-ranks-1920-2025-(female|male)-latvia.json
+#   lu   STATEC "La démographie luxembourgeoise en chiffres" 2023-2025 editions (data years 2022-2024), top 5 table:
+#        raw/lu-statec-demographie-en-chiffres-*.pdf
+#   nl   SVB kindernamen, every name given 10+ times, 2017-2025 (the JSON behind svb.nl's tables): raw/nl-svb-(meisjes|jongens)namen-YYYY.json
 import csv, glob, html, io, json, os, re, sys, unicodedata, zipfile, collections
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -277,13 +286,18 @@ def chile():
         c[int(r["anio"])]["girl" if r["sexo"] == "F" else "boy"][r["nombre"]] += int(r["n"])
     return c
 
-def south_africa():
+def top_lists(f):
+    # lines of YEAR, F|M, "Name count,Name count,..." read out of an agency's PDFs or press releases
     c = new()
-    for line in open(f"{RAW}/za-top10-2014-2024.tsv"):
+    for line in open(f"{RAW}/{f}", encoding="utf-8"):
         y, s, lst = line.rstrip("\n").split("\t")
         for item in lst.split(","):
-            n, v = item.rsplit(" ", 1); c[int(y)]["girl" if s == "F" else "boy"][n] = int(v)
+            n, v = item.strip().rsplit(" ", 1); c[int(y)]["girl" if s == "F" else "boy"][n] = int(v)
     return c
+
+def south_africa(): return top_lists("za-top10-2014-2024.tsv")
+
+def federation_bih(): return top_lists("ba-fbih-fzs-top100-2012-2025.tsv")
 
 def brazil():
     # ranking?decada=D covers people born in [D-10, D); decada=1930 is everyone born before 1930 (kept under 1920)
@@ -307,6 +321,45 @@ def moldova():
         if "TOATE" in t: rows = [(n, v) for v, _, n in re.findall(r"\|([\d.]+)\|(\d+)\|([^|\d]+)(?=\|)", t)]
         else: rows = [(n, v) for _, n, v in re.findall(r"\|(\d+)\.?\|([^|\d]+)\|(\d+)(?=\|)", t)]
         for n, v in rows: c[int(y)]["girl" if s == "f" else "boy"][title(n)] = int(v.replace(".", ""))
+    return c
+
+def latvia_ranks():
+    # each name has one rank per period (0 = not in that period's top 100). The tool labels a period by its midpoint;
+    # it is stored under its first year (1920 -> 1918, births 1918-1922). The last one runs 2023 to July 2026
+    r = ranked()
+    for sex, f in (("girl", "female"), ("boy", "male")):
+        d = json.load(open(f"{RAW}/lv-csp-top100-ranks-1920-2025-{f}-latvia.json", encoding="utf-8-sig"))
+        mids = [y["year"] for y in d["years"]]
+        ranks = collections.defaultdict(list)
+        for n in d["data"]:
+            for mid, k in zip(mids, n["data"].split(",")):
+                if k != "0": ranks[mid - 2].append((int(k), title(n["name"])))
+        for start, lst in ranks.items(): r[start][sex] = [n for _, n in sorted(lst)]
+    return r
+
+LV_PERIODS = {str(m - 2): [m - 2, m + 2] for m in range(1920, 2025, 5)} | {"2023": [2023, 2026]}
+
+def luxembourg():
+    # rows of three cells (Luxembourgish, foreign, all births), each "name(s) | count"; tied names share a cell and may wrap.
+    # Only the all-births column is kept
+    import fitz
+    c = new()
+    for f, y, page in (("2023", 2022, 11), ("2024", 2023, 23), ("2025", 2024, 23)):
+        t = fitz.open(f"{RAW}/lu-statec-demographie-en-chiffres-{f}.pdf")[page].get_text()
+        i = t.index("Femmes"); t = re.sub(r",\s*\n", ", ", t[i:t.index("Source", i)])
+        girls, boys = t.split("Hommes")
+        for sex, part in (("girl", girls), ("boy", boys)):
+            cells = [x.strip() for x in part.split("\n")[1:] if x.strip()]
+            for k in range(0, len(cells) - 5, 6):
+                for n in cells[k + 4].split(", "): c[y][sex][n] = int(cells[k + 5])
+    return c
+
+def netherlands():
+    # rows: name, count, rank, length, (unused)
+    c = new()
+    for f in glob.glob(f"{RAW}/nl-svb-*namen-*.json"):
+        s, y = re.search(r"(meisjes|jongens)namen-(\d{4})", f).groups()
+        for r in json.load(open(f, encoding="utf-8-sig"))["data"]: c[int(y)]["girl" if s == "meisjes" else "boy"][r[0]] = int(r[1])
     return c
 
 def finland():
@@ -365,8 +418,16 @@ PLACES = [
          coverage="all", badge="ended", ended=True, threshold=1, rule="Every first name registered, even once, 1920–2021.", fn=chile),
     dict(key="za", label="South Africa", group="", region="Africa", agency="Statistics South Africa", dataset="Recorded live births (P0305), top ten baby forenames", license="Free to use with attribution",
          coverage="top", badge="ranked", threshold=None, rule="Top 10 names only, for births that happened and were registered in the year. 2015–2016 count a forename in any position; from 2017 only the first forename.", breaks=[2017], fn=south_africa),
+    dict(key="ba-fbih", label="Federation of BiH", group="Bosnia and Herzegovina", region="Europe", agency="Federal Statistical Office (Federalni zavod za statistiku)", dataset="Top 100 names of newborns", license="Source: FZS",
+         coverage="top", badge="ranked", threshold=None, rule="Top 100 names of babies born in the Federation of Bosnia and Herzegovina, one of the country's two entities; Republika Srpska publishes its own list.", fn=federation_bih),
     dict(key="md", label="Moldova", group="", region="Europe", agency="Public Services Agency (Agenția Servicii Publice)", dataset="Raport statistic privind cel mai frecvent prenume al copiilor nou-născuți (dataset.gov.md)", license="Reuse with a link to date.gov.md",
          coverage="top", badge="ranked", threshold=None, rule="The most frequent first names of newborns registered by civil-status offices in the year (top 20 in 2018–2022, longer lists in 2016, 2017 and 2023).", fn=moldova),
+    dict(key="nl", label="the Netherlands", group="", region="Europe", agency="Sociale Verzekeringsbank (SVB)", dataset="Kindernamen (child benefit registrations)", license="Public (svb.nl)",
+         coverage="all", badge="full", threshold=10, rule="Children registered for child benefit, by year of birth. Names given to fewer than 10 babies aren't published.", fn=netherlands),
+    dict(key="lu", label="Luxembourg", group="", region="Europe", agency="STATEC", dataset="La démographie luxembourgeoise en chiffres (top 5 first names of newborns)", license="Source: STATEC",
+         coverage="top", badge="ranked", threshold=None, rule="Top 5 names of all babies born in the year (STATEC also splits them by Luxembourgish and foreign nationality). Tied names share a rank. Spellings are counted separately (Leo and Léo).", fn=luxembourg),
+    dict(key="lv", label="Latvia", group="", region="Europe", agency="Central Statistical Bureau of Latvia", dataset="100 most popular newborn names in Latvia", license="Open (cite CSB)",
+         coverage="top", badge="ranked", period=5, periods=LV_PERIODS, threshold=None, rule="Top 100 first names in five-year periods of birth, ranks only (no counts). Each key is the first year of its period (1918 = births 1918–1922); the last period, 2023 to July 2026, is provisional. Before 1990 only people still in the register are counted. Spellings are kept apart (Kristiāns and Kristians).", fn=new, ranked=latvia_ranks),
     dict(key="br", label="Brazil", group="", region="Latin America", agency="IBGE", dataset="Censo 2010: Nomes no Brasil", license="Open (IBGE terms)",
          coverage="top", badge="population", decades=True, threshold=None, rule="Names of people counted in the 2010 census, by the decade they were born; 1920 stands for everyone born before 1930.", fn=brazil),
     dict(key="fi", label="Finland", group="", region="Europe", agency="Digital and Population Data Services Agency", dataset="Nimipalvelu: suosituimmat etunimet", license="CC BY 4.0",
