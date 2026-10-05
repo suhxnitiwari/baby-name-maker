@@ -71,8 +71,8 @@ for f, source in [("scripture-names.json", "stepbible"), ("culture-names.json", 
     path = os.path.join(DATA, f)
     if not os.path.exists(path): continue
     for row in json.load(open(path, encoding="utf-8")):
-        if isinstance(row, list) and len(row) >= 9:
-            add_row(*row[:9], row[9] if len(row) > 9 else [], source)
+        if isinstance(row, list) and len(row) >= 8:                 # scripture rows have 8 columns (no kind / also); the others 10
+            add_row(*row[:8], row[8] if len(row) > 8 else "real", row[9] if len(row) > 9 else [], source)
 
 # East Asian names: their native script is a name form, not a separate name
 ea = json.load(open(os.path.join(DATA, "east-asian-names.json"), encoding="utf-8"))
@@ -122,9 +122,15 @@ for line in fam.strip().split("\n"):
                 db.execute("INSERT INTO relationships VALUES (?,?,?,?,?)", (first(a), first(b), "spelling_variant", None, "hand"))
 rp = os.path.join(DATA, "relations.json")
 if os.path.exists(rp):
-    for a, rel, b, lang in json.load(open(rp, encoding="utf-8")):
+    for row in json.load(open(rp, encoding="utf-8")):
+        a, rel, b, lang = row[:4]
         if first(a) and first(b):
             db.execute("INSERT INTO relationships VALUES (?,?,?,?,?)", (first(a), first(b), rel, lang, "wiktionary"))
+        # a native-script pair (Γιάννης / Ιωάννης) is a written form of each name
+        if len(row) > 4 and row[4]:
+            for latin, native in ((a, row[4][0]), (b, row[4][1])):
+                if first(latin) and native and native != latin:
+                    db.execute("INSERT INTO name_forms VALUES (?,?,?,?,?,?)", (first(latin), None, native, None, 1, "wiktionary"))
 
 # ── pronunciations, syllables and lullabytes: the same code the site runs, in Node ──
 NODE = r"""
@@ -134,7 +140,9 @@ const fs = require("fs"), vm = require("vm");
 const src = ["names.js", "generator.js", "phonetics.js", "musicbox.js"].map(f => fs.readFileSync(f, "utf8")).join("\n;\n") + "\n;globalThis.PH = PH; globalThis.MB = MB;";
 vm.runInThisContext(src);
 PH.load(JSON.parse(fs.readFileSync("data/pron.json", "utf8")));
-const names = JSON.parse(fs.readFileSync(0, "utf8")), out = [];
+const input = JSON.parse(fs.readFileSync(0, "utf8")), names = input.names, out = [];
+// the sound rules need each name's cultures, as on the site (BY_NAME)
+globalThis.BY_NAME = new Map(Object.entries(input.cultures).map(([k, cs]) => [k, cs.map(o => ({ o }))]));
 for (const n of names) {
   const opts = PH.options(n);
   opts.forEach((o, k) => {
@@ -150,7 +158,12 @@ process.stdout.write(JSON.stringify({ algorithm: MB.ALGORITHM, out }));
 PRON = json.load(open(os.path.join(DATA, "pron.json")))
 storied = [r[0] for r in db.execute("SELECT DISTINCT display_name FROM names JOIN meanings USING(name_id) WHERE display_name NOT LIKE '% %'")]
 targets = sorted({d for d in ids if " " not in d and "-" not in d and norm(d) in PRON} | set(storied))
-res = json.loads(subprocess.run(["node", "-e", NODE], input=json.dumps(targets), capture_output=True, text=True, cwd=HERE, check=True).stdout)
+cult = collections.defaultdict(list)
+for nid, v in db.execute("SELECT name_id, association_value FROM associations WHERE association_type = 'culture'"):
+    cult[nid].append(v)
+fold_js = lambda d: norm(d).translate(str.maketrans({"æ": "a", "ø": "o", "ð": "th", "þ": "th", "ß": "ss", "ł": "l"}))
+cultures = {fold_js(d): cult[ids[d]] for d in targets if cult.get(ids[d])}
+res = json.loads(subprocess.run(["node", "-e", NODE], input=json.dumps({"names": targets, "cultures": cultures}), capture_output=True, text=True, cwd=HERE, check=True).stdout)
 SRC_ID = lambda s: "cmudict" if "English" in s or "common way" in s else "hand-checked" if "hand" in s else "rules"
 for p in res["out"]:
     nid = ids[p["n"]]
@@ -172,7 +185,7 @@ for p in res["out"]:
 # ── popularity observations: every year, full counts, from the official sources ──
 spec = importlib.util.spec_from_file_location("build_years_src", os.path.join(HERE, "scripts/build_years.py"))
 src = open(os.path.join(HERE, "scripts/build_years.py"), encoding="utf-8").read()
-src = src[: src.index("out = {")]                       # the parsers and PLACES, without writing years.json
+src = src[: re.search(r"^out = \{", src, re.M).start()]   # the parsers and PLACES, without writing years.json
 mod = {"__file__": os.path.join(HERE, "scripts/build_years.py"), "__name__": "build_years_src"}
 exec(compile(src, "build_years.py", "exec"), mod)
 for p in mod["PLACES"]:
@@ -190,12 +203,23 @@ for p in mod["PLACES"]:
             for rank, (spelling, c) in enumerate(ctr.most_common(), 1):
                 nid = (by_norm.get(norm(spelling)) or [None])[0]
                 span = (p.get("periods") or {}).get(str(y)) or ([int(y), int(y) + p["period"] - 1] if p.get("period") and int(y) not in p.get("single_years", []) else None)
-                db.execute("INSERT INTO popularity_observations VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                db.execute("INSERT INTO popularity_observations VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                            (nid, spelling, sex, int(y), "decade" if p.get("decades") else "period" if span else "year", c, rank, p["label"], int(bool(p.get("rounded"))),
-                            "phonetic" if p.get("grouped") else None, 1 if p.get("first_name_only") else None, span[0] if span else None, span[1] if span else None, sid))
+                            "phonetic" if p.get("grouped") else None, 1 if p.get("first_name_only") else None, None, None, "all_births", span[0] if span else None, span[1] if span else None, sid))
                 n_obs += 1
     if years: db.execute("UPDATE sources SET data_start_year=?, data_end_year=? WHERE source_id=?", (min(years), max(years), sid))
     print(f"  observations {p['key']:4} {n_obs:>9,}", flush=True)
+
+# census name tables by age group (data/census-names.json): people of an age at a census, never birth years
+cp = os.path.join(DATA, "census-names.json")
+if os.path.exists(cp):
+    for r in json.load(open(cp, encoding="utf-8")):
+        sid = "census-" + norm(r["place"])
+        db.execute("INSERT OR IGNORE INTO sources (source_id, source_agency, dataset_name, country, publisher_type, coverage, license) VALUES (?,?,?,?,?,?,?)",
+                   (sid, r["source"], f"{r['source']}: most frequent names by age and sex", r["place"], "statistical agency", "population", None))
+        db.execute("INSERT INTO popularity_observations VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                   ((by_norm.get(norm(r["name"])) or [None])[0], r["name"], r["sex"], None, "census", r.get("count"), r.get("rank"),
+                    r["place"] + (f" · {r['municipality']}" if r.get("municipality") else ""), 0, None, None, r.get("age_group"), r.get("reference_year"), "residents", None, None, sid))
 
 db.commit()
 

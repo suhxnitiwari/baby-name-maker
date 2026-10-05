@@ -142,6 +142,9 @@ CREATE TABLE popularity_observations (
   is_rounded           INTEGER DEFAULT 0,
   variant_aggregation  TEXT,                  -- NULL = exact spelling; 'phonetic' when spellings that sound alike share one count (Liechtenstein: Matteo / Mateo)
   given_name_position  INTEGER,               -- 1 when only the first given name is counted; NULL when every given name counts or the source doesn't say
+  age_group            TEXT,                  -- census observations: '70-79' (people of that age at reference_year); never turned into birth years
+  reference_year       INTEGER,               -- the census or register date the counts describe
+  population_group     TEXT DEFAULT 'all_births', -- 'all_births' | 'nationals' | 'foreign_nationals' (Luxembourg splits newborns by nationality)
   period_start         INTEGER,               -- for multi-year periods (Latvia's "1920" = 1918–1922); never collapsed into one birth year
   period_end           INTEGER,
   source_id            TEXT NOT NULL REFERENCES sources(source_id)
