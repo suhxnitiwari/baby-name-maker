@@ -5,7 +5,7 @@ the tradition, corpus, book, passage, a link to read it, how close the tie is (a
 s = a sacred association), what kind of name it is (p personal, e epithet, t title, d divine, w a word), the figure,
 the original script and transliteration. Rows for places, tribes and concepts are kept, flagged by the figure's type.
 """
-import csv, glob, json, os, sys
+import csv, glob, json, os, re, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "data", "sacred")
@@ -27,7 +27,7 @@ def idx(lst, v):
 
 seen = set()
 for r in rows:
-    name, fid = r["name"].strip(), r["figure_id"].strip()
+    name, fid = re.sub(r"\s*\(.*?\)\s*$", "", r["name"].strip()), r["figure_id"].strip()  # "Tamar (daughter of David)" is the name Tamar
     status = STATUS.get(r["status"].strip())
     if not status or not fid:
         continue
@@ -35,7 +35,10 @@ for r in rows:
     if key in seen:
         continue
     seen.add(key)
-    figs.setdefault(fid, [r["figure"].strip(), r["entity_type"].strip()])
+    kind = r["entity_type"].strip()
+    if kind == "human" and re.search(r"\b([Aa]n?|[Tt]he)\s+(\w+\s+){0,2}(god|goddess|idol|deity)\b|^\w[\w-]*, (Deity|[A-Z]\w+ (god|goddess))\b", r["figure"]):
+        kind = "deity"  # "a Philistine god" outranks a person tag; "a man of God" stays a person
+    figs.setdefault(fid, [r["figure"].strip(), kind])
     occ = r.get("occurrences", "").strip()
     e = names.setdefault(name, {"sex": set(), "refs": []})
     if r.get("sex", "").strip() in ("girl", "boy"):

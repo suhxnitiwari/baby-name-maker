@@ -73,7 +73,7 @@ function addStoried(rows) {
 const TRADITION = { Hindu: "Hindu traditions", Buddhist: "Buddhist traditions", Jewish: "Jewish tradition", Christian: "Christian tradition", Islamic: "Islamic tradition",
   Sikh: "Sikh tradition", Jain: "Jain tradition", Zoroastrian: "Zoroastrian tradition" };
 const PERSONLIKE = new Set(["human", "prophet", "sage", "saint", "disciple", "royal", "deity", "bodhisattva", "angel"]);
-const SACRED = new Map(); // folded name → cited references
+const SACRED = new Map(), SACRED_SEX = new Map(); // folded name → cited references; the sex of the people the text gives that name
 let SACRED_FIG = {};
 const FIG_FORMS = new Map(); // figure → every name form it carries, across traditions (Abraham, Avraham, Ibrahim)
 const sacredReady = Promise.all([fetch("data/sacred.json?v=1").then(r => r.ok ? r.json() : null).catch(() => null), storied]).then(([d]) => {
@@ -85,8 +85,9 @@ const sacredReady = Promise.all([fetch("data/sacred.json?v=1").then(r => r.ok ? 
       ({ t: d.t[t], c: d.c[c], text, at, url, s, role, fid, orig, tr, rel, occ, kind: (d.f[fid] || [])[1] || "" }));
     const k = fold(n);
     SACRED.set(k, [...(SACRED.get(k) || []), ...refs]);
+    if (sex) SACRED_SEX.set(k, SACRED_SEX.has(k) && SACRED_SEX.get(k) !== sex ? "e" : sex);
     for (const r of refs) if (r.s !== "s") FIG_FORMS.set(r.fid, [...(FIG_FORMS.get(r.fid) || []), { n, ...r }]);
-    const named = refs.filter(r => r.s !== "s" && r.role !== "w" && PERSONLIKE.has(r.kind)), cur = have.get(k);
+    const named = refs.filter(r => r.s !== "s" && r.role !== "w" && PERSONLIKE.has(r.kind) && !(r.kind === "deity" && ["Jewish", "Christian", "Islamic"].includes(r.t))), cur = have.get(k);
     if (cur) { cur.r = [...new Set([...cur.r, ...named.map(r => r.t)])]; continue; }
     // a person named in a text but not yet a known given name: kept for "named in the text" searches only
     if (!named.length || !sex) continue;
@@ -99,9 +100,14 @@ const sacredReady = Promise.all([fetch("data/sacred.json?v=1").then(r => r.ok ? 
 }).catch(e => console.error(e));
 const sacredOf = x => SACRED.get(fold(x.n)) || [];
 // how close a name sits to a tradition (or to any, when none is chosen): 3 in the text, 2 a sacred connection, 1 cultural usage, 0 none
+// "in the text" needs a person (not a place or tribe) who carries the name as a girl or a boy, matching who it's for
 function closeness(x, trad) {
-  const refs = sacredOf(x).filter(r => !trad || r.t === trad);
-  if (refs.some(r => r.s === "a" && r.role !== "w")) return 3;
+  const refs = sacredOf(x).filter(r => (!trad || r.t === trad) && r.kind !== "place" && r.kind !== "tribe");
+  const sx = SACRED_SEX.get(fold(x.n)), forWho = gender === "girl" ? "g" : gender === "boy" ? "b" : "";
+  const sexOk = !sx || sx === "e" || !forWho || sx === forWho;
+  // in the Bible and the Qur'an a named god is a foreign one (Baal, al-Lāt), never a name the tradition gives
+  const named = r => PERSONLIKE.has(r.kind) && !(r.kind === "deity" && ["Jewish", "Christian", "Islamic"].includes(r.t));
+  if (sexOk && refs.some(r => r.s === "a" && r.role !== "w" && named(r))) return 3;
   if (refs.length || (x.x || []).length && (!trad || x.r.includes(trad))) return 2;
   return (trad ? x.r.includes(trad) : x.r.some(r => TRADITION[r])) ? 1 : 0;
 }
