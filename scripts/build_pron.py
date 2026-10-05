@@ -13,6 +13,9 @@ FIX = {
     "niamh": ["N IY1 V"], "siobhan": ["SH IH0 V AO1 N"], "saoirse": ["S IH1 R SH AH0"], "aoife": ["IY1 F AH0"],
     "caoimhe": ["K IY1 V AH0"], "oisin": ["AH0 SH IY1 N"], "sean": ["SH AO1 N"], "sinead": ["SH IH0 N EY1 D"],
     "roisin": ["R OW0 SH IY1 N"], "aisling": ["AE1 SH L IH0 NG"], "grainne": ["G R AO1 N Y AH0"], "padraig": ["P AO1 R IH0 G"],
+    "eabha": ["EY1 V AH0"], "fiadh": ["F IY1 AH0"], "croia": ["K R IY1 AH0"], "eala": ["EY1 L AH0"], "meabh": ["M EY1 V"],
+    "sadhbh": ["S AY1 V"], "clodagh": ["K L OW1 D AH0"], "ailbhe": ["AE1 L V AH0"], "fionn": ["F Y UH1 N"], "cillian": ["K IH1 L IY0 AH0 N"],
+    "caelan": ["K EY1 L AH0 N"], "ruairi": ["R UW1 R IY0"], "senan": ["S EH1 N AH0 N"], "darragh": ["D AE1 R AH0"], "aoibhinn": ["IY1 V IH0 N"],
     "aiden": ["EY1 D AH0 N"], "aidan": ["EY1 D AH0 N"], "rian": ["R IY1 AH0 N"], "tadhg": ["T AY1 G"],
 }
 
