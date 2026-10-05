@@ -88,6 +88,37 @@ const INVENTED = {};
 const invented = g => INVENTED[g] || (INVENTED[g] = buildInvented(g, TAKEN));
 const KIND_LABEL = { attested: "Real name", real: "Real name", root: "Built from roots", invented: "Invented" };
 
+// meanings and name families from Wiktionary (data/meanings.json, data/relations.json): they fill in names that had none,
+// and never overwrite a meaning we already have
+let MEAN = {}, RELS = new Map();
+const meaningFor = n => MEAN[n.toLowerCase()] || MEAN[fold(n)] || null;
+function addMeanings() {
+  for (const x of [...REAL, ...ROOT_NAMES, ...DB]) {
+    if (x.m) continue;
+    const w = meaningFor(x.n);
+    if (w && (w.m || w.ety)) { x.m = w.m || ""; x.ety = w.ety || ""; delete x.t; }
+  }
+}
+Promise.all([fetch("data/meanings.json?v=1").then(r => r.json()), dbReady]).then(([d]) => { MEAN = d; addMeanings(); }).catch(() => {});
+const INVERSE = { diminutive: "diminutives", short_form: "short forms", feminine_form: "feminine forms", masculine_form: "masculine forms", variant: "other forms", cognate: "in other languages" };
+const RELATION = { diminutive: "a diminutive of", short_form: "a short form of", feminine_form: "the feminine of", masculine_form: "the masculine of", variant: "a form of", cognate: "the same name as" };
+fetch("data/relations.json?v=1").then(r => r.json()).then(rows => {
+  const add = (k, v) => (RELS.get(k) || RELS.set(k, []).get(k)).push(v);
+  for (const [a, rel, b, lang] of rows) { add(fold(a), { dir: "to", rel, other: b, lang }); add(fold(b), { dir: "from", rel, other: a, lang }); }
+}).catch(() => {});
+// "Tilly: a diminutive of Matilda" / "Matilda: diminutives Tilly, Tillie" / "Ilya: in other languages Elias, Elijah…"
+function familyOf(n) {
+  const rs = RELS.get(fold(n)) || [], up = {}, down = {};
+  for (const r of rs) {
+    if (r.dir === "to" && r.rel !== "cognate") (up[r.rel] ||= new Set()).add(r.other);
+    else (down[r.dir === "to" ? "cognate" : r.rel] ||= new Set()).add(r.other);
+  }
+  const parts = [];
+  for (const [rel, set] of Object.entries(up)) parts.push(`${RELATION[rel]} ${[...set].slice(0, 3).join(", ")}`);
+  for (const [rel, set] of Object.entries(down)) parts.push(`${INVERSE[rel]}: ${[...set].slice(0, 6).join(", ")}`);
+  return parts.slice(0, 3);
+}
+
 // official popularity: rank badges, and every year's top names for the time machine
 let POP = null, YEARS = null;
 const SHORT = { us: "US", ca: "Canada", au: "NSW", ew: "Eng & Wales", fr: "France" };
@@ -351,11 +382,12 @@ function moreHTML(x) {
     <div class="row-detail">
       <div>
         ${x.m ? `<p class="mean">“${esc(x.m)}”</p>` : `<p class="mean none">${isNew ? "A brand-new name. No meaning yet: it's yours to give." : x.x && x.x.length ? `A name from the ${esc(x.x[0])}.` : "A real name, from official birth records."}</p>`}
-        ${x.src ? `<p class="src">${esc(x.src)}</p>` : ""}
+        ${x.src ? `<p class="src">${esc(x.src)}</p>` : x.ety ? `<p class="src">${esc(x.ety)} <small>(Wiktionary)</small></p>` : ""}
         ${x.prov ? provHTML(x) : ""}
       </div>
       <dl class="dl">
         ${(() => { const S = /[\s-]/.test(x.n) ? null : MB.say(x.n); return S && S.say ? `<div><dt>Said</dt><dd>${esc(S.say)} <small>${esc(S.source)}</small></dd></div><div><dt>Sound shape</dt><dd>${S.shape < -.33 ? "rounded ◯" : S.shape > .33 ? "sharp ◇" : "in between"}</dd></div>` : ""; })()}
+        ${familyOf(x.n).map((f, k) => `<div><dt>${k ? "" : "Family"}</dt><dd>${esc(f)}</dd></div>`).join("")}
         <div><dt>Feels</dt><dd>${v.words.map(esc).join(", ") || "its own thing"}</dd></div>
         ${pop ? `<div><dt>Chart</dt><dd>${esc(pop)}</dd></div>` : ""}
         ${spell.length ? `<div><dt>Also spelled</dt><dd>${spell.map(s => `<button class="inline" data-spell="${esc(s.n)}">${esc(s.n)}</button>`).join(", ")}</dd></div>` : ""}
