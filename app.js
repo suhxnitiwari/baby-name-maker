@@ -758,7 +758,9 @@ const Charts = (() => {
     if (!YEARS || !place) return;
     const y = years[at], full = place.years[y][sex()] || [], list = full.slice(0, 7);
     const snapshot = (place.snapshots || []).includes(y);
-    $("#chYear").textContent = place.decades ? (y < 1930 && at === 0 && place.key === "br" ? "before 1930" : y + "s") : y;
+    // a period is shown as the span it really covers (Latvia's "1920" is births 1918–1922), never as one year
+    const span = place.periods && place.periods[y] ? place.periods[y] : place.period && !(place.single_years || []).includes(y) ? [y, y + place.period - 1] : null;
+    $("#chYear").textContent = place.decades ? (y < 1930 && at === 0 && place.key === "br" ? "before 1930" : y + "s") : span && span[1] !== span[0] ? `${span[0]}–${String(span[1]).slice(-2)}` : y;
     $("#chRange").value = at;
     $("#chNote").textContent = snapshot ? "A ten-year snapshot: the official top 100 for this year, ranks only (no counts)." : place.rule;
     $$("#chTicks button").forEach(b => b.setAttribute("aria-current", +b.dataset.year === y));
