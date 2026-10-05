@@ -769,7 +769,12 @@ const Duet = (() => {
     $("#duetLegend").innerHTML = a || b ? `<span class="lg a">${esc(a || "Mom")}</span><span class="lg b">${esc(b || "Dad")}</span><span class="lg both">both</span>` : `<span>type both names to hear them on the keys</span>`;
   }
   [mom, dad].forEach(el => el.addEventListener("input", () => { clearTimeout(el._t); el._t = setTimeout(keys, 200); }));
-  [mom, dad].forEach(el => el.addEventListener("keydown", e => { if (e.key === "Enter") together(); }));
+  // Enter shows the names right away, just under the sentence; the best one opens and plays
+  [mom, dad].forEach(el => el.addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    if (!val(mom) || !val(dad)) return (val(mom) ? dad : mom).focus();
+    MB.ensure(); keys(); run(true); el.blur();
+  }));
   // the extras live behind "+ Add something meaningful"
   $("#duetAdd").addEventListener("click", e => {
     const b = e.target.closest("[data-extra]"); if (!b) return;
@@ -784,10 +789,10 @@ const Duet = (() => {
     if (!a || !b) return (a ? dad : mom).focus();
     MB.ensure(); keys();
     const p = $("#duetPiano .piano");
-    $("#duetResult").hidden = true;
+    run();
     const dur = Piano.play(p, [Piano.voice(a, "a"), Piano.voice(b, "b")]);
     $("#duetTogether").classList.add("playing");
-    setTimeout(() => { $("#duetTogether").classList.remove("playing"); run(true); }, dur * 1000 + 250);
+    setTimeout(() => { $("#duetTogether").classList.remove("playing"); const first = $("#duetRows .row"); first && openRow(first); }, dur * 1000 + 250);
   }
   function run(reveal = false) {
     const a = val(mom), b = val(dad);
@@ -807,7 +812,8 @@ const Duet = (() => {
     fillRows($("#duetRows"), [best, ...queue.splice(0, 5)], () => queue.shift());
     const first = $("#duetRows .row");
     first.classList.add("big");
-    if (reveal) { box.classList.remove("descend"); void box.offsetWidth; box.classList.add("descend"); setTimeout(() => openRow(first), 500); }
+    if (reveal) { box.classList.remove("descend"); void box.offsetWidth; box.classList.add("descend"); setTimeout(() => openRow(first), 500);
+      const top = box.getBoundingClientRect().top; if (top > innerHeight * .7) scrollBy({ top: top - innerHeight * .3, behavior: "smooth" }); }
   }
   $("#duetTogether").onclick = together;
   $("#duetShare").onclick = () => {
@@ -818,6 +824,8 @@ const Duet = (() => {
   };
   $("#duetPiano").addEventListener("click", e => { const s = e.target.closest(".syl"); if (s) { const own = s.classList.contains("o-b") ? "b" : "a"; Piano.play($("#duetPiano .piano"), [Piano.voice(val(own === "b" ? dad : mom), own)]); } });
   addEventListener("namesdb", () => { if (!$("#duetResult").hidden) run(); });
+  // once there are names, every change to the sentence updates them
+  $("#duet").addEventListener("change", e => { if (!$("#duetResult").hidden && e.target.closest(".wishes, #x-honor")) run(); });
   keys();
   return { run, surname, keys };
 })();

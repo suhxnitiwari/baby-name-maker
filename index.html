@@ -301,7 +301,7 @@
   .nope-note.fade { opacity: 0; }
 
   /* the duet */
-  .duet-piano { display: grid; justify-items: center; gap: 14px; margin: 60px auto 0; max-width: 620px; }
+  .duet-piano { display: grid; justify-items: center; gap: 14px; margin: 40px auto 0; max-width: 620px; }
   .duet-piano .piano { max-width: 620px; }
   .legend { display: flex; gap: 18px; font: .64rem var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
   .lg::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
@@ -314,7 +314,7 @@
   .add-opts button { all: unset; cursor: pointer; font: italic 400 1.05rem var(--serif); color: var(--ink); padding: 0 6px; border-bottom: 1px dotted var(--muted); }
   .add-opts button:hover { color: var(--rose); }
   .add-opts button + button::before { content: "·"; color: var(--muted); margin-right: 12px; font-style: normal; }
-  .duet-result { margin-top: 70px; }
+  .duet-result { margin-top: 36px; }
   .duet-result.descend { animation: descend 1s var(--drop) both; }
   .duet-name { font: 400 clamp(4rem, 13vw, 10rem)/.9 var(--serif); letter-spacing: -.02em; margin: 6px 0 6px; }
   .duet-name .o-a { color: var(--mom); } .duet-name .o-b { color: var(--dad); } .duet-name .o-f { color: #a5803c; }
@@ -595,16 +595,16 @@
     means <select class="slot" id="dTheme" data-fill="theme" aria-label="Meaning"></select>, and has <select class="slot" id="dRoots" data-fill="culture" aria-label="Roots"></select> roots<span id="x-honor" hidden>, honoring <input class="slot" id="dHonor" placeholder="grandma, a sibling" size="12"></span><span id="x-lang" hidden>, in <select class="slot" id="dLang" data-fill="lang"></select></span><span id="x-faith" hidden>, from <select class="slot" id="dFaith" data-fill="religion"></select></span><span id="x-text" hidden>, named in <select class="slot" id="dText"><option value="">any sacred text</option><option value="Torah">the Torah</option><option value="Bible">the Bible</option><option value="Quran">the Quran</option><option value="Bhagavad Gita">the Bhagavad Gita</option><option value="Mahabharata">the Mahabharata</option><option value="Ramayana">the Ramayana</option><option value="Vedas">the Vedas</option></select></span><span id="x-len" hidden>, <select class="slot" id="dLen"><option value="">any length</option><option value="3-4">short</option><option value="5-6">medium</option><option value="7-8">long</option></select></span><span id="x-last" hidden>, to go with <input class="slot" id="dLast" placeholder="your last name" size="12"></span>.</p>
   <p class="add-wrap" id="duetAddWrap"><span class="add">+ Add something meaningful</span><span class="add-opts" id="duetAdd">
     <button data-extra="honor">Honor someone</button><button data-extra="lang">Language</button><button data-extra="faith">Faith or tradition</button><button data-extra="text">Sacred text</button><button data-extra="len">Length</button><button data-extra="last">Last name</button></span></p>
-  <div class="duet-piano">
-    <div id="duetPiano" style="width:100%"></div>
-    <div class="legend" id="duetLegend"></div>
-    <button class="go duet-go" id="duetTogether">Play them together ♫</button>
-  </div>
   <div class="duet-result" id="duetResult" hidden>
     <div class="duet-best" id="duetBest"></div>
     <div class="rows" id="duetRows"></div>
     <details class="log"><summary>how the compiler got here</summary><div id="duetLog"></div></details>
     <div class="share-row"><button class="link" id="duetShare">copy a link to this duet</button></div>
+  </div>
+  <div class="duet-piano">
+    <div id="duetPiano" style="width:100%"></div>
+    <div class="legend" id="duetLegend"></div>
+    <button class="go duet-go" id="duetTogether">Play them together ♫</button>
   </div>
 </section>
 
@@ -667,6 +667,6 @@
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=21"></script>
+<script src="app.js?v=22"></script>
 </body>
 </html>
