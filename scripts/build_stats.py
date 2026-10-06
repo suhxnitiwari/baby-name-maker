@@ -6,9 +6,11 @@ texts      sacred texts and epics the names are cited from (data/sacred.json cor
 passages   cited passages
 languages  languages a name is shown in its own script (data/native-forms.json)
 years      the span of the yearly records (data/years.json)
-The total of distinct names is counted live on the page, since the invented names are made there.
+names      distinct names, as the page counts them (it builds the invented names itself, so pass its count: the console
+           prints "names: N" once everything has loaded): python3 scripts/build_stats.py --names N
+           The page climbs to this number on arrival, then corrects it with its own live count.
 """
-import json, os
+import json, os, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 D = lambda f: os.path.join(ROOT, "data", f)
@@ -39,7 +41,9 @@ countries |= {PLACE[p["label"]] for p in places}
 
 sac = json.load(open(D("sacred.json"), encoding="utf-8"))
 nf = json.load(open(D("native-forms.json"), encoding="utf-8"))
+old = json.load(open(D("stats.json"), encoding="utf-8")) if os.path.exists(D("stats.json")) else {}
 out = {
+    "names": int(sys.argv[sys.argv.index("--names") + 1]) if "--names" in sys.argv else old.get("names", 0),
     "countries": len(countries),
     "records": records,
     "texts": len(sac["c"]),

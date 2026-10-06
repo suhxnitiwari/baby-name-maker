@@ -13,6 +13,25 @@ const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.r
 const store = { get: (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 
 // ── data ──
+// the opening plays first: every file downloads at once, but the heavy reading waits until the mobile has landed and the
+// headline has risen (about 3.5s after the page wakes), or until someone types, clicks or scrolls
+let settle;
+const settled = new Promise(r => settle = r);
+for (const ev of ["pointerdown", "keydown", "wheel", "touchstart"]) addEventListener(ev, () => settle(), { once: true, passive: true });
+// and the files are read one at a time, with a breath between, instead of all in the same instant
+let queue = Promise.resolve();
+const inTurn = f => { const p = queue.then(() => new Promise(r => setTimeout(r, 0))).then(f); queue = p.catch(() => {}); return p; };
+const getJSON = u => fetch(u).then(r => settled.then(() => inTurn(() => r.json())));
+const getText = u => fetch(u).then(r => settled.then(() => inTurn(() => r.text())));
+// long loops give the page a breath every ~10ms, so the mobile keeps moving and typing stays smooth while a million names load
+const breathe = () => new Promise(r => setTimeout(r, 0));
+async function slowly(items, fn) {
+  let t = performance.now();
+  for (let i = 0; i < items.length; i++) {
+    fn(items[i], i);
+    if ((i & 511) === 511 && performance.now() - t > 10) { await breathe(); t = performance.now(); }
+  }
+}
 const ROOT_NAMES = buildRootNames();
 const HAND_PICKED = REAL.length;                                  // the hand-written names with stories, before the big lists join
 const TAKEN = new Set([...REAL, ...ROOT_NAMES].map(x => x.n.toLowerCase()));
@@ -46,7 +65,7 @@ function eastAsian(d) {
 // …then medieval England and France, Old Norse, and Azerbaijan's official list (data/medieval-names.json, data/az-names.json)
 const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=8", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=2",
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1"]
-  .map(u => fetch(u).then(r => r.json()).catch(() => [])))
+  .map(u => getJSON(u).catch(() => [])))
   .then(([a, bx, d, e, c, med, az, b, ru, cb]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb])).catch(e => console.error(e));
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
@@ -81,7 +100,7 @@ const PERSONLIKE = new Set(["human", "prophet", "sage", "saint", "disciple", "ro
 const SACRED = new Map(), SACRED_SEX = new Map(); // folded name → cited references; the sex of the people the text gives that name
 let SACRED_FIG = {};
 const FIG_FORMS = new Map(); // figure → every name form it carries, across traditions (Abraham, Avraham, Ibrahim)
-const sacredReady = Promise.all([fetch("data/sacred.json?v=6").then(r => r.ok ? r.json() : null).catch(() => null), storied]).then(([d]) => {
+const sacredReady = Promise.all([getJSON("data/sacred.json?v=6").catch(() => null), storied]).then(([d]) => {
   if (!d) return;
   SACRED_FIG = d.f;
   const have = new Map(ALL_NAMED.map(x => [fold(x.n), x]));
@@ -157,35 +176,37 @@ function threadHTML(x) {
   return `<div class="sthread"><p class="sthread-h">Sacred thread</p><ul>${lines.join("")}${cultural.map(t =>
     `<li><span class="mark m-c" title="Cultural usage">○</span><div><b>${esc(TRADITION[t])}</b><small>Cultural usage · common in the tradition; no cited text yet</small></div></li>`).join("")}</ul></div>`;
 }
-const dbReady = Promise.all([fetch("data/names-db.tsv?v=3").then(r => r.text()), storied]).then(([t]) => {
+const dbReady = Promise.all([getText("data/names-db.tsv?v=3"), storied]).then(async ([t]) => {
   const ours = new Set(ALL_NAMED.map(x => fold(x.n)));
-  for (const line of t.split("\n")) {
-    if (!line) continue;
+  await slowly(t.split("\n"), line => {
+    if (!line) return;
     const [n, g, cc, cnt] = line.split("\t"), k = fold(n), ccs = cc.split(",");
     const e = { n, g: DB_G[g], cc: ccs, cnt: +cnt, o: ccs.length === 1 && ccs[0] === "il" ? "Israeli" : "", l: "", r: [], m: "", src: "", type: "attested" };
     if (!DB_KEYS.has(k)) DB_KEYS.set(k, e);
     TAKEN.add(k);
     if (!ours.has(k)) DB.push(e);
-  }
+  });
   for (const g in INVENTED) delete INVENTED[g]; // rebuild invented names without any real ones
-  setTimeout(() => { for (const e of DB) { if (e.cnt < 20 || e.n.includes(" ")) continue; const sk = soundKey(e.n); SOUND_INDEX.has(sk) ? SOUND_INDEX.get(sk).push(e.n) : SOUND_INDEX.set(sk, [e.n]); } }, 50);
+  setTimeout(() => slowly(DB, e => { if (e.cnt < 20 || e.n.includes(" ")) return; const sk = soundKey(e.n); SOUND_INDEX.has(sk) ? SOUND_INDEX.get(sk).push(e.n) : SOUND_INDEX.set(sk, [e.n]); }), 50);
   DB_READY = true;
   fillSelects();
   dispatchEvent(new Event("namesdb"));
   // the long tail (data/names-extra.tsv: Argentina 1922–2015, France's deaths file, Brazil 2022, official lists, Wikidata…) arrives once
   // the page is idle; it counts, and any name typed is found, but Find only suggests those held by at least 5 people
-  (window.requestIdleCallback || (f => setTimeout(f, 1500)))(() => fetch("data/names-extra.tsv?v=1").then(r => r.text()).then(t => {
-    for (const line of t.split("\n")) {
-      if (!line) continue;
+  (window.requestIdleCallback || (f => setTimeout(f, 1500)))(() => getText("data/names-extra.tsv?v=1").then(async t => {
+    await slowly(t.split("\n"), line => {
+      if (!line) return;
       const [n, g, cc, cnt] = line.split("\t"), k = fold(n);
-      if (DB_KEYS.has(k)) continue;
+      if (DB_KEYS.has(k)) return;
       const e = { n, g: DB_G[g], cc: cc.split(","), cnt: +cnt || 0, o: "", l: "", r: [], m: "", src: "", type: "attested", extra: true };
       DB_KEYS.set(k, e); TAKEN.add(k); DB.push(e);
-    }
+    });
     for (const g in INVENTED) delete INVENTED[g];
+    EXTRA_READY = true;
     dispatchEvent(new Event("namesdb"));
   }).catch(() => {}));
 }).catch(() => {});
+let EXTRA_READY = false;
 const dbEntry = n => DB_KEYS.get(fold(n));
 const INVENTED = {};
 const invented = g => INVENTED[g] || (INVENTED[g] = buildInvented(g, TAKEN));
@@ -196,19 +217,19 @@ const KIND_LABEL = { attested: "Real name", real: "Real name", root: "Built from
 let MEAN = {}, RELS = new Map();
 const meaningFor = n => MEAN[n.toLowerCase()] || MEAN[fold(n)] || null;
 function addMeanings() {
-  for (const x of [...REAL, ...ROOT_NAMES, ...DB]) {
-    if (x.m) continue;
+  return slowly([...REAL, ...ROOT_NAMES, ...DB], x => {
+    if (x.m) return;
     const w = meaningFor(x.n);
     if (w && (w.m || w.ety)) { x.m = w.m || ""; x.ety = w.ety || ""; delete x.t; }
-  }
+  });
 }
 // meanings from Wiktionary: by the Latin spelling (meanings.json), then by the name's own script (native-meanings.json)
-Promise.all([fetch("data/meanings.json?v=2").then(r => r.json()), fetch("data/native-meanings.json?v=1").then(r => r.json()).catch(() => ({})),
-  fetch("data/extra-meanings.json?v=1").then(r => r.json()).catch(() => ({})), dbReady])
+Promise.all([getJSON("data/meanings.json?v=2"), getJSON("data/native-meanings.json?v=1").catch(() => ({})),
+  getJSON("data/extra-meanings.json?v=1").catch(() => ({})), dbReady])
   .then(([d, nat, extra]) => { for (const more of [nat, extra]) for (const [k, v] of Object.entries(more)) if (!(d[k] && d[k].m)) d[k] = v; MEAN = d; addMeanings(); }).catch(() => {});
 const INVERSE = { diminutive: "diminutives", short_form: "short forms", feminine_form: "feminine forms", masculine_form: "masculine forms", variant: "other forms", cognate: "in other languages", romanization_variant: "other Latin spellings" };
 const RELATION = { diminutive: "a diminutive of", short_form: "a short form of", feminine_form: "the feminine of", masculine_form: "the masculine of", variant: "a form of", cognate: "the same name as", romanization_variant: "another Latin spelling of" };
-fetch("data/relations.json?v=2").then(r => r.json()).then(rows => {
+getJSON("data/relations.json?v=2").then(rows => {
   const add = (k, v) => (RELS.get(k) || RELS.set(k, []).get(k)).push(v);
   for (const [a, rel, b, lang] of rows) { add(fold(a), { dir: "to", rel, other: b, lang }); add(fold(b), { dir: "from", rel, other: a, lang }); }
 }).catch(() => {});
@@ -229,9 +250,9 @@ function familyOf(n) {
 let POP = null, YEARS = null;
 const SHORT = { us: "US", ca: "Canada", au: "NSW", ew: "Eng & Wales", fr: "France" };
 // pronunciations: a dictionary for names people have, then the rules of each name's language (phonetics.js)
-fetch("data/pron.json?v=1").then(r => r.json()).then(d => PH.load(d)).catch(() => {});
-fetch("data/popularity.json?v=6").then(r => r.json()).then(d => { POP = d; }).catch(() => {});
-fetch("data/years.json?v=2").then(r => r.json()).then(d => { YEARS = d; Charts.ready(); }).catch(() => {});
+getJSON("data/pron.json?v=1").then(d => PH.load(d)).catch(() => {});
+getJSON("data/popularity.json?v=6").then(d => { POP = d; }).catch(() => {});
+getJSON("data/years.json?v=2").then(d => { YEARS = d; Charts.ready(); }).catch(() => {});
 function popRanks(name, g) {
   if (!POP) return [];
   const sexes = g === "either" ? ["g", "b"] : [(g || gender)[0]], out = [];
@@ -526,9 +547,9 @@ const BASKETS = new Set(["African", "South Asian", "Pacific", "Slavic", "Latin A
 // Hebrew), else the first culture that lists it. The other lists record where families who moved use it, so they stay out of this line.
 const ETY_LANG = /\b(?:from|of)\s+(?:the\s+)?(?:Ancient |Classical |Biblical |Koine |Old |Middle |Late |Medieval |Modern )?(Greek|Hebrew|Latin|Arabic|Sanskrit|Persian|Aramaic|Old Norse|Germanic|Celtic|Irish|Welsh|Slavic|Turkish|Hindi|Tamil|Swahili|Yoruba|Igbo|Akan|Japanese|Chinese|Korean)\b/gi;
 let ORIGINS = {}, NATIVE_ALL = {}, ARABIC = {};
-fetch("data/name-origins.json?v=2").then(r => r.json()).then(d => ORIGINS = d).catch(() => {});
+getJSON("data/name-origins.json?v=2").then(d => ORIGINS = d).catch(() => {});
 // Latin spellings of Arabic names (Wikidata): Yousif, Hussain, Fatema → their Arabic, used only for a name with no other origin on record
-fetch("data/arabic-forms.json?v=1").then(r => r.json()).then(d => ARABIC = d).catch(() => {});
+getJSON("data/arabic-forms.json?v=1").then(d => ARABIC = d).catch(() => {});
 function originOf(x) {
   const k = fold(x.n);
   // 1. the name's own etymology on Wiktionary (Omar, Ali, Aisha: borrowed from Arabic)
@@ -682,7 +703,7 @@ const Hero = (() => {
   // the name in its own scripts (data/native-forms.json): only the languages of the name's own cultures, so Sofia gets Σοφία and
   // Софья but not a Japanese spelling of a borrowed name; same-sounding spellings share theirs (Fatima ← Fatimah's فاطمة)
   let NATIVE = {};
-  fetch("data/native-forms.json?v=6").then(r => r.json()).then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
+  getJSON("data/native-forms.json?v=6").then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
   const LANG_OF = { Arab: "Arabic", Arabic: "Arabic", Indian: "Hindi Sanskrit Marathi", "South Asian": "Hindi Sanskrit Urdu Bengali", Hindi: "Hindi Sanskrit",
     Israeli: "Hebrew", Hebrew: "Hebrew", Jewish: "Hebrew", Persian: "Persian", Iranian: "Persian", Chinese: "Chinese", Japanese: "Japanese", Korean: "Korean",
     Greek: "Greek", Russian: "Russian", Slavic: "Russian Ukrainian Bulgarian Serbian", Ukrainian: "Ukrainian", Armenian: "Armenian", Georgian: "Georgian",
@@ -1242,7 +1263,7 @@ function enter(withSound) {
   setTimeout(Hero.demo, 2500);
 }
 // the page wakes: the mobile is lowered in on its string and the headline rises after it
-function wake() { document.body.classList.add("awake"); if (Mobile) Mobile.wake(); }
+function wake() { document.body.classList.add("awake"); if (Mobile) Mobile.wake(); setTimeout(settle, 3500); }
 $("#gateSound").onclick = () => enter(true);
 $("#gateQuiet").onclick = () => enter(false);
 if (store.get("lullabyte-entered", false)) { $("#gate").hidden = true; setTimeout(wake, 120); setTimeout(Hero.demo, 2600); }
@@ -1262,7 +1283,8 @@ const Count = (() => {
     raf = t < 1 ? requestAnimationFrame(tick) : 0;
   }
   return n => {
-    if (n <= goal) return;
+    if (n === goal) return;
+    if (n < goal) { goal = shown = n; el.textContent = n.toLocaleString(); return; }   // the live count corrects the stored one
     goal = n; from = Math.max(1, shown); t0 = performance.now(); dur = shown ? 1600 : 3600;
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) { shown = n; el.textContent = n.toLocaleString(); return; }
     if (!raf) raf = requestAnimationFrame(tick);
@@ -1271,12 +1293,12 @@ const Count = (() => {
   };
 })();
 // the rest of the ledger, from data/stats.json: each number climbs the same way once the page wakes
-fetch("data/stats.json?v=1").then(r => r.json()).then(st => {
+fetch("data/stats.json?v=2").then(r => r.json()).then(st => {
   $("#ledgerSub").textContent = `${st.passages.toLocaleString()} cited passages · ${st.traditions} faiths & mythologies · records from ${st.from} to ${st.to}`;
   const els = $$("#ledger [data-stat]"), still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   els.forEach(el => el.textContent = still ? st[el.dataset.stat].toLocaleString() : "1");
   if (still) return;
-  const start = () => els.forEach((el, k) => {
+  const start = () => (Count(st.names), els).forEach((el, k) => {
     const goal = st[el.dataset.stat], t0 = performance.now() + 500 + k * 140, dur = 1800 + Math.log10(goal) * 260;
     const step = now => { const t = Math.max(0, Math.min(1, (now - t0) / dur)); el.textContent = Math.round(Math.pow(goal, 1 - Math.pow(1 - t, 3))).toLocaleString(); if (t < 1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
@@ -1285,11 +1307,15 @@ fetch("data/stats.json?v=1").then(r => r.json()).then(st => {
   document.body.classList.contains("awake") ? start() : new MutationObserver((_, o) => { if (document.body.classList.contains("awake")) { o.disconnect(); start(); } }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
 }).catch(() => {});
 // each distinct name once: a name listed for girls and boys, or made for both, counts one time (José and Jose are two spellings)
-addEventListener("namesdb", () => setTimeout(() => {
-  const seen = new Set();
-  for (const list of [REAL, DB, ROOT_NAMES, ...["girl", "boy", "either"].map(g => invented(g))]) for (const x of list) seen.add(x.n.toLowerCase());
+// counted once, when the long tail has arrived; the invented names are built one kind at a time between breaths
+addEventListener("namesdb", async () => {
+  if (!EXTRA_READY) return;
+  const seen = new Set(), lists = [REAL, DB, ROOT_NAMES];
+  for (const g of ["girl", "boy", "either"]) { await breathe(); lists.push(invented(g)); }
+  for (const list of lists) await slowly(list, x => seen.add(x.n.toLowerCase()));
   Count(seen.size);
-}, 0));
+  console.log("names:", seen.size);
+});
 
 // shared link: ?mom=Priya&dad=Daniel&g=girl opens straight into the duet
 (() => {
