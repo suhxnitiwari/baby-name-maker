@@ -92,7 +92,7 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
         const r = 1;
         let s = mine[j];
         if (!s) { s = makeStrand({ i, a: slot(j) / M * TAU + .001 }); strands.push(s); }
-        if (s.kind && s.kind !== kind) s.vs += .25;                        // a charm that changes shape swings
+        if (s.kind && s.kind !== kind) s.vs += .08;                        // a charm that changes shape swings
         Object.assign(s, { i, kind, color: TINT[x.place] || TINT.none, r: r * (x.stress === 1 ? 1.08 : 1), lenT: lenFor(i), aT: slot(j) / M * TAU, syl: j });
         // beads: one per letter of the syllable, falling into place on its string
         const lt = x.text.toLowerCase();
@@ -108,7 +108,7 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
     keep.slice(L.length).forEach(g => Object.assign(g, { dying: true, v: 0 }));
     garland = [...keep.slice(0, L.length), ...keep.slice(L.length), ...garland.filter(g => g.dying)];
     // the hoop tips as weight goes on, then finds its balance
-    if (n !== prev) { vtilt += (n.length >= prev.length ? 1 : -1) * .07 * (Math.random() * .6 + .7); pendant.lenT = n ? pendantLen() : 0; }
+    if (n !== prev) { vtilt += (n.length >= prev.length ? 1 : -1) * .025 * (Math.random() * .6 + .7); pendant.lenT = n ? pendantLen() : 0; }
   }
 
   // ── drawing helpers ──
@@ -339,49 +339,49 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
 
   // ── motion: springs with weight; nothing bounces like an app ──
   function chime(s) {
-    s.vs += .12 + (14 - s.i) * .004; s.vb += 5 * S; s.glow = 1;
+    s.vs += .05 + (14 - s.i) * .002; s.vb += 2 * S; s.glow = 1;
     const p = s.tip || { x: hx, y: ringY + s.len, r: 30 };
     for (let k = 0; k < 2; k++) sparks.push({ x: p.x + (Math.random() - .5) * p.r, y: p.y - p.r * .4, vx: (Math.random() - .5) * .6, vy: -.8 - Math.random() * .6, life: 1, c: k % 2 ? "✦" : "♪" });
   }
   function frame(now) {
     const dt = Math.min(.05, (now - last) / 1000); last = now;
     const m = still ? 0 : 1;
-    if (!drag) { rot += spin * dt * m; spin += ((playing ? .5 : .1) - spin) * dt * .7; }
-    vtilt += (-tilt * 7 - vtilt * 1.6) * dt; tilt += vtilt * dt * (m || 0);
+    if (!drag) { rot += spin * dt * m; spin += ((playing ? .22 : .06) - spin) * dt * .45; }
+    vtilt += (-tilt * 4 - vtilt * 3.4) * dt; tilt += vtilt * dt * (m || 0);
     if (playing) keyA += dt * 5;
     for (const s of strands) {
       if (s.born && now < s.born) continue;
       // the string drops and settles with a little overshoot, like something with weight
-      s.v += ((s.lenT - s.len) * 38 - s.v * 7.5) * dt; s.len += s.v * dt;
-      s.a += (s.aT - s.a) * Math.min(1, dt * 3.5);
-      s.vs += (-s.swing * 9 - s.vs * 1.3) * dt; s.swing += s.vs * dt * 3;
-      s.vb += (-s.bob * 40 - s.vb * 5) * dt; s.bob += s.vb * dt;
+      s.v += ((s.lenT - s.len) * 13 - s.v * 6.6) * dt; s.len += s.v * dt;
+      s.a += (s.aT - s.a) * Math.min(1, dt * 1.6);
+      s.vs += (-s.swing * 5 - s.vs * 2.4) * dt; s.swing += s.vs * dt * 2;
+      s.vb += (-s.bob * 18 - s.vb * 6) * dt; s.bob += s.vb * dt;
       s.glow *= Math.pow(.25, dt);
       if (!still) s.swing += Math.sin(now / 1400 + s.a * 3) * .0005;
-      for (const b of s.beads) { b.vy += ((1 - b.y) * 55 - b.vy * 8.5) * dt; b.y += b.vy * dt; }
+      for (const b of s.beads) { b.vy += ((1 - b.y) * 24 - b.vy * 8.4) * dt; b.y += b.vy * dt; }
       if (s.dying) s.alpha -= dt * 1.6;
     }
     strands = strands.filter(s => !(s.dying && s.alpha <= 0));
     for (const b of garland) {
       if (b.dying) { b.v += 900 * S * dt; b.dy += b.v * dt; b.alpha -= dt * 2.2; }
-      else { b.v += (-b.dy * 70 - b.v * 8) * dt; b.dy += b.v * dt; }
+      else { b.v += (-b.dy * 30 - b.v * 9.5) * dt; b.dy += b.v * dt; }
     }
     garland = garland.filter(b => !(b.dying && b.alpha <= 0));
-    pendant.v += ((pendant.lenT - pendant.len) * 30 - pendant.v * 7) * dt; pendant.len += pendant.v * dt;
-    pendant.vb += (-pendant.bob * 40 - pendant.vb * 5) * dt; pendant.bob += pendant.vb * dt; pendant.glow *= Math.pow(.25, dt);
+    pendant.v += ((pendant.lenT - pendant.len) * 14 - pendant.v * 7) * dt; pendant.len += pendant.v * dt;
+    pendant.vb += (-pendant.bob * 18 - pendant.vb * 6) * dt; pendant.bob += pendant.vb * dt; pendant.glow *= Math.pow(.25, dt);
     if (playing) {
       const el = (now - playing.t0) / 1000 / MB.STEP;
       for (const e of mel.ev) if (!playing.done.has(e) && e.t <= el) {
         playing.done.add(e);
         if (e.kind === "main") { const s = strands.find(x => !x.dying && x.syl === e.syl); if (s) chime(s); noteFns.forEach(f => f(e)); }
-        if (e.kind === "home") { pendant.glow = 1; pendant.vb += 5 * S; noteFns.forEach(f => f(e)); }
+        if (e.kind === "home") { pendant.glow = 1; pendant.vb += 2 * S; noteFns.forEach(f => f(e)); }
       }
       if (el > mel.steps + 1) { playing = null; doneFns.forEach(f => f(name)); }
     }
     if (awake && lower !== 0) {
       // lowered on its string: eases down, overshoots a touch, and the charms swing as it stops
-      vlower += (-lower * 26 - vlower * 6.2) * dt; lower += vlower * dt;
-      if (lower < -.004 && !landed) { landed = true; for (const s of strands) s.vs += (Math.random() - .5) * .5; }
+      vlower += (-lower * 7 - vlower * 5.4) * dt; lower += vlower * dt;
+      if (lower < -.004 && !landed) { landed = true; for (const s of strands) s.vs += (Math.random() - .5) * .15; }
       if (Math.abs(lower) < .0005 && Math.abs(vlower) < .002) lower = 0;
     }
     draw(now);
@@ -401,15 +401,15 @@ const lenFor = (i, rest) => (H - ringY) * (narrow ? .2 + (14 - i) / 14 * .42 : .
     if (!drag) {
       const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
       const s = strands.find(s => s.tip && !s.dying && Math.hypot(s.tip.x - x, s.tip.y - y) < s.tip.r);
-      if (s && s !== hover) s.vs += (e.movementX || 1) * .006 + .05;
+      if (s && s !== hover) s.vs += (e.movementX || 1) * .002 + .02;
       hover = s || null;
       return;
     }
     const now = performance.now(), d = (e.clientX - drag.x) / (rx || 1);
     rot += d; drag.v = d / Math.max(.008, (now - drag.t) / 1000); drag.t = now; drag.x = e.clientX; drag.moved += Math.abs(d);
-    for (const s of strands) s.vs -= d * .35;
+    for (const s of strands) s.vs -= d * .12;
   });
-  const release = () => { if (!drag) return; if (drag.moved < .02) play(); else spin = Math.max(-4, Math.min(4, drag.v)); drag = null; };
+  const release = () => { if (!drag) return; if (drag.moved < .02) play(); else spin = Math.max(-2, Math.min(2, drag.v * .6)); drag = null; };
   cv.addEventListener("pointerup", release); cv.addEventListener("pointercancel", release);
 
   addEventListener("resize", size);

@@ -175,7 +175,7 @@ const MB = (() => {
       g.gain.setValueAtTime(0, t);
       g.gain.linearRampToValueAtTime(.11 * v * a, t + (ATTACK[art] || .004));
       g.gain.exponentialRampToValueAtTime(.0001, t + ring / (r * .8));
-      o.connect(g); g.connect(bus); o.start(t); o.stop(t + ring + .1);
+      o.connect(g); g.connect(out || bus); o.start(t); o.stop(t + ring + .1);
     }
   }
   // tiny mechanical sounds: the crank's ratchet, the paper
@@ -185,15 +185,28 @@ const MB = (() => {
     for (let k = 0; k < d.length; k++) d[k] = (Math.random() * 2 - 1) * (1 - k / d.length) ** 6;
     const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
     f.type = "bandpass"; f.frequency.value = 3200; f.Q.value = 2; g.gain.value = .18 * v;
-    s.buffer = b; s.connect(f); f.connect(g); g.connect(bus); s.start(t);
+    s.buffer = b; s.connect(f); f.connect(g); g.connect(out || bus); s.start(t);
   }
   function setOn(v) { on = v; try { localStorage.setItem(PREF, v ? "on" : "off"); } catch {} if (v) ensure(); dispatchEvent(new Event("mbsound")); }
 
   // schedule a whole melody; returns its length in seconds
+  // each tune plays through its own volume, so hush() can fade out the notes already scheduled
+  let out = null;
+  const tunes = new Set();
   function play(m, speed = 1) {
     const c = on && ensure(), t0 = c ? c.currentTime + .06 : 0;
-    if (c) for (const e of m.ev) pluck(e.i, e.v, t0 + e.t * STEP / speed, e.art, m.shape);
+    if (c) {
+      const g = c.createGain(); g.connect(bus); tunes.add(g);
+      out = g; for (const e of m.ev) pluck(e.i, e.v, t0 + e.t * STEP / speed, e.art, m.shape); out = null;
+      setTimeout(() => tunes.delete(g), (m.steps * STEP / speed + 3) * 1000);
+    }
     return m.steps * STEP / speed;
+  }
+  function hush() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    for (const g of tunes) { g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + .25); setTimeout(() => g.disconnect(), 400); }
+    tunes.clear();
   }
 
   // ── the paper strip: night-velvet paper, every note a lit hole, a gold thread through the tune ──
@@ -339,6 +352,6 @@ const MB = (() => {
     return dur;
   }
 
-  return { melody, syllables, stripSVG, paperSVG, playPaper, explain, say, reset, ALGORITHM, play, playEl, pluck, tone, tick, ensure, label, STEP, COMB, NOTE_NAMES,
+  return { melody, syllables, stripSVG, paperSVG, playPaper, explain, say, reset, ALGORITHM, play, hush, playEl, pluck, tone, tick, ensure, label, STEP, COMB, NOTE_NAMES,
     get on() { return on; }, setOn, stopAll: () => playing && playing.stop() };
 })();

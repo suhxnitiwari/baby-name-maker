@@ -745,7 +745,7 @@ const Hero = (() => {
   function show(v, user) {
     typed.textContent = v;
     field.classList.toggle("empty", !v);
-    field.classList.toggle("long", v.length > 8); field.classList.toggle("longer", v.length > 12);
+    typed.scrollLeft = typed.scrollWidth;
     Mobile.set(v);
     const parts = v ? MB.explain(v) : [];
     $("#heroPlay").innerHTML = `<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg><span>${v && v === lastPlayed ? "Play again" : "Hear it ♪"}</span>`;
@@ -1126,12 +1126,33 @@ const Charts = (() => {
   atlas.addEventListener("click", e => { e.stopPropagation(); const b = e.target.closest(".atlas-place"); if (b) { setPlace(b.dataset.k); openAtlas(false); pbtn.focus({ preventScroll: true }); } });
   document.addEventListener("click", () => { if (!atlas.hidden) openAtlas(false); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !atlas.hidden) { openAtlas(false); pbtn.focus(); } });
-  async function playYear() {
-    MB.ensure();
-    const tags = $$("#chMobile .hc:not(.rise)").slice(0, 5);
-    for (const t of tags) { t.classList.add("lit"); Hang.nudge(t.firstChild, .12); await new Promise(r => setTimeout(r, MB.play(MB.melody(t.querySelector("span").textContent)) * 1000 + 80)); t.classList.remove("lit"); }
+  // the year's top five, one after another; the button pauses it, and the next press picks up at the name it stopped on
+  let run = null, resumeAt = 0, heard = "";
+  const playBtn = $("#chPlay"), label = on => { playBtn.textContent = on ? "❚❚ Pause" : resumeAt ? "▶ Keep playing" : "▶ Play the year"; playBtn.setAttribute("aria-pressed", on); };
+  function pauseYear() {
+    if (!run) return;
+    clearTimeout(run.t); run.done(); MB.hush();
+    $$("#chMobile .hc.lit").forEach(t => t.classList.remove("lit"));
+    run = null; label(false);
   }
-  $("#chPlay").onclick = playYear;
+  async function playYear() {
+    if (run) { pauseYear(); return; }
+    MB.ensure();
+    const tags = $$("#chMobile .hc:not(.rise)").slice(0, 5), me = run = { t: 0, done: () => {} };
+    const key = tags.map(t => t.querySelector("span").textContent).join();
+    if (key !== heard) { heard = key; resumeAt = 0; }                       // another year or place starts from its top name
+    label(true);
+    for (let k = resumeAt; k < tags.length; k++) {
+      const t = tags[k];
+      resumeAt = k;
+      t.classList.add("lit"); Hang.nudge(t.firstChild, .12);
+      const finished = await new Promise(r => { me.done = () => r(false); me.t = setTimeout(() => r(true), MB.play(MB.melody(t.querySelector("span").textContent)) * 1000 + 80); });
+      t.classList.remove("lit");
+      if (!finished || run !== me) return;
+    }
+    resumeAt = 0; run = null; label(false);
+  }
+  playBtn.onclick = playYear;
   return { ready, draw: () => draw(true) };
 })();
 function playName(n) {

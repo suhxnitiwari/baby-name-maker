@@ -111,14 +111,13 @@
   .namer::before { content: ""; position: absolute; inset: -40px -60px -30px -48px; z-index: -1; pointer-events: none;
     background: radial-gradient(ellipse 70% 65% at 35% 45%, rgba(246,239,228,.92), rgba(246,239,228,.6) 55%, rgba(246,239,228,0) 80%); }
   .name-row { display: flex; align-items: flex-end; gap: 22px; width: 92%; }
-  .field { position: relative; flex: 1; display: inline-flex; align-items: baseline; font: 400 clamp(3.1rem, 6.2vw, 5.3rem)/1.05 var(--serif); min-width: 4ch; max-width: 100%;
-    padding: 0 4px 6px; border-bottom: 1.5px solid rgba(70,45,40,.45); cursor: text; transition: border-color .3s, font-size .45s var(--ease);
+  .field { position: relative; flex: 1; display: inline-flex; align-items: baseline; font: 400 clamp(2.6rem, 4.7vw, 4.1rem)/1.05 var(--serif); min-width: 4ch; max-width: 100%;
+    padding: 0 4px 6px; border-bottom: 1.5px solid rgba(70,45,40,.45); cursor: text; transition: border-color .3s;
     height: clamp(3.9rem, 7vw, 6rem); align-items: flex-end; box-sizing: border-box; }
-  .field.empty { font-size: clamp(1.7rem, 2.3vw, 2.2rem); }
-  .field.long { font-size: clamp(2.4rem, 4.6vw, 4rem); } .field.longer { font-size: clamp(2rem, 3.6vw, 3.1rem); }
+  /* one size, typed or not: the caret and the line never move; a long name slides left inside the box instead of shrinking */
   .field-label { font: 500 .78rem var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--rose); margin-bottom: -4px; }
   .field:focus-within { border-color: var(--rose); }
-  .field #typed { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+  .field #typed { white-space: pre; overflow: hidden; max-width: calc(100% - 12px); }
   .field .ph { display: none; color: rgba(70,50,42,.55); font-style: italic; order: 2; }
   .field.empty .ph { display: inline; }
   .caret { order: 1; display: inline-block; width: 2px; height: .8em; margin: 0 2px .2em 3px; background: var(--rose); align-self: flex-end; animation: blink 1.05s steps(1) infinite; }
@@ -774,12 +773,12 @@
 <script src="names.js?v=16"></script>
 <script src="generator.js?v=5"></script>
 <script src="phonetics.js?v=7"></script>
-<script src="musicbox.js?v=6"></script>
-<script src="mobile.js?v=15"></script>
+<script src="musicbox.js?v=7"></script>
+<script src="mobile.js?v=16"></script>
 <script src="piano.js?v=3"></script>
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=62"></script>
+<script src="app.js?v=64"></script>
 </body>
 </html>
