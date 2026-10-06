@@ -1258,18 +1258,32 @@ const Count = (() => {
   function tick(now) {
     const t = Math.min(1, (now - t0) / dur);
     shown = Math.max(shown, Math.round(from * Math.pow(goal / from, t)));
-    el.textContent = `${shown.toLocaleString()} names`;
+    el.textContent = shown.toLocaleString();
     raf = t < 1 ? requestAnimationFrame(tick) : 0;
   }
   return n => {
     if (n <= goal) return;
     goal = n; from = Math.max(1, shown); t0 = performance.now(); dur = shown ? 1600 : 3600;
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { shown = n; el.textContent = `${n.toLocaleString()} names`; return; }
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { shown = n; el.textContent = n.toLocaleString(); return; }
     if (!raf) raf = requestAnimationFrame(tick);
     // a tab in the background gets no animation frames: still land on the right number
-    setTimeout(() => { if (shown < goal) { shown = goal; el.textContent = `${goal.toLocaleString()} names`; } }, dur + 600);
+    setTimeout(() => { if (shown < goal) { shown = goal; el.textContent = goal.toLocaleString(); } }, dur + 600);
   };
 })();
+// the rest of the ledger, from data/stats.json: each number climbs the same way once the page wakes
+fetch("data/stats.json?v=1").then(r => r.json()).then(st => {
+  $("#ledgerSub").textContent = `${st.passages.toLocaleString()} cited passages · ${st.traditions} faiths & mythologies · records from ${st.from} to ${st.to}`;
+  const els = $$("#ledger [data-stat]"), still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  els.forEach(el => el.textContent = still ? st[el.dataset.stat].toLocaleString() : "1");
+  if (still) return;
+  const start = () => els.forEach((el, k) => {
+    const goal = st[el.dataset.stat], t0 = performance.now() + 500 + k * 140, dur = 1800 + Math.log10(goal) * 260;
+    const step = now => { const t = Math.max(0, Math.min(1, (now - t0) / dur)); el.textContent = Math.round(Math.pow(goal, 1 - Math.pow(1 - t, 3))).toLocaleString(); if (t < 1) requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+    setTimeout(() => el.textContent = goal.toLocaleString(), 500 + k * 140 + dur + 800);   // a background tab still lands on the number
+  });
+  document.body.classList.contains("awake") ? start() : new MutationObserver((_, o) => { if (document.body.classList.contains("awake")) { o.disconnect(); start(); } }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
+}).catch(() => {});
 // each distinct name once: a name listed for girls and boys, or made for both, counts one time (José and Jose are two spellings)
 addEventListener("namesdb", () => setTimeout(() => {
   const seen = new Set();
