@@ -112,7 +112,7 @@ Siddharth|b|Indian|Sanskrit|Buddhist,Hindu|one who has achieved his goal|birth n
 Gautam|b|Indian|Sanskrit|Buddhist||family name of the Buddha
 Ananda|b|Indian|Sanskrit|Buddhist|joy, bliss|the Buddha's closest disciple
 Bodhi|e|Indian|Sanskrit|Buddhist|enlightenment|the Bodhi tree where the Buddha awoke
-Maya|g|Indian|Sanskrit|Buddhist,Hindu|illusion, magic|mother of the Buddha
+Maya|g|Indian|Sanskrit|Buddhist,Hindu|illusion, magic|Written माया; Māyā, mother of the Buddha
 Rahul|b|Indian|Sanskrit|Buddhist||son of the Buddha
 Sujata|g|Indian|Sanskrit|Buddhist|well-born|offered rice to the Buddha before his enlightenment
 Yashodhara|g|Indian|Sanskrit|Buddhist|bearer of glory|wife of the Buddha
@@ -2023,7 +2023,7 @@ Alireza|b|Persian|Arabic|Islamic|Ali the content one|honors Imam Reza, Ali ibn M
 Taha|b|Persian|Arabic|Islamic|the letters Ta-Ha opening Sura 20|
 Javad|b|Persian|Arabic|Islamic|generous|Imam Javad, ninth Shia Imam
 Sajjad|b|Persian|Arabic|Islamic|one who prostrates often|Imam Sajjad, fourth Shia Imam
-Hadi|b|Persian|Arabic|Islamic|guide|Imam Hadi, tenth Shia Imam
+Hadi|b|Arab|Arabic|Islamic|guide|Written هادي; Imam Hadi, tenth Shia Imam
 Mojtaba|b|Persian|Arabic|Islamic|chosen|epithet of Imam Hassan
 Mostafa|b|Persian|Arabic|Islamic|chosen one|epithet of the Prophet Muhammad
 Morteza|b|Persian|Arabic|Islamic|one pleasing to God|title of Imam Ali
