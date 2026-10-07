@@ -65,21 +65,22 @@ function eastAsian(d) {
 // …then medieval England and France, Old Norse, and Azerbaijan's official list (data/medieval-names.json, data/az-names.json)
 const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=8", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=2",
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1",
-  "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1"]
+  "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1"]
   .map(u => getJSON(u).catch(() => [])))
-  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr])).catch(e => console.error(e));
+  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy])).catch(e => console.error(e));
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
   for (let [n, g, o, l, r, m, src, texts, kind, also] of rows) {
     if (src) src = src.replace(/^A (?=[AEIOU])/, "An ");
     const x = texts ? texts.split(",") : [], k = fold(n), cur = have.get(k);
     // the ancient layers (Arabia before Islam, Mexico before 1521, Greece, Rome) say who bore the name: that line shows on the card
-    const hist = src && /^(Used (in Arabia )?before|Used in ancient Greece|An ancient|The modern form of the ancient|The name of the .{1,30} goddess|A Classical Nahuatl word)/.test(src) ? src : "";
+    const hist = src && /^(Used (in Arabia )?before|Used in ancient Greece|Used in early Armenia|An ancient|The modern form of the ancient|The name of the .{1,30} (goddess|god)\b|A Classical Nahuatl word)/.test(src) ? src : "";
     if (cur) {
       if (hist && !(cur.hist || []).includes(hist)) cur.hist = [...(cur.hist || []), hist];
       // being borne in the Greek world says nothing about where a name comes from (Esther, Elias): it only adds the line
       if (/^Used in ancient Greece/.test(hist)) continue;
-      if (hist) cur.anc ||= [o, l && l !== o ? l : ""].filter(Boolean).join(" · ");
+      // an early Armenian Mariam or Erato was borrowed (Hebrew, Greek): only an Armenian or Iranian name takes "Armenian" as its origin
+      if (hist && !(o === "Armenian" && !/Armenian|Iranian|Parthian|Persian/.test(l || ""))) cur.anc ||= [o, l && l !== o ? l : ""].filter(Boolean).join(" · ");
       if (o && o !== cur.o) cur.oo = [...new Set([...(cur.oo || []), o])];
       if (also && also.length) cur.oo = [...new Set([...(cur.oo || []), ...also])].filter(c => c !== cur.o);
       if (!cur.o && o) { cur.o = o; cur.l = cur.l || l; }
@@ -563,7 +564,8 @@ function originOf(x) {
   if (ORIGINS[k]) return ORIGINS[k];
   // a nationality list (Argentine, Filipino) says where a name is given, never where it's from, even in a hand-written entry (Emilia is Latin)
   const NATIONAL = new Set(["Argentine", "Mexican", "Colombian", "Dominican", "Puerto Rican", "Cuban", "Chilean", "Peruvian", "Venezuelan", "Brazilian",
-    "Filipino", "American", "Canadian", "Australian", "Israeli", "Latin American", "Spanish American"]);
+    "Filipino", "American", "Canadian", "Australian", "Israeli", "Latin American", "Spanish American", "Sudanese", "Nigerian", "Ghanaian", "Kenyan",
+    "Ugandan", "Tanzanian", "Jamaican", "Haitian", "Trinidadian", "Guyanese", "New Zealander", "South African"]);
   if (x.hand && x.o && !NATIONAL.has(x.o)) return [x.o, x.l && x.l !== x.o ? x.l : ""].filter(Boolean).join(" · ");
   // 2. a name of the Islamic tradition with an Arabic spelling is Arabic, wherever families who moved now give it (Ibrahim, Muhammad)
   if (x.r && x.r.includes("Islamic") && (NATIVE_ALL[k] || []).some(([, l]) => l === "Arabic")) return "Arabic";
@@ -713,7 +715,7 @@ const Hero = (() => {
   // the name in its own scripts (data/native-forms.json): only the languages of the name's own cultures, so Sofia gets Σοφία and
   // Софья but not a Japanese spelling of a borrowed name; same-sounding spellings share theirs (Fatima ← Fatimah's فاطمة)
   let NATIVE = {};
-  getJSON("data/native-forms.json?v=10").then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
+  getJSON("data/native-forms.json?v=11").then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
   const LANG_OF = { Arab: "Arabic", Arabic: "Arabic", "Pre-Islamic Arabian": "Arabic", Indian: "Hindi Sanskrit Marathi", "South Asian": "Hindi Sanskrit Urdu Bengali", Hindi: "Hindi Sanskrit",
     Israeli: "Hebrew", Hebrew: "Hebrew", Jewish: "Hebrew", Persian: "Persian", Iranian: "Persian", Chinese: "Chinese", Japanese: "Japanese", Korean: "Korean",
     Greek: "Greek", Russian: "Russian", Slavic: "Russian Ukrainian Bulgarian Serbian", Ukrainian: "Ukrainian", Armenian: "Armenian", Georgian: "Georgian",
