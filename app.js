@@ -65,18 +65,21 @@ function eastAsian(d) {
 // …then medieval England and France, Old Norse, and Azerbaijan's official list (data/medieval-names.json, data/az-names.json)
 const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=8", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=2",
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1",
-  "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1"]
+  "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1"]
   .map(u => getJSON(u).catch(() => [])))
-  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro])).catch(e => console.error(e));
+  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr])).catch(e => console.error(e));
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
   for (let [n, g, o, l, r, m, src, texts, kind, also] of rows) {
     if (src) src = src.replace(/^A (?=[AEIOU])/, "An ");
     const x = texts ? texts.split(",") : [], k = fold(n), cur = have.get(k);
     // the ancient layers (Arabia before Islam, Mexico before 1521, Greece, Rome) say who bore the name: that line shows on the card
-    const hist = src && /^(Used (in Arabia )?before|An ancient|The modern form of the ancient|The name of the .{1,30} goddess|A Classical Nahuatl word)/.test(src) ? src : "";
+    const hist = src && /^(Used (in Arabia )?before|Used in ancient Greece|An ancient|The modern form of the ancient|The name of the .{1,30} goddess|A Classical Nahuatl word)/.test(src) ? src : "";
     if (cur) {
-      if (hist && !(cur.hist || []).includes(hist)) { cur.hist = [...(cur.hist || []), hist]; cur.anc ||= [o, l && l !== o ? l : ""].filter(Boolean).join(" · "); }
+      if (hist && !(cur.hist || []).includes(hist)) cur.hist = [...(cur.hist || []), hist];
+      // being borne in the Greek world says nothing about where a name comes from (Esther, Elias): it only adds the line
+      if (/^Used in ancient Greece/.test(hist)) continue;
+      if (hist) cur.anc ||= [o, l && l !== o ? l : ""].filter(Boolean).join(" · ");
       if (o && o !== cur.o) cur.oo = [...new Set([...(cur.oo || []), o])];
       if (also && also.length) cur.oo = [...new Set([...(cur.oo || []), ...also])].filter(c => c !== cur.o);
       if (!cur.o && o) { cur.o = o; cur.l = cur.l || l; }
@@ -104,7 +107,7 @@ const PERSONLIKE = new Set(["human", "prophet", "sage", "saint", "disciple", "ro
 const SACRED = new Map(), SACRED_SEX = new Map(); // folded name → cited references; the sex of the people the text gives that name
 let SACRED_FIG = {};
 const FIG_FORMS = new Map(); // figure → every name form it carries, across traditions (Abraham, Avraham, Ibrahim)
-const sacredReady = Promise.all([getJSON("data/sacred.json?v=6").catch(() => null), storied]).then(([d]) => {
+const sacredReady = Promise.all([getJSON("data/sacred.json?v=7").catch(() => null), storied]).then(([d]) => {
   if (!d) return;
   SACRED_FIG = d.f;
   const have = new Map(ALL_NAMED.map(x => [fold(x.n), x]));
@@ -551,7 +554,7 @@ const BASKETS = new Set(["African", "South Asian", "Pacific", "Slavic", "Latin A
 // Hebrew), else the first culture that lists it. The other lists record where families who moved use it, so they stay out of this line.
 const ETY_LANG = /\b(?:from|of)\s+(?:the\s+)?(?:Ancient |Classical |Biblical |Koine |Old |Middle |Late |Medieval |Modern )?(Greek|Hebrew|Latin|Arabic|Sanskrit|Persian|Aramaic|Old Norse|Germanic|Celtic|Irish|Welsh|Slavic|Turkish|Hindi|Tamil|Swahili|Yoruba|Igbo|Akan|Japanese|Chinese|Korean)\b/gi;
 let ORIGINS = {}, NATIVE_ALL = {}, ARABIC = {};
-getJSON("data/name-origins.json?v=2").then(d => ORIGINS = d).catch(() => {});
+getJSON("data/name-origins.json?v=3").then(d => ORIGINS = d).catch(() => {});
 // Latin spellings of Arabic names (Wikidata): Yousif, Hussain, Fatema → their Arabic, used only for a name with no other origin on record
 getJSON("data/arabic-forms.json?v=1").then(d => ARABIC = d).catch(() => {});
 function originOf(x) {
@@ -564,11 +567,11 @@ function originOf(x) {
   if (x.hand && x.o && !NATIONAL.has(x.o)) return [x.o, x.l && x.l !== x.o ? x.l : ""].filter(Boolean).join(" · ");
   // 2. a name of the Islamic tradition with an Arabic spelling is Arabic, wherever families who moved now give it (Ibrahim, Muhammad)
   if (x.r && x.r.includes("Islamic") && (NATIVE_ALL[k] || []).some(([, l]) => l === "Arabic")) return "Arabic";
+  const chain = [...(x.ety || "").matchAll(ETY_LANG)].map(m => m[1]).filter((v, i, a) => a.indexOf(v) === i).slice(0, 2);
+  if (chain.length) return chain[0] + (chain[1] ? ` · from ${chain[1]}` : "");
   // 3. an ancient layer that proves who bore it (Laelia, a Roman; Hind, an Arabian before Islam) outranks the modern lists that also give it
   if (x.anc) return x.anc;
   if (x.hand && x.o && x.l) return x.l;
-  const chain = [...(x.ety || "").matchAll(ETY_LANG)].map(m => m[1]).filter((v, i, a) => a.indexOf(v) === i).slice(0, 2);
-  if (chain.length) return chain[0] + (chain[1] ? ` · from ${chain[1]}` : "");
   const c = [x.o, ...(x.oo || [])].find(c => c && !BASKETS.has(c) && !NATIONAL.has(c)) || (x.l && !NATIONAL.has(x.l) ? x.l : "");
   if (!c && ARABIC[k]) return "Arabic";
   const MUSLIM_USE = new Set(["Bengali", "Urdu", "Pashtun", "Afghan", "Persian", "Turkish", "Malay", "Indonesian", "Somali", "Hausa", "Swahili", "Kazakh", "Uzbek",
@@ -710,7 +713,7 @@ const Hero = (() => {
   // the name in its own scripts (data/native-forms.json): only the languages of the name's own cultures, so Sofia gets Σοφία and
   // Софья but not a Japanese spelling of a borrowed name; same-sounding spellings share theirs (Fatima ← Fatimah's فاطمة)
   let NATIVE = {};
-  getJSON("data/native-forms.json?v=9").then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
+  getJSON("data/native-forms.json?v=10").then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
   const LANG_OF = { Arab: "Arabic", Arabic: "Arabic", "Pre-Islamic Arabian": "Arabic", Indian: "Hindi Sanskrit Marathi", "South Asian": "Hindi Sanskrit Urdu Bengali", Hindi: "Hindi Sanskrit",
     Israeli: "Hebrew", Hebrew: "Hebrew", Jewish: "Hebrew", Persian: "Persian", Iranian: "Persian", Chinese: "Chinese", Japanese: "Japanese", Korean: "Korean",
     Greek: "Greek", Russian: "Russian", Slavic: "Russian Ukrainian Bulgarian Serbian", Ukrainian: "Ukrainian", Armenian: "Armenian", Georgian: "Georgian",
@@ -1313,7 +1316,7 @@ const Count = (() => {
   };
 })();
 // the rest of the ledger, from data/stats.json: each number climbs the same way once the page wakes
-fetch("data/stats.json?v=2").then(r => r.json()).then(st => {
+fetch("data/stats.json?v=3").then(r => r.json()).then(st => {
   $("#ledgerSub").textContent = `${st.passages.toLocaleString()} cited passages · ${st.traditions} faiths & mythologies · records from ${st.from} to ${st.to}`;
   const els = $$("#ledger [data-stat]"), still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   els.forEach(el => el.textContent = still ? st[el.dataset.stat].toLocaleString() : "1");
