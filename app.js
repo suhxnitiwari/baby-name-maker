@@ -67,9 +67,9 @@ const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1",
   "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=1",
   "data/english-names.json?v=1", "data/spanish-names.json?v=1",
-  "data/portuguese-names.json?v=1"]
+  "data/portuguese-names.json?v=1", "data/german-names.json?v=1"]
   .map(u => getJSON(u).catch(() => [])))
-  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, en, es, pt]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...en, ...es, ...pt])).catch(e => console.error(e));
+  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, en, es, pt, de]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...en, ...es, ...pt, ...de])).catch(e => console.error(e));
 const BOLLYWOOD = new Map();   // folded first name → "In Bollywood: Varun Dhawan, actor…" (any name, from the records or the lists)
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
@@ -80,7 +80,10 @@ function addStoried(rows) {
     if (src && src.startsWith("In Bollywood:")) { BOLLYWOOD.set(k, src); continue; }
     // the ancient layers (Arabia before Islam, Mexico before 1521, Greece, Rome) say who bore the name: that line shows on the card
     const hist = src && /^(Used (in Arabia )?before|Used in ancient Greece|Used in early Armenia|An ancient|The modern form of the ancient|The name of the .{1,30} (goddess|god)\b|A Classical Nahuatl word)/.test(src) ? src : "";
+    // "A German name, from Ancient Greek Σουσάννα, from Hebrew…": the chain says where the name comes from, not the list it is on
+    const ety = src && /^An? [\p{L} ]+ name, from /u.test(src) ? src : "";
     if (cur) {
+      if (ety && !cur.ety && !cur.hand) cur.ety = ety;
       if (hist && !(cur.hist || []).includes(hist)) cur.hist = [...(cur.hist || []), hist];
       // being borne in the Greek world says nothing about where a name comes from (Esther, Elias): it only adds the line
       if (/^Used in ancient Greece/.test(hist)) continue;
@@ -92,7 +95,7 @@ function addStoried(rows) {
       cur.x = [...new Set([...(cur.x || []), ...x])]; cur.r = [...new Set([...cur.r, ...(r ? r.split(",") : [])])];
       // a Japanese, Korean or Chinese reading's meaning belongs to that reading, not to a Georgian Nino or an Italian Gino
       if (!(["Japanese", "Korean", "Chinese"].includes(o) && cur.o && cur.o !== o)) cur.m ||= m; cur.src = cur.src ? (src && !cur.src.includes(src) && src.startsWith("Given to") ? `${cur.src} ${src}` : cur.src) : src; continue; }
-    const e = { n, g: { g: "girl", b: "boy", e: "either" }[g], o, l, r: r ? r.split(",") : [], m, src, type: kind === "root" ? "root" : "real", x, oo: also || [], ...(hist ? { hist: [hist] } : {}) };
+    const e = { n, g: { g: "girl", b: "boy", e: "either" }[g], o, l, r: r ? r.split(",") : [], m, src, type: kind === "root" ? "root" : "real", x, oo: also || [], ...(hist ? { hist: [hist] } : {}), ...(ety ? { ety } : {}) };
     (kind === "root" ? ROOT_NAMES : REAL).push(e); ALL_NAMED.push(e); have.set(k, e); TAKEN.add(k); indexName(e);
   }
   // hand-written names join their broad basket too (a Zulu name is also African)
