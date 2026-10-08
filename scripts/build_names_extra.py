@@ -15,10 +15,22 @@
 #   jp    JMnedict (EDRDG, CC BY-SA 4.0), given-name entries' romanised readings: raw/JMnedict.xml.gz
 #   fr    INSEE (France), fichier des personnes décédées 1970-2025, every given name of everyone recorded: raw/fr-deces/
 #   wikt  English Wiktionary (CC BY-SA 4.0), every entry in a "<language> given names" category: raw/wikt-given-names.tsv
+#   it    ISTAT (Italy) "Conta nomi", names of babies registered at birth 1999-2024 (full lists from 2022; the service cuts the
+#         1999-2021 lists off part-way): raw/it-istat-contanomi/ (fetch_istat_names.py). Names given to only one baby in all
+#         those years are left out, because ISTAT says it doesn't correct spelling or transcription mistakes
+#   tr    TÜİK (Türkiye) "İstatistiklerle Çocuk" 2014-2025, top 30 names of babies born in the year and of all children 0-17:
+#         raw/tr/tr-tuik-cocuk-names-2014-2025.tsv
+#   tw    Ministry of the Interior (Taiwan), 全國姓名統計分析 2023, tables 50, 51 and 56 (top single-character names, top 100
+#         names, top 10 by period of birth): raw/tw/tw-moi-112-names.tsv. Names there are in characters; the Latin form is the
+#         CC-CEDICT pinyin (cedict_pinyin.py), only where every character has one reading
+#   be    Statbel (Belgium), first names of newborns 1995-2025 (5+ babies in a year), births summed: raw/be-statbel/names-1995-2025.tsv
+#   es    INE (Spain), names of residents with 20+ people (Padrón, 1 Jan 2022; INE strips accents): raw/es/es-ine-nombres-ge20.tsv
+#   se    Statistics Sweden TAB622, every tilltalsnamn (name a person goes by) with 10+ bearers 2005-2020, no counts:
+#         raw/se/se-scb-TAB622-tilltalsnamn-min10-metadata.json
 #
 #   python3 scripts/build_names_extra.py            (downloads what is missing, then rewrites data/names-extra.tsv)
 #   python3 scripts/build_names_extra.py --offline  (only what is already in raw/)
-import collections, csv, gzip, io, json, os, re, sys, time, unicodedata, urllib.parse, urllib.request, zipfile
+import collections, csv, glob, gzip, io, json, os, re, sys, time, unicodedata, urllib.parse, urllib.request, zipfile
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE); RAW = os.path.join(ROOT, "raw"); DATA = os.path.join(ROOT, "data")
 sys.path.insert(0, HERE)
 from build_world import clean as world_clean, num
@@ -265,11 +277,60 @@ def wiktionary():
         sx = "u" if "unisex" in c else "f" if "female" in c else "m" if "male" in c else "?"
         yield t, sx, 0
 
+def italy():
+    tot = collections.Counter()
+    for f in glob.glob(os.path.join(RAW, "it-istat-contanomi", "*-[fm].json")):
+        d = json.load(open(f, encoding="utf-8"))
+        for n, c in d["rows"]:
+            # "FRANCESCO D'ASSISI": d' is a particle, not a name; NICOLO' (= Nicolò) loses its apostrophe in clean()
+            n = " ".join(w for w in n.split() if not re.match(r"(?i)de?'", w))
+            if n: tot[(n, d["sex"])] += int(c)
+    for (n, sx), c in tot.items():
+        if sum(tot[(n, s)] for s in "fm") >= 2: yield n, sx, c
+
+def turkey():
+    best = collections.Counter()
+    for line in open(os.path.join(RAW, "tr", "tr-tuik-cocuk-names-2014-2025.tsv"), encoding="utf-8"):
+        if line.startswith("#"): continue
+        y, g, sx, rk, n, v = line.rstrip("\n").split("\t")
+        k = (n, g, sx); best[k] = max(best[k], int(v or 0))   # the same children recur year after year: keep the largest count
+    for (n, g, sx), c in best.items(): yield n, sx, c
+
+def taiwan():
+    from cedict_pinyin import pinyin
+    best = collections.Counter()
+    for line in open(os.path.join(RAW, "tw", "tw-moi-112-names.tsv"), encoding="utf-8"):
+        if line.startswith("#"): continue
+        tab, sx, per, rk, n, v = line.rstrip("\n").split("\t")
+        if tab != "t56": best[(n, sx)] = max(best[(n, sx)], int(v))   # t50/t51 already count everyone; t56 is a slice of them
+        else: best[(n, sx)] = max(best[(n, sx)], 0)
+    for (n, sx), c in best.items():
+        p = pinyin(n)
+        if p: yield p, sx, c
+
+def belgium():
+    for r in csv.DictReader(open(os.path.join(RAW, "be-statbel", "names-1995-2025.tsv"), encoding="utf-8"), delimiter="\t"):
+        yield r["name"], r["sex"], num(r["births"])
+
+def spain():
+    for line in open(os.path.join(RAW, "es", "es-ine-nombres-ge20.tsv"), encoding="utf-8"):
+        if line.startswith("#"): continue
+        sx, n, c = line.rstrip("\n").split("\t"); yield n, sx, int(c)
+
+def sweden():
+    d = json.load(open(os.path.join(RAW, "se", "se-scb-TAB622-tilltalsnamn-min10-metadata.json"), encoding="utf-8"))
+    for code, n in d["dimension"]["Tilltalsnamn"]["category"]["label"].items():
+        yield n.replace("’", "'"), "f" if code.endswith("K") else "m", 0
+
 SOURCES = [("ar", "RENAPER Argentina 1922-2015", argentina), ("lists", "official name lists (data/name-lists.tsv)", name_lists),
            ("br", "IBGE Censo 2010 + 2022 (Brazil)", brazil), ("cl", "Registro Civil Chile 1920-2021", chile),
            ("wd", "Wikidata given names", wikidata), ("jp", "JMnedict given names", jmnedict),
            ("fr", "INSEE deaths file 1970-2025 (France)", france),
-           ("wikt", "Wiktionary given names, all languages", wiktionary)]
+           ("wikt", "Wiktionary given names, all languages", wiktionary),
+           ("it", "ISTAT Conta nomi 1999-2024 (Italy)", italy), ("tr", "TÜİK İstatistiklerle Çocuk 2014-2025 (Türkiye)", turkey),
+           ("tw", "Ministry of the Interior name statistics 2023 (Taiwan), CC-CEDICT pinyin", taiwan),
+           ("be", "Statbel first names of newborns 1995-2025 (Belgium)", belgium), ("es", "INE names with 20+ residents (Spain)", spain),
+           ("se", "Statistics Sweden TAB622 tilltalsnamn with 10+ bearers", sweden)]
 
 # pieces of a compound given name that are never names on their own: particles, and the connecting words of devotional
 # names ("María de los Ángeles", "Ana del Sagrado Corazón", "José de San Martín")

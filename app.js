@@ -65,9 +65,10 @@ function eastAsian(d) {
 // …then medieval England and France, Old Norse, and Azerbaijan's official list (data/medieval-names.json, data/az-names.json)
 const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=8", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=2",
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1",
-  "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=1"]
+  "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=1",
+  "data/english-names.json?v=1", "data/spanish-names.json?v=1"]
   .map(u => getJSON(u).catch(() => [])))
-  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw])).catch(e => console.error(e));
+  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, en, es]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...en, ...es])).catch(e => console.error(e));
 const BOLLYWOOD = new Map();   // folded first name → "In Bollywood: Varun Dhawan, actor…" (any name, from the records or the lists)
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
@@ -1322,7 +1323,7 @@ const Count = (() => {
   };
 })();
 // the rest of the ledger, from data/stats.json: each number climbs the same way once the page wakes
-fetch("data/stats.json?v=3").then(r => r.json()).then(st => {
+fetch("data/stats.json?v=4").then(r => r.json()).then(st => {
   $("#ledgerSub").textContent = `${st.passages.toLocaleString()} cited passages · ${st.traditions} faiths & mythologies · records from ${st.from} to ${st.to}`;
   const els = $$("#ledger [data-stat]"), still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   els.forEach(el => el.textContent = still ? st[el.dataset.stat].toLocaleString() : "1");

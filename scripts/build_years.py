@@ -40,6 +40,8 @@
 #        raw/bg-nsi-newborn-top-names-2012-2025.tsv (Latin as NSI spells it in English + Cyrillic)
 #   br   IBGE Censo 2010 names API, top 20 per sex per decade of birth: raw/br-ibge-censo2010-ranking-by-decade.json
 #   fi   DVV Nimipalvelu, most popular first names by decade of birth (population register): raw/fi-dvv-top-etunimet-*.html
+#   es   INE "Nombres más frecuentes por fecha de nacimiento" (Censos de población anuales, 1 January 2025), the 50 most frequent
+#        names of residents of Spain by decade of birth: raw/spanish/ine-nombres_por_fecha.xlsx (fetch_spanish_sources.py)
 #   md   Public Services Agency, most frequent first names of newborns 2016-2023 (dataset.gov.md 16943 / 16944):
 #        raw/md-asp-prenume-YYYY-[fm].(pdf|docx|xlsx)
 #   lv   Central Statistical Bureau "100 most popular newborn names", ranks by five-year period (tools.stat.gov.lv/names/api):
@@ -50,6 +52,15 @@
 #   ru-moscow  Moscow Government open data (data.mos.ru datasets 2009 girls / 2011 boys, from the Moscow civil registry), the 100
 #        most popular names of each month since 2015: raw/ru/moscow-names-(2009|2011).(json|csv|zip), downloaded by
 #        fetch_moscow_names.py. Left out of years.json until those files are there (data.mos.ru only answers from Russia)
+#   it   ISTAT "Conta nomi" (survey "Iscritti in anagrafe per nascita"), names of babies registered at birth 1999 onward, by sex,
+#        from the web service behind istat.it/dati/calcolatori/contanomi: raw/it-istat-contanomi/YYYY-[fm].json (fetch_istat_names.py)
+#   tr   TÜİK "İstatistiklerle Çocuk" bulletins 2014-2025 (veriportali.tuik.gov.tr), table of the most used child names: the top 30 of
+#        babies born in the year (counts from 2021, ranks only before): raw/tr/tuik-cocuk-YYYY-*.xls, read into
+#        raw/tr/tr-tuik-cocuk-names-2014-2025.tsv
+#   tw   Ministry of the Interior (Taiwan) "全國姓名統計分析" (data date 2023-06-30), table 56: top 10 given names of people in the
+#        household register by period of birth: raw/tw/tw-moi-112namestat.pdf, read into raw/tw/tw-moi-112-names.tsv;
+#        pinyin from CC-CEDICT (raw/tw/cedict_1_0_ts_utf-8_mdbg.txt.gz) via cedict_pinyin.py, only where the reading is certain
+#   be   Statbel "First names of newborns" 1995-2025, national top 12 per year (fetched in a browser): raw/be-statbel/top12-1995-2025.json
 import csv, glob, html, io, json, os, re, sys, unicodedata, zipfile, collections
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -306,6 +317,23 @@ def south_africa(): return top_lists("za-top10-2014-2024.tsv")
 
 def federation_bih(): return top_lists("ba-fbih-fzs-top100-2012-2025.tsv")
 
+def spain_decades():
+    # sheets ESPAÑA_hombres / ESPAÑA_mujeres: blocks of rank | NOMBRE | FRECUENCIA | Por 1.000 under "NACIDOS EN AÑOS 1930 A 1939";
+    # "ANTES DE 1930" is kept under 1920. INE prints names in capitals without accents; they are only title-cased (Jose, Maria Carmen)
+    c = new()
+    path = f"{RAW}/spanish/ine-nombres_por_fecha.xlsx"
+    for sheet, sx in (("ESPAÑA_hombres", "boy"), ("ESPAÑA_mujeres", "girl")):
+        rows = list(xlsx.rows(path, sheet)); heads = rows[2]
+        for r in rows[4:]:
+            if not r or not (r[0] or "").isdigit(): continue
+            for k in range(1, len(r) - 1, 3):
+                h = heads[k] if k < len(heads) else ""
+                m = re.search(r"(\d{4}) A|ANTES DE (\d{4})", h or "")
+                if not m or not r[k] or not r[k + 1]: continue
+                d = int(m.group(1)) if m.group(1) else int(m.group(2)) - 10
+                c[d][sx][" ".join(title(w) for w in r[k].split())] = int(r[k + 1])
+    return c
+
 def brazil():
     # ranking?decada=D covers people born in [D-10, D); decada=1930 is everyone born before 1930 (kept under 1920)
     c = new()
@@ -444,6 +472,57 @@ def moscow():
             for n, _ in c[y][s].most_common(TOP): MOSCOW_LATIN[n] = romanize(n, "bgn_plain") or ""
     return c
 
+def italy():
+    # ISTAT prints names in capitals without accents, an accented final letter as an apostrophe (NICOLO' = Nicolò), and
+    # compound names whole (GIOVANNI PIO); they are kept as printed, only title-cased
+    c = new()
+    for f in glob.glob(f"{RAW}/it-istat-contanomi/*-[fm].json"):
+        d = json.load(open(f, encoding="utf-8"))
+        for n, v in d["rows"]:
+            c[int(d["year"])]["girl" if d["sex"] == "f" else "boy"][" ".join(title(w) for w in n.split())] += int(v)
+    return c
+
+def turkey_rows():
+    for line in open(f"{RAW}/tr/tr-tuik-cocuk-names-2014-2025.tsv", encoding="utf-8"):
+        if line.startswith("#"): continue
+        y, g, s, rk, n, v = line.rstrip("\n").split("\t")
+        if g == "born": yield int(y), "girl" if s == "f" else "boy", int(rk), n, int(v) if v else None
+
+def turkey():
+    c = new()
+    for y, sex, rk, n, v in turkey_rows():
+        if v is not None: c[y][sex][n] = v
+    return c
+
+def turkey_ranks():
+    r = ranked()
+    for y, sex, rk, n, v in sorted(turkey_rows()):
+        if v is None: r[y][sex].append(n)
+    return r
+
+TAIWAN_LATIN, TW_PERIODS = {}, {}
+
+def taiwan():
+    # table 56: periods of birth in ROC years (民國1-9年 = 1912-1920, then 民國10-19年 = 1921-1930 ...; the last runs to June 2023).
+    # Each period is stored under its first year; names stay in characters, with CEDICT pinyin for search where it is certain
+    from cedict_pinyin import pinyin
+    c = new()
+    for line in open(f"{RAW}/tw/tw-moi-112-names.tsv", encoding="utf-8"):
+        if line.startswith("#"): continue
+        tab, s, per, rk, n, v = line.rstrip("\n").split("\t")
+        if tab != "t56": continue
+        a, b = int(per[:4]), int(per[5:9])
+        c[a]["girl" if s == "f" else "boy"][n] = int(v); TW_PERIODS[str(a)] = [a, b]
+        if pinyin(n): TAIWAN_LATIN[n] = pinyin(n)
+    return c
+
+def belgium():
+    c = new()
+    for y, d in json.load(open(f"{RAW}/be-statbel/top12-1995-2025.json", encoding="utf-8")).items():
+        for s, sex in (("f", "girl"), ("m", "boy")):
+            for n, v in d[s]: c[int(y)][sex][n] = int(v)
+    return c
+
 # coverage: "all" = every name above a publication threshold; "top" = a ranked list only
 # badge: "full" (all names above a threshold, ongoing), "ranked" (top-N only), "ended" (series no longer updated),
 #        "population" (people counted in a register or census by when they were born, not newborn registrations)
@@ -509,6 +588,17 @@ PLACES = [
          coverage="top", badge="population", decades=True, threshold=None, rule="Names of people counted in the 2010 census, by the decade they were born; 1920 stands for everyone born before 1930.", fn=brazil),
     dict(key="fi", label="Finland", group="", region="Europe", agency="Digital and Population Data Services Agency", dataset="Nimipalvelu: suosituimmat etunimet", license="CC BY 4.0",
          coverage="top", badge="population", decades=True, threshold=5, rule="People in the Finnish population register, by the decade they were born, counting every first name a person has (not only the one they go by). Names with fewer than 5 bearers aren't published.", fn=finland),
+    dict(key="es", label="Spain", group="", region="Europe", agency="Instituto Nacional de Estadística (INE)", dataset="Nombres más frecuentes por fecha de nacimiento (Censos de población anuales, 1 January 2025)", license="Free reuse citing INE as the source",
+         coverage="top", badge="population", decades=True, threshold=None, rule="People living in Spain on 1 January 2025, by the decade they were born, from INE's table of the 50 most frequent names of each decade (residents counted, not births; people who died or left before 2025 are missing). 1920 stands for everyone born before 1930; 2020 covers 2020–2024. Compound names count as their own name (Maria Carmen). INE prints names without accents; they are shown as printed.", fn=spain_decades),
+    dict(key="it", label="Italy", group="", region="Europe", agency="ISTAT", dataset="Conta nomi: names of babies registered at birth (survey Iscritti in anagrafe per nascita)", license="CC BY 4.0 (Istat)",
+         coverage="all", badge="full", threshold=1, rule="Babies of the resident population registered at birth, by year of birth, from 1999. Every first name is counted, down to one baby, written as ISTAT prints it: compound names whole (Giovanni Pio) and an accented last letter as an apostrophe (Nicolo' for Nicolò). ISTAT does not correct spelling mistakes or a name that doesn't match the baby's sex.", fn=italy),
+    dict(key="tr", label="Türkiye", group="", region="Middle East & West Asia", agency="Turkish Statistical Institute (TÜİK)", dataset="İstatistiklerle Çocuk (Statistics on Child): most used names of babies born in the year", license="Free to use with attribution (TÜİK)",
+         coverage="top", badge="ranked", threshold=None, rule="Top 30 names of babies born in the year, from the Address Based Population Registration System (ADNKS). 2014–2020 are ranks only; counts from 2021. 2014 is the age-0 group at the end of the year. Turkish spelling as published (Göktuğ, İnci).", fn=turkey, ranked=turkey_ranks),
+    dict(key="tw", label="Taiwan", group="", region="East Asia", agency="Ministry of the Interior, Department of Household Registration", dataset="全國姓名統計分析 (National name statistics), table 56: top 10 given names by period of birth", license="Open Government Data License, version 1.0 (attribution)",
+         coverage="top", badge="population", threshold=None, period=10, periods=TW_PERIODS, script="Han", latin=TAIWAN_LATIN,
+         rule="People in Taiwan's household register on 30 June 2023, by when they were born (ten-year periods counted in Republic of China years: 1912–1920, 1921–1930, and so on; the last is 2021 to June 2023). Living people, not newborn registrations. Names are in Chinese characters as registered; the pinyin for search comes from the CC-CEDICT dictionary, not from the ministry, and is left out where a character has more than one reading.", fn=taiwan),
+    dict(key="be", label="Belgium", group="", region="Europe", agency="Statbel", dataset="First names of newborns 1995–2025", license="Statbel open data (attribution)",
+         coverage="all", badge="full", threshold=5, rule="Statbel publishes names given to at least 5 newborns in a year in Belgium.", fn=belgium),
 ]
 if all(moscow_files().values()):
     PLACES.append(dict(key="ru-moscow", label="Moscow (city)", group="Russia", region="Europe", agency="Moscow Government open data / Moscow civil registry (ZAGS)",

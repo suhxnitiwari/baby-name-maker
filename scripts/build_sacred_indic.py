@@ -766,10 +766,19 @@ def hindu(hints, later=True):
         print(f"  scanned {job['corpus']} / {job['text'] or job['corpus']} in {time.time() - t0:.0f}s, {len(hits)} lemmas", file=sys.stderr)
     # phase 2: Wikidata items for names of the later corpora (label match + Hindu-context description)
     if later:
-        keys = {k for job in JOBS if job["new"] for k, h in job["hits"].items()
-                if h["free"] and (any(ls_works_ok(job["wkey"], sn) for sn in mw[cand[k]["mw"]]["senses"]) or h.get("pure"))}
-        keys -= {k for k in keys if any(v == "label" for f, v in wd_by_key.get(k, []))}
-        found = wd_label_figs(sorted(keys))
+        pri = {}
+        for job in JOBS:
+            if not job["new"]: continue
+            for k, h in job["hits"].items():
+                if not h["free"] or any(v == "label" for f, v in wd_by_key.get(k, [])): continue
+                d = mw[cand[k]["mw"]]
+                tied = any(ls_works_ok(job["wkey"], sn) for sn in d["senses"])
+                amb = is_amb(k, d) and not h.get("pure")
+                if not (tied or h.get("pure")): continue
+                score = (2 if amb and tied else (1 if tied else 0), h["n"])     # Wikidata decides ambiguous tied names first
+                pri[k] = max(pri.get(k, (0, 0)), score)
+        keys = sorted(pri, key=lambda k: pri[k], reverse=True)
+        found = wd_label_figs(keys)
         for k2, f in found.items(): wd_by_key[k2].append((f, "label"))
         print(f"  Wikidata label matches for later corpora: {len(found)} of {len(keys)} names", file=sys.stderr)
     # phase 3: decide
@@ -961,7 +970,7 @@ def hindu(hints, later=True):
             conf = round(max(0.1, min(conf, 0.99)), 2)
             use = cverses if amb and cverses else h["verses"]
             occ = h["n"]                     # every matched form (for common words this may include the ordinary word)
-            cite, section, url, _ = verses[use[0]]
+            cite, section, url = verses[use[0]][:3]
             translit = L[:1].upper() + L[1:]
             for rx, rep in ((r"ṃ(?=[cj])", "ñ"), (r"ṃ(?=[kg])", "ṅ"), (r"ṃ(?=[td])", "n"), (r"ṃ(?=[ṭḍ])", "ṇ"), (r"ṃ(?=[pb])", "m")):
                 translit = re.sub(rx, rep, translit)
@@ -1275,57 +1284,67 @@ WD_BAD = re.compile(r"\bfilm\b|album|\bsong\b|single|village|town in|city in|dis
                     r"plant|scholar|writer|poet\b|singer|musician|scientist|astronomer|mathematician|philosopher \(|journalist", re.I)
 WD_TEXT = re.compile(r"literary work|religious text|\btext\b|upanishad|book|scripture|written work|hymn", re.I)
 
+def desc_type(d):
+    d = d.lower()
+    for t, rx in (("demon", r"asura|demon|rakshas|rākṣas|daitya|dānava|danava"), ("deity", r"goddess|\bgod\b|deity|devi\b|personification"),
+                  ("mythological_being", r"serpent|nāga|\bnaga\b|apsara|gandharva|yaksha|monkey|vanara|bird|elephant|horse"),
+                  ("place", r"river|mountain|city|kingdom|forest|region"), ("sage", r"sage|rishi|ṛṣi|seer|ascetic"),
+                  ("royal", r"\bking\b|queen|prince|princess|ruler")):
+        if re.search(rx, d): return t
+    return "human"
+
 def wd_label_figs(keys):
-    """Wikidata items whose English label or alias equals the name (IAST or everyday spelling) and whose description places
-    them in Hindu tradition. A name matching two or more such items gets none (no guessing)."""
+    """Wikidata items whose English label or alias equals the name's everyday spelling and whose description places them in
+    Hindu tradition (batched WDQS queries, cached). A name matching two or more such items gets none (no guessing)."""
     try: cache = json.load(open(WDL_CACHE, encoding="utf-8"))
     except Exception: cache = {}
-    labels_of = {}
+    if not isinstance(cache, dict) or cache.get("_v") != 3: cache = {"_v": 3, "label": {}}
+    label_of = {}
     for k in keys:
         L = re.sub(r"ṃ(?=[cj])", "ñ", re.sub(r"ṃ(?=[kg])", "ṅ", re.sub(r"ṃ(?=[td])", "n", k)))
-        cand = {roman(L), L[:1].upper() + L[1:], modern_name(L[:1].upper() + L[1:], {})}
-        if roman(L).endswith("a") and len(L) > 4: cand.add(roman(L)[:-1])
-        labels_of[k] = {c for c in cand if len(c) > 2}
-    need = sorted({l for v in labels_of.values() for l in v} - set(cache))
-    for i in range(0, len(need), 120):
-        chunk = need[i:i + 120]
+        label_of[k] = modern_name(L[:1].upper() + L[1:], {})
+    need = sorted({l for l in label_of.values()} - set(cache["label"]))
+    for i in range(0, len(need), 250):
+        chunk = need[i:i + 250]
         vals = " ".join(json.dumps(l, ensure_ascii=False) + "@en" for l in chunk)
-        q = f"""SELECT ?l ?item ?desc ?sex (GROUP_CONCAT(DISTINCT ?il; separator="|") AS ?insts) WHERE {{
-          VALUES ?l {{ {vals} }} ?item rdfs:label|skos:altLabel ?l .
-          OPTIONAL {{ ?item schema:description ?desc FILTER(lang(?desc)="en") }}
-          OPTIONAL {{ ?item wdt:P21 ?sex }}
-          OPTIONAL {{ ?item wdt:P31 ?i . ?i rdfs:label ?il FILTER(lang(?il)="en") }} }} GROUP BY ?l ?item ?desc ?sex"""
+        q = (f'SELECT ?l ?item ?desc ?sex ?p31 WHERE {{ VALUES ?l {{ {vals} }} {{ ?item rdfs:label ?l }} UNION {{ ?item skos:altLabel ?l }} '
+             f'OPTIONAL {{ ?item schema:description ?desc FILTER(lang(?desc)="en") }} OPTIONAL {{ ?item wdt:P21 ?sex }} '
+             f'OPTIONAL {{ ?item wdt:P31 ?p31 }} }}')
         res = None
-        for attempt in range(5):
+        for attempt in range(6):
             try:
-                req = urllib.request.Request("https://query.wikidata.org/sparql?" + urllib.parse.urlencode({"query": q}),
+                req = urllib.request.Request("https://query.wikidata.org/sparql", data=urllib.parse.urlencode({"query": q}).encode(),
                                              headers={"User-Agent": UA, "Accept": "application/sparql-results+json"})
-                with urllib.request.urlopen(req, timeout=120) as r: res = json.loads(r.read())
-                break
-            except Exception as e:
-                time.sleep(65 if "429" in str(e) else 5 + 5 * attempt)
+                with urllib.request.urlopen(req, timeout=180) as r: res = json.loads(r.read()); break
+            except urllib.error.HTTPError as e:
+                ra = e.headers.get("Retry-After") if e.headers else None
+                time.sleep(min(90, int(ra) + 1) if ra and ra.isdigit() else 61)
+            except Exception:
+                time.sleep(10 + 10 * attempt)
         if res is None: continue
-        for l in chunk: cache[l] = []
+        got = {l: {} for l in chunk}
         for b in res["results"]["bindings"]:
             g = lambda x: b.get(x, {}).get("value", "")
+            it = got[g("l")].setdefault(g("item").rsplit("/", 1)[-1], {"desc": g("desc"), "sex": "", "p31": []})
             sx = g("sex").rsplit("/", 1)[-1]
-            cache[g("l")].append({"qid": g("item").rsplit("/", 1)[-1], "desc": g("desc"), "insts": g("insts"),
-                                  "sex": "boy" if sx == "Q6581097" else ("girl" if sx == "Q6581072" else "")})
-        if i % 1200 == 0: json.dump(cache, open(WDL_CACHE, "w", encoding="utf-8"), ensure_ascii=False)
-        time.sleep(0.3)
-    json.dump(cache, open(WDL_CACHE, "w", encoding="utf-8"), ensure_ascii=False)
+            if sx == "Q6581097": it["sex"] = "boy"
+            elif sx == "Q6581072": it["sex"] = "girl"
+            p = g("p31").rsplit("/", 1)[-1]
+            if p and p not in it["p31"]: it["p31"].append(p)
+        for l, items in got.items(): cache["label"][l] = [{"qid": q2, **v} for q2, v in items.items()]
+        json.dump(cache, open(WDL_CACHE, "w", encoding="utf-8"), ensure_ascii=False)
+        print(f"    Wikidata labels {min(i + 250, len(need))}/{len(need)}", file=sys.stderr)
+        time.sleep(2)
+    TEXTY = {"Q7725634", "Q47461344", "Q1092563", "Q17537576", "Q571", "Q49848", "Q11424", "Q4167410", "Q13442814",
+             "Q5398426", "Q7366", "Q482994", "Q101352", "Q12308941", "Q11879590", "Q3409032", "Q4167836"}
     out = {}
-    for k, labs in labels_of.items():
-        hits = {}
-        for l in labs:
-            for c in cache.get(l, []):
-                blob = c["desc"] + " | " + c["insts"]
-                if WD_OK.search(blob) and not WD_BAD.search(c["desc"]) and not WD_TEXT.search(c["insts"]):
-                    hits.setdefault(c["qid"], (l, c))
+    for k, label in label_of.items():
+        hits = {c["qid"]: c for c in cache["label"].get(label, [])
+                if WD_OK.search(c["desc"]) and not WD_BAD.search(c["desc"]) and not (set(c["p31"]) & TEXTY)}
         if len(hits) == 1:
-            qid, (l, c) = next(iter(hits.items()))
-            out[k] = {"qid": qid, "en": l, "works": {"*"}, "sex": c["sex"], "keys": {k}, "akeys": set(), "confirm": set(),
-                      "desc": c["desc"], "type": wd_type(c["insts"], c["desc"])}
+            qid, c = next(iter(hits.items()))
+            out[k] = {"qid": qid, "en": label, "works": {"*"}, "sex": c["sex"], "keys": {k},
+                      "akeys": set(), "confirm": set(), "desc": c["desc"], "type": desc_type(c["desc"])}
     return out
 
 
