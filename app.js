@@ -65,14 +65,17 @@ function eastAsian(d) {
 // …then medieval England and France, Old Norse, and Azerbaijan's official list (data/medieval-names.json, data/az-names.json)
 const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=8", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=2",
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1",
-  "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1"]
+  "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=1"]
   .map(u => getJSON(u).catch(() => [])))
-  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy])).catch(e => console.error(e));
+  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw])).catch(e => console.error(e));
+const BOLLYWOOD = new Map();   // folded first name → "In Bollywood: Varun Dhawan, actor…" (any name, from the records or the lists)
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
   for (let [n, g, o, l, r, m, src, texts, kind, also] of rows) {
     if (src) src = src.replace(/^A (?=[AEIOU])/, "An ");
     const x = texts ? texts.split(",") : [], k = fold(n), cur = have.get(k);
+    // a star's first name only adds its line to a name the site already knows: it says nothing about origin or who the name is for
+    if (src && src.startsWith("In Bollywood:")) { BOLLYWOOD.set(k, src); continue; }
     // the ancient layers (Arabia before Islam, Mexico before 1521, Greece, Rome) say who bore the name: that line shows on the card
     const hist = src && /^(Used (in Arabia )?before|Used in ancient Greece|Used in early Armenia|An ancient|The modern form of the ancient|The name of the .{1,30} (goddess|god)\b|A Classical Nahuatl word)/.test(src) ? src : "";
     if (cur) {
@@ -557,7 +560,7 @@ const ETY_LANG = /\b(?:from|of)\s+(?:the\s+)?(?:Ancient |Classical |Biblical |Ko
 let ORIGINS = {}, NATIVE_ALL = {}, ARABIC = {};
 getJSON("data/name-origins.json?v=3").then(d => ORIGINS = d).catch(() => {});
 // Latin spellings of Arabic names (Wikidata): Yousif, Hussain, Fatema → their Arabic, used only for a name with no other origin on record
-getJSON("data/arabic-forms.json?v=1").then(d => ARABIC = d).catch(() => {});
+getJSON("data/arabic-forms.json?v=2").then(d => ARABIC = d).catch(() => {});
 function originOf(x) {
   const k = fold(x.n);
   // 1. the name's own etymology on Wiktionary (Omar, Ali, Aisha: borrowed from Arabic)
@@ -785,6 +788,7 @@ const Hero = (() => {
       (maybe ? `<span class="hc-maybe">Did you mean <button class="inline" data-hero-name="${esc(maybe.n)}">${esc(maybe.n)}</button>?</span>` : "") +
       (m ? `<span class="hc-mean">“${esc(m)}”</span>` : "") + (cite ? `<span class="hc-src">${esc(cite)}</span>` : "") +
       (x.hist ? x.hist.map(h => `<span class="hc-hist">${esc(histLine(h))}</span>`).join("") : "") +
+      (BOLLYWOOD.has(k) ? `<span class="hc-hist hc-bw">${esc(histLine(BOLLYWOOD.get(k)))}</span>` : "") +
       (pop ? `<span class="hc-chart">${esc(pop)}</span>` : "");
   }
   if (touched) $("#typeHint").classList.add("gone");
