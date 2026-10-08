@@ -67,9 +67,9 @@ const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1",
   "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=1",
   "data/english-names.json?v=1", "data/spanish-names.json?v=1",
-  "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2"]
+  "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2", "data/persian-names.json?v=1", "data/egyptian-names.json?v=1"]
   .map(u => getJSON(u).catch(() => [])))
-  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, en, es, pt, de, fi]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...en, ...es, ...pt, ...de, ...fi])).catch(e => console.error(e));
+  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, en, es, pt, de, fi, fa, eg]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...en, ...es, ...pt, ...de, ...fi, ...fa, ...eg])).catch(e => console.error(e));
 const BOLLYWOOD = new Map();   // folded first name → "In Bollywood: Varun Dhawan, actor…" (any name, from the records or the lists)
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
@@ -79,7 +79,7 @@ function addStoried(rows) {
     // a star's first name only adds its line to a name the site already knows: it says nothing about origin or who the name is for
     if (src && src.startsWith("In Bollywood:")) { BOLLYWOOD.set(k, src); continue; }
     // the ancient layers (Arabia before Islam, Mexico before 1521, Greece, Rome) say who bore the name: that line shows on the card
-    const hist = src && /^(Used (in Arabia )?before|Used in ancient Greece|Used in early Armenia|An ancient|The modern form of the ancient|The name of the .{1,30} (goddess|god)\b|A Classical Nahuatl word)/.test(src) ? src : "";
+    const hist = src && /^(Used (in Arabia )?before|Used in ancient Greece|Used in early Armenia|Used in ancient Iran|Used in ancient Egypt|A god's name in|A goddess's name in|(?=.*\bShahnameh\b)|An ancient|The modern form of the ancient|The name of the .{1,30} (goddess|god)\b|A Classical Nahuatl word)/.test(src) ? src : "";
     // "A German name, from Ancient Greek Σουσάννα, from Hebrew…": the chain says where the name comes from, not the list it is on
     const ety = src && /^An? [\p{L} ]+ name, from /u.test(src) ? src : "";
     if (cur) {
@@ -124,7 +124,7 @@ const PERSONLIKE = new Set(["human", "prophet", "sage", "saint", "disciple", "ro
 const SACRED = new Map(), SACRED_SEX = new Map(); // folded name → cited references; the sex of the people the text gives that name
 let SACRED_FIG = {};
 const FIG_FORMS = new Map(); // figure → every name form it carries, across traditions (Abraham, Avraham, Ibrahim)
-const sacredReady = Promise.all([getJSON("data/sacred.json?v=7").catch(() => null), storied]).then(([d]) => {
+const sacredReady = Promise.all([getJSON("data/sacred.json?v=8").catch(() => null), storied]).then(([d]) => {
   if (!d) return;
   SACRED_FIG = d.f;
   const have = new Map(ALL_NAMED.map(x => [fold(x.n), x]));
@@ -571,7 +571,7 @@ const BASKETS = new Set(["African", "South Asian", "Pacific", "Slavic", "Latin A
 // Hebrew), else the first culture that lists it. The other lists record where families who moved use it, so they stay out of this line.
 const ETY_LANG = /\b(?:from|of)\s+(?:the\s+)?(?:Ancient |Classical |Biblical |Koine |Old |Middle |Late |Medieval |Modern )?(Greek|Hebrew|Latin|Arabic|Sanskrit|Persian|Aramaic|Old Norse|Germanic|Celtic|Irish|Welsh|Slavic|Turkish|Hindi|Tamil|Swahili|Yoruba|Igbo|Akan|Japanese|Chinese|Korean)\b/gi;
 let ORIGINS = {}, NATIVE_ALL = {}, ARABIC = {};
-getJSON("data/name-origins.json?v=3").then(d => ORIGINS = d).catch(() => {});
+getJSON("data/name-origins.json?v=5").then(d => ORIGINS = d).catch(() => {});
 // Latin spellings of Arabic names (Wikidata): Yousif, Hussain, Fatema → their Arabic, used only for a name with no other origin on record
 getJSON("data/arabic-forms.json?v=2").then(d => ARABIC = d).catch(() => {});
 function originOf(x) {
@@ -731,7 +731,7 @@ const Hero = (() => {
   // the name in its own scripts (data/native-forms.json): only the languages of the name's own cultures, so Sofia gets Σοφία and
   // Софья but not a Japanese spelling of a borrowed name; same-sounding spellings share theirs (Fatima ← Fatimah's فاطمة)
   let NATIVE = {};
-  getJSON("data/native-forms.json?v=11").then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
+  getJSON("data/native-forms.json?v=12").then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
   const LANG_OF = { Arab: "Arabic", Arabic: "Arabic", "Pre-Islamic Arabian": "Arabic", Indian: "Hindi Sanskrit Marathi", "South Asian": "Hindi Sanskrit Urdu Bengali", Hindi: "Hindi Sanskrit",
     Israeli: "Hebrew", Hebrew: "Hebrew", Jewish: "Hebrew", Persian: "Persian", Iranian: "Persian", Chinese: "Chinese", Japanese: "Japanese", Korean: "Korean",
     Greek: "Greek", Russian: "Russian", Slavic: "Russian Ukrainian Bulgarian Serbian", Ukrainian: "Ukrainian", Armenian: "Armenian", Georgian: "Georgian",
@@ -778,9 +778,12 @@ const Hero = (() => {
     h = h.replace(/\s*Written [^.]+\.\s*/, " ").trim();
     let depth = 0, at = -1;
     if (h.endsWith(")")) for (let i = h.length - 1; i >= 0; i--) { if (h[i] === ")") depth++; else if (h[i] === "(" && !--depth) { at = i; break; } }
-    if (at < 0) return h;
-    const cite = h.slice(at + 1, -1).replace(/;?\s*meaning:.*$/, "").trim();
-    return h.slice(0, at).trim() + (cite ? ` · ${cite}` : "");
+    let body = at < 0 ? h : h.slice(0, at).trim();
+    const cite = at < 0 ? "" : h.slice(at + 1, -1).replace(/;?\s*meaning:.*$/, "").trim();
+    // a long scholarly note (transliteration IDs, conventions) keeps only its first sentence on the card
+    body = body.replace(/; first in Shahnameh,[^)]*\)/, ")");                     // the chapter and bayt stay in the data, not on the card
+    if (body.length > 200) { const m = body.slice(40).match(/[a-z)\]]\. (?=[A-Z])/); if (m) body = body.slice(0, 40 + m.index + 2); }   // a real sentence end, not "Dyn. 18"
+    return body + (cite ? ` · ${cite}` : "");
   }
   // the name's card: where it's from (and how it's written there), what it means, how it charts
   function cardFor(v) {

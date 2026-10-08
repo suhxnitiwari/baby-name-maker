@@ -1,4 +1,7 @@
-"""Every original-script spelling our sources know for a name → data/native-forms.json.
+"""NOTE: data/native-forms.json also carries forms added straight from the ancient-name lists (Arabic, Greek, Armenian, Persian)
+and hand fixes (Maya माया, Hadi هادي); a full rebuild drops those, so re-add them after running this.
+
+Every original-script spelling our sources know for a name → data/native-forms.json.
 
 The card shows a name in its own script (Suhani सुहानी, Hana هناء · 花 · 하나). Those spellings are scattered across sources:
 the culture lists ("Written सुहानी."), Wiktionary etymologies ("From Arabic هَنَاء"), the Japanese list (kanji), the sacred texts
@@ -43,6 +46,12 @@ for f in ["culture-names.json", "caucasus-balkan-names.json", "also-cultures.jso
         m = re.search(r"\(Hebrew ([^;)]+)", src)
         if m: add(name, m.group(1), "Hebrew")
 
+# Persian and ancient Iranian names: "Written داریوش." is always the Persian spelling, whatever stage the row's language is
+if os.path.exists(D("persian-names.json")):
+    for r in json.load(open(D("persian-names.json"), encoding="utf-8")):
+        m = re.search(r"Written ([^\s.,(]+)", r[6] or "")
+        if m: add(r[0], m.group(1), "Persian")
+
 # the hand-written names (names.js): "Written सुहानी, the feminine of …"
 src = open(os.path.join(ROOT, "names.js"), encoding="utf-8").read()
 for line in src[src.index("REAL_RAW = `") + 12: src.index("`;", src.index("REAL_RAW = `"))].strip().split("\n"):
@@ -79,7 +88,11 @@ if os.path.exists(D("sacred.json")):
     for name, _, refs in sac["n"]:
         for ref in refs:
             corpus = sac["c"][ref[1]]
-            add(name, ref[8], LANG.get(corpus, "Sanskrit" if sac["t"][ref[0]] in ("Hindu", "Jain") else "Pali" if corpus == "Pali Canon" else "Sanskrit"))
+            # the script follows the text's tradition; a tradition without a known script adds nothing (the Talmud's Hebrew is never "Sanskrit")
+            trad = sac["t"][ref[0]]
+            lang = LANG.get(corpus) or {"Jewish": "Hebrew", "Islamic": "Arabic", "Greek religion": "Greek", "Hindu": "Sanskrit", "Jain": "Sanskrit",
+                                        "Sikh": "Punjabi", "Zoroastrian": "Avestan"}.get(trad) or ("Pali" if corpus == "Pali Canon" else None)
+            if lang: add(name, ref[8], lang)
 
 # official lists that print the native form (Cyprus Greek, Hungary's minority names)
 NL = {"cy": "Greek", "hu-minority-armenian": "Armenian", "hu-minority-bulgarian": "Bulgarian", "hu-minority-greek": "Greek", "hu-minority-serbian": "Serbian",
