@@ -63,17 +63,17 @@ function eastAsian(d) {
 // the cultures list leads; the East Asian lists (some built from syllables) and Israel's records, which include names
 // from everywhere, come after it, so they only add cultures (Rani is Bengali, Hindi and Telugu first)
 // …then medieval England and France, Old Norse, and Azerbaijan's official list (data/medieval-names.json, data/az-names.json)
-const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=8", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=2",
+const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=9", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=2",
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1",
   "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=1",
   "data/english-names.json?v=1", "data/spanish-names.json?v=1",
-  "data/portuguese-names.json?v=1", "data/german-names.json?v=1"]
+  "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2"]
   .map(u => getJSON(u).catch(() => [])))
-  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, en, es, pt, de]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...en, ...es, ...pt, ...de])).catch(e => console.error(e));
+  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, en, es, pt, de, fi]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...en, ...es, ...pt, ...de, ...fi])).catch(e => console.error(e));
 const BOLLYWOOD = new Map();   // folded first name → "In Bollywood: Varun Dhawan, actor…" (any name, from the records or the lists)
 function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
-  for (let [n, g, o, l, r, m, src, texts, kind, also] of rows) {
+  for (let [n, g, o, l, r, m, src, texts, kind, also, ease] of rows) {
     if (src) src = src.replace(/^A (?=[AEIOU])/, "An ");
     const x = texts ? texts.split(",") : [], k = fold(n), cur = have.get(k);
     // a star's first name only adds its line to a name the site already knows: it says nothing about origin or who the name is for
@@ -84,6 +84,14 @@ function addStoried(rows) {
     const ety = src && /^An? [\p{L} ]+ name, from /u.test(src) ? src : "";
     if (cur) {
       if (ety && !cur.ety && !cur.hand) cur.ety = ety;
+      // a language's own list (Portuguese, German, Finnish: the rows that rate how easy a name is) knows its names better than the broad
+      // lists loaded before it: Inês is Portuguese, Aino Finnish, Máret Sámi, whichever list happened to name them first
+      // …and within that list, the language itself (Finnish) beats a group that uses it (Finnish Orthodox): Onni is Finnish
+      const plain = o === l, better = !cur.spec || (plain && cur.o !== cur.l);
+      if (ease !== undefined && o && !cur.hand && better) {
+        if (cur.o !== o) { if (cur.o) cur.oo = [...new Set([cur.o, ...(cur.oo || [])])].filter(c => c !== o); cur.o = o; cur.l = l || cur.l; }
+        cur.spec = true;
+      }
       if (hist && !(cur.hist || []).includes(hist)) cur.hist = [...(cur.hist || []), hist];
       // being borne in the Greek world says nothing about where a name comes from (Esther, Elias): it only adds the line
       if (/^Used in ancient Greece/.test(hist)) continue;
@@ -95,7 +103,7 @@ function addStoried(rows) {
       cur.x = [...new Set([...(cur.x || []), ...x])]; cur.r = [...new Set([...cur.r, ...(r ? r.split(",") : [])])];
       // a Japanese, Korean or Chinese reading's meaning belongs to that reading, not to a Georgian Nino or an Italian Gino
       if (!(["Japanese", "Korean", "Chinese"].includes(o) && cur.o && cur.o !== o)) cur.m ||= m; cur.src = cur.src ? (src && !cur.src.includes(src) && src.startsWith("Given to") ? `${cur.src} ${src}` : cur.src) : src; continue; }
-    const e = { n, g: { g: "girl", b: "boy", e: "either" }[g], o, l, r: r ? r.split(",") : [], m, src, type: kind === "root" ? "root" : "real", x, oo: also || [], ...(hist ? { hist: [hist] } : {}), ...(ety ? { ety } : {}) };
+    const e = { n, g: { g: "girl", b: "boy", e: "either" }[g], o, l, r: r ? r.split(",") : [], m, src, type: kind === "root" ? "root" : "real", x, oo: also || [], ...(hist ? { hist: [hist] } : {}), ...(ety ? { ety } : {}), ...(ease !== undefined ? { spec: true } : {}) };
     (kind === "root" ? ROOT_NAMES : REAL).push(e); ALL_NAMED.push(e); have.set(k, e); TAKEN.add(k); indexName(e);
   }
   // hand-written names join their broad basket too (a Zulu name is also African)
