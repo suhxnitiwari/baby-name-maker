@@ -18,7 +18,8 @@ D = lambda f: os.path.join(ROOT, "data", f)
 # source code / place → country (Québec is Canada, Northern Ireland and Scotland are the UK, Berlin is Germany …)
 COUNTRY = {"us": "US", "ca": "CA", "qc": "CA", "au": "AU", "uk": "GB", "nir": "GB", "sct": "GB", "ie": "IE", "fr": "FR", "es": "ES", "ch": "CH",
            "ar": "AR", "br": "BR", "cl": "CL", "pl": "PL", "de": "DE", "at": "AT", "no": "NO", "lu": "LU", "pt": "PT", "il": "IL", "fi": "FI",
-           "be": "BE", "nz": "NZ", "dk": "DK", "cz": "CZ", "cy": "CY", "hu": "HU", "is": "IS", "ro": "RO", "jp": "JP", "it": "IT", "tr": "TR", "tw": "TW", "se": "SE", "es": "ES"}
+           "be": "BE", "nz": "NZ", "dk": "DK", "cz": "CZ", "cy": "CY", "hu": "HU", "is": "IS", "ro": "RO", "jp": "JP", "it": "IT", "tr": "TR", "tw": "TW", "se": "SE", "es": "ES",
+           "lv": "LV", "gl": "GL", "si": "SI", "fo": "FO", "bs": "CH", "zh": "CH", "frc": "FR", "itc": "IT"}
 PLACE = {"the United States": "US", "Canada": "CA", "England & Wales": "GB", "Scotland": "GB", "Northern Ireland": "GB", "Ireland": "IE",
          "France": "FR", "Catalonia": "ES", "Switzerland": "CH", "Brazil": "BR", "Chile": "CL", "Poland": "PL", "Berlin": "DE", "Austria": "AT",
          "Norway": "NO", "Luxembourg": "LU", "Finland": "FI", "Denmark": "DK", "New Zealand": "NZ", "New South Wales": "AU", "Queensland": "AU",

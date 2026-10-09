@@ -27,6 +27,22 @@
 #   es    INE (Spain), names of residents with 20+ people (Padrón, 1 Jan 2022; INE strips accents): raw/es/es-ine-nombres-ge20.tsv
 #   se    Statistics Sweden TAB622, every tilltalsnamn (name a person goes by) with 10+ bearers 2005-2020, no counts:
 #         raw/se/se-scb-TAB622-tilltalsnamn-min10-metadata.json
+#   dk    Danmarks Statistik, every first name registered in Denmark in 2020, women's and men's lists, no counts (published by
+#         Digitaliseringsstyrelsen, CC BY 4.0): raw/dk-dst/navne_registreret_i_danmark_2020.zip
+#   lv    PMLP (Latvia), "Personu vārdi" (data.gov.lv, CC0): every given name and combination in the Natural Persons Register with
+#         its number of people, half-yearly snapshots 2019-2026, by sex from Oct 2023: raw/lv/
+#   gl    Statistics Greenland statbank NAXT5-7, first names of the population and of newborns: raw/gl/
+#   fo    Hagstova Føroya statbank IB05, first names of boys, men, girls and women 1985-2025: raw/fo/
+#   bs    Statistisches Amt Basel-Stadt (CC BY 4.0), first names of the resident population 1979-2025 and of newborns,
+#         every name (counts under 4 left blank, read as 1): raw/ch-bs/
+#   zh    Statistisches Amt des Kantons Zürich, first names of every newborn by year: raw/ch-zh/
+#   frc   French towns' état-civil lists of the names declared for babies born there (data.gouv.fr, Licence Ouverte only):
+#         raw/fr-communes/ (datasets.json lists each dataset, publisher and licence)
+#   qc    Retraite Québec "Banque de prénoms" 1980-2025 (Données Québec, CC BY 4.0), "<5" read as 2: raw/qc/
+#   itc   Italian towns' registers of names (dati.gov.it, CC BY 4.0 / CC0), names of 2+ people as for ISTAT: raw/it-comuni/
+#   wikt2 French, German, Polish, Finnish, Catalan, Portuguese, Czech and Hungarian Wiktionaries (CC BY-SA 4.0), every entry in
+#         a given-name category: raw/wikt-other-given-names.tsv
+#   si    SURS (Slovenia) SiStat 05X1005S/05X1010S/05X2001S/05X2002S, names with 5+ bearers (CC BY 4.0): raw/si/
 #
 #   python3 scripts/build_names_extra.py            (downloads what is missing, then rewrites data/names-extra.tsv)
 #   python3 scripts/build_names_extra.py --offline  (only what is already in raw/)
@@ -50,7 +66,8 @@ def fold(s):
     return re.sub(r"[\s-]", "", s)
 key = lambda n: unicodedata.normalize("NFC", n).lower()
 
-EXTRA_PLACEHOLDERS = {"sinnombre", "nn", "nomeignorado", "ignorado", "naoinformado", "semnome", "nonombre", "sinregistro", "fallecido", "rn", "nonato", "mortinato", "sansprenom", "inconnu", "inconnue", "veuve", "epouse", "dit", "dite"}
+EXTRA_PLACEHOLDERS = {"sinnombre", "nn", "nomeignorado", "ignorado", "naoinformado", "semnome", "nonombre", "sinregistro", "fallecido", "rn", "nonato", "mortinato", "sansprenom", "inconnu", "inconnue", "veuve", "epouse", "dit", "dite",
+                     "enfant", "prenom", "navn", "vorname", "nonrenseigne", "nondeclare", "sansprenom", "xxx"}
 def clean(n):
     n = world_clean(n)
     if not n: return None
@@ -63,6 +80,7 @@ def get(url, path, data=None, headers=None):
     if OFFLINE: return None
     req = urllib.request.Request(url, data=data, headers={**UA, **(headers or {})})
     with urllib.request.urlopen(req, timeout=300) as r: body = r.read()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     open(path, "wb").write(body); return path
 
 # ── sources: each yields (raw name, sex f|m|?, people) ──
@@ -322,7 +340,287 @@ def sweden():
     for code, n in d["dimension"]["Tilltalsnamn"]["category"]["label"].items():
         yield n.replace("’", "'"), "f" if code.endswith("K") else "m", 0
 
-SOURCES = [("ar", "RENAPER Argentina 1922-2015", argentina), ("lists", "official name lists (data/name-lists.tsv)", name_lists),
+def latvia():
+    # PMLP (Office of Citizenship and Migration Affairs, Latvia), "Personu vārdi" on data.gov.lv (CC0): how many people in the
+    # Natural Persons Register (until 28.06.2021 the Population Register) have each given name or combination of given names,
+    # every name with no minimum; by sex from 1.10.2023 (Vardi-dz-*). Names are written in Latvian spelling by the register;
+    # foreigners' names follow their travel document. Every half-yearly snapshot since 2019 is read, so people who have
+    # since died or left still count; per name and sex the largest count in any snapshot is kept (the same people recur).
+    d = os.path.join(RAW, "lv"); os.makedirs(d, exist_ok=True)
+    if not OFFLINE:
+        url = "https://data.gov.lv/dati/api/3/action/package_show?id=personu-vardi"
+        with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60) as r: res = json.load(r)["result"]["resources"]
+        for r in res:
+            p = os.path.join(d, "lv-pmlp-" + r["name"].lower().replace("_", "-"))
+            if r["url"].lower().endswith(".csv") and not os.path.exists(p): get(r["url"], p); time.sleep(1)
+    snaps = collections.defaultdict(dict)   # date → {"dz": path, "all": path}
+    for f in glob.glob(os.path.join(d, "lv-pmlp-vardi-*.csv")):
+        m = re.search(r"vardi-(dz-)?(\d{8})\.csv$", f)
+        if m: snaps[m.group(2)]["dz" if m.group(1) else "all"] = f
+    total, bysex = collections.Counter(), collections.Counter()
+    for date, fs in snaps.items():
+        seen = collections.Counter()
+        rows = csv.reader(open(fs.get("dz") or fs["all"], encoding="utf-8-sig")); next(rows)   # Vardi[,Dzimums],Skaits
+        for r in rows:
+            n, c = r[0], num(r[-1]); seen[n] += c
+            if len(r) == 3:
+                sx = "f" if r[1] == "SIEVIETE" else "m" if r[1] == "VĪRIETIS" else "?"
+                bysex[(n, sx)] = max(bysex[(n, sx)], c)
+        for n, c in seen.items(): total[n] = max(total[n], c)
+    # Foreigners' given-name fields copy their travel document, so a later word of a combination can be a family name
+    # ("LAURA KIRIJENKO"): a word counts if someone has it as their whole or first given name, or if 2+ people bear it.
+    alone, words = set(), collections.Counter()
+    for n, c in total.items():
+        ws = n.split()
+        if ws: alone.add(fold(ws[0]))
+        for w in ws: words[fold(w)] += c
+    for n, c in total.items():
+        sexes = {sx: bysex[(n, sx)] for sx in "fm?" if bysex[(n, sx)]}
+        if c > sum(sexes.values()): sexes["?"] = sexes.get("?", 0) + c - sum(sexes.values())
+        for w in n.split():
+            if re.search(r"(ovičs|evičs|ovičš)$", w.lower()): continue   # Latvian forms of Russian patronymics (Aleksejevičs)
+            if fold(w) in alone or words[fold(w)] >= 2:
+                for sx, k in sexes.items(): yield w, sx, k
+
+DK_SURNAME = re.compile(r"(gaard|gard|strup|drup|trup|torp|rup|holm|bjerg|berg|borg|sen|son|lund|dal|skov|mark|feldt|felt|vig|bæk|baek|bech|"
+                        r"toft|kær|kjær|kjaer|dorf|hus|vad|sted|stad|ager|kilde|hede|lev|ic|vic|ov|ova|ev|eva|sky|ski|ska|enko|chuk|uk|mann)$")
+def denmark():
+    # Danmarks Statistik, every first name registered in Denmark in 2020 (CPR), one list for names women use and one for
+    # names men use, no counts and no minimum; published by Digitaliseringsstyrelsen (CC BY 4.0, source Danmarks Statistik)
+    # as "Navne registreret i Danmark 2020": raw/dk-dst/navne_registreret_i_danmark_2020.zip
+    p = get("https://sprogtek-ressources.digst.govcloud.dk/danmarks%20statistik/navne_registreret_i_danmark_2020.zip",
+            os.path.join(RAW, "dk-dst", "navne_registreret_i_danmark_2020.zip"))
+    # Danish middle names (mellemnavne) are often family names ("Kornum", "Nordestgaard") and the lists don't tell them
+    # apart: a name that is also on the zip's list of all surnames and has a family-name shape (-gaard, -strup, -sen, -ić,
+    # -ov ...) is left out unless it is among the 1,000 commonest first names. (Many names on both lists are given names
+    # that also serve as family names where a father's name is passed on, as in Tamil or Somali naming.)
+    with zipfile.ZipFile(p) as z:
+        lines = lambda i: [l.strip() for l in io.TextIOWrapper(z.open(i), encoding="utf-8-sig") if l.strip()]
+        files = {i.filename: i for i in z.infolist()}
+        surnames = {fold(l) for f, i in files.items() if f.startswith("Efternavne - alle") for l in lines(i)}
+        top = {fold(l) for f, i in files.items() if f.startswith("Fornavne") and "1000" in f for l in lines(i)}
+        for f, i in files.items():
+            if not (f.startswith("Fornavne") and "alle" in f): continue
+            sx = "f" if "kvinder" in f else "m"
+            for n in lines(i):
+                if fold(n) not in surnames or fold(n) in top or not DK_SURNAME.search(fold(n)): yield n, sx, 0
+
+def px_names(base, tables, d):
+    # the name list of a PX-Web statbank table, from its metadata (the first variable holds the names), kept as raw/<d>/<table>.json
+    for t, sx in tables:
+        p = get(f"{base}/{t}.px", os.path.join(RAW, d, f"{t}.json"))
+        if not p: continue
+        for n in json.load(open(p, encoding="utf-8"))["variables"][0]["valueTexts"]: yield n, sx, 0
+
+def greenland():
+    # Statistics Greenland statbank (free reuse, source named): the names in NAXT5 (first names of the population 2011-) and
+    # NAXT6 / NAXT7 (first first names of boys / girls by birth cohort 2002-), read from the tables' metadata: raw/gl/
+    yield from px_names("https://bank.stat.gl/api/v1/en/Greenland/NA", [("NAXT5", "?"), ("NAXT6", "m"), ("NAXT7", "f")], "gl")
+
+def slovenia():
+    # SURS (Statistical Office of Slovenia) SiStat, CC BY 4.0: men's and women's names of the population (05X1005S, 05X1010S)
+    # and names of newborn boys and girls (05X2001S, 05X2002S), 2008-; SURS lists only names borne by 5 or more people: raw/si/
+    yield from px_names("https://pxweb.stat.si/SiStatData/api/v1/sl/Data",
+                        [("05X1005S", "m"), ("05X1010S", "f"), ("05X2001S", "m"), ("05X2002S", "f")], "si")
+
+def faroe():
+    # Hagstova Føroya (Statistics Faroe Islands) statbank IB05: first and second first names of boys, men, girls and women
+    # 1985-2025 (IB05014, IB05024, IB05034, IB05044), read from the tables' metadata: raw/fo/
+    yield from px_names("https://statbank.hagstova.fo/api/v1/en/H2/IB/IB05",
+                        [("d12_navn", "m"), ("m12_navn", "m"), ("g12_navn", "f"), ("k12_navn", "f")], "fo")
+
+def basel():
+    # Statistisches Amt Basel-Stadt (data.bs.ch, CC BY 4.0): first names of the resident population 1979-2025 from the
+    # cantonal residents' register (dataset 100129) and first names of newborns (100192), every name; rare names come with
+    # the count left blank (fewer than 4 people), counted here as 1. Per name and sex the largest yearly count is kept.
+    best = collections.Counter()
+    for ds, col in (("100129", "Vorname"), ("100192", "Vorname")):
+        p = get(f"https://data.bs.ch/api/v2/catalog/datasets/{ds}/exports/csv?use_labels=true", os.path.join(RAW, "ch-bs", f"bs-{ds}.csv"))
+        if not p: continue
+        for r in csv.DictReader(open(p, encoding="utf-8-sig"), delimiter=";"):
+            k = (r[col], "f" if r["Geschlecht"] == "W" else "m" if r["Geschlecht"] == "M" else "?")
+            best[k] = max(best[k], num(r["Anzahl"]) or 1)
+    for (n, sx), c in best.items(): yield n, sx, c
+
+def zurich_canton():
+    # Statistisches Amt des Kantons Zürich, first names of every baby born to mothers living in the canton, by year of
+    # birth (KTZH_00003002, opendata.swiss, attribution): raw/ch-zh/ktzh-vornamen-neugeborene.csv
+    p = get("https://daten.statistik.zh.ch/ogd/daten/ressourcen/KTZH_00003002_00006263.csv", os.path.join(RAW, "ch-zh", "ktzh-vornamen-neugeborene.csv"))
+    tot = collections.Counter()
+    for r in csv.DictReader(open(p, encoding="utf-8-sig")): tot[(r["VORNAME"], r["GESCHLECHT"])] += num(r["ANZAHL_NEUGEBORENE"])
+    for (n, sx), c in tot.items(): yield n, sx if sx in "fm" else "?", c
+
+FR_SKIP = re.compile(r"(?i)top ?\d|palmar|conseillers|changements?|insee|fichier des pr|super pr|parquet|patronymes|usuels|plus attribu|les plus")
+def france_communes():
+    # French towns' registers of births (état civil): the names declared for every baby born there, published by the town
+    # itself on data.gouv.fr under the Licence Ouverte (Etalab). Every dataset whose title is about first names and whose
+    # publisher is an organisation is read (top-10 lists, councillors' names, INSEE re-publications and ODbL or
+    # unlicensed sets are left out): raw/fr-communes/<dataset>-<n>.csv, with raw/fr-communes/datasets.json saying where each came from.
+    d = os.path.join(RAW, "fr-communes"); os.makedirs(d, exist_ok=True)
+    idx = os.path.join(d, "datasets.json")
+    if not os.path.exists(idx) and not OFFLINE:
+        found, page = [], 1
+        while page:
+            u = "https://www.data.gouv.fr/api/1/datasets/?" + urllib.parse.urlencode({"q": "prénoms", "page_size": 100, "page": page})
+            with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60) as r: res = json.load(r)
+            for x in res["data"]:
+                if not re.search(r"(?i)pr[ée]nom", x["title"]) or FR_SKIP.search(x["title"]) or not x.get("organization"): continue
+                if x.get("license") not in ("lov2", "fr-lo"): continue
+                urls = [r["url"] for r in x["resources"] if (r.get("format") or "").lower() == "csv" and (r.get("filesize") or 0) < 50e6]
+                if urls: found.append({"id": x["id"], "title": x["title"], "publisher": x["organization"]["name"], "licence": x["license"], "csv": urls})
+            page = page + 1 if res.get("next_page") else 0
+        for f in found:
+            for i, u in enumerate(f["csv"]):
+                try: get(u, os.path.join(d, f"{f['id']}-{i}.csv")); time.sleep(0.5)
+                except Exception as e: print(f"    fr-communes {f['title']}: {e}", flush=True)
+        json.dump(found, open(idx, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    for p in sorted(glob.glob(os.path.join(d, "*.csv"))):
+        raw = open(p, "rb").read()
+        for enc in ("utf-8-sig", "cp1252", "cp850"):   # cp850: a few towns export from old DOS-era software
+            try: txt = raw.decode(enc); break
+            except UnicodeDecodeError: pass
+        first = txt.split("\n", 1)[0]
+        rows = list(csv.reader(io.StringIO(txt), delimiter=max(";,\t", key=first.count)))
+        if not rows: continue
+        h = [x.strip().lower() for x in rows[0]]
+        ni = [i for i, x in enumerate(h) if re.search(r"pr[eé]nom", x) and not re.search(r"nombre|nb|rang|total|d[ée]compte", x)]
+        ci = [i for i, x in enumerate(h) if re.search(r"^(nombre|nb|effectif|occurr?en|occurence|d[ée]compte|nbre)", x)]
+        si = [i for i, x in enumerate(h) if re.search(r"sexe|genre", x)]
+        if not ni: continue
+        for r in rows[1:]:
+            if len(r) <= max(ni + ci + si): continue
+            c = re.sub(r"[.,]0+$", "", r[ci[0]].strip()) if ci else "1"
+            s = r[si[0]].strip().lower() if si else ""
+            sx = "f" if s[:1] in ("f", "2") else "m" if s[:1] in ("m", "1", "g") else "?"
+            yield r[ni[0]].strip(), sx, int(c) if c.isdigit() else 1
+
+def quebec():
+    # Retraite Québec, "Banque de prénoms" (Données Québec, CC BY 4.0): every first name of children eligible for family
+    # benefits since 1980, by year; names given fewer than 5 times in a year show "<5" (counted as 2), and names given only
+    # once in all 1980-2025 are left out by Retraite Québec: raw/qc/
+    for sx, ds, res, f in (("m", "93d640ec-d059-4768-b7ed-388604b278aa", "039539f5-af55-4d8f-9010-ca718e45c2a5", "grande_listeg_csv.csv"),
+                           ("f", "13db2583-427a-4e5f-b679-8532d3df571f", "bf77b504-54b9-4db8-be53-b92156175c12", "grande_listef_csv.csv")):
+        p = get(f"https://www.donneesquebec.ca/recherche/dataset/{ds}/resource/{res}/download/{f}", os.path.join(RAW, "qc", f"qc-rq-{f}"))
+        if not p: continue
+        rows = csv.reader(open(p, encoding="utf-8-sig")); next(rows)
+        for r in rows:
+            yield r[0], sx, sum(2 if v.strip() == "<5" else num(v) for v in r[1:])
+
+def italy_communes():
+    # Italian towns' registers (anagrafe): "Nomi iscritti per nascita", "Nomi residenti ..." and similar lists of the first
+    # names of babies registered or of residents, published by the towns on dati.gov.it under CC BY 4.0 / CC0 (top-N lists
+    # left out): raw/it-comuni/ (datasets.json says where each came from). As for ISTAT, names borne by only one person in
+    # all these lists are left out: the towns publish the register as typed, without correcting spelling.
+    d = os.path.join(RAW, "it-comuni"); os.makedirs(d, exist_ok=True)
+    idx = os.path.join(d, "datasets.json")
+    if not os.path.exists(idx) and not OFFLINE:
+        found = {}
+        for q in ("nomi nascita", "nomi residenti", "nomi nati", "nomi neonati", "nomi iscritti"):
+            start = 0
+            while True:
+                u = "https://www.dati.gov.it/opendata/api/3/action/package_search?" + urllib.parse.urlencode({"q": q, "rows": 100, "start": start})
+                with urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=60) as r: res = json.load(r)["result"]
+                for x in res["results"]:
+                    t, lic = x["title"], x.get("license_id") or ""
+                    if not re.search(r"(?i)\bnomi\b", t) or re.search(r"(?i)cognom|primi \d|frequent|graduatoria dei nomi tra|vie|strad", t): continue
+                    if "Creative Commons" not in lic: continue
+                    urls = [r["url"] for r in x.get("resources", []) if (r.get("format") or "").upper() == "CSV"]
+                    if urls: found[x["id"]] = {"title": t, "publisher": (x.get("organization") or {}).get("title"), "licence": lic, "csv": urls}
+                start += 100
+                if start >= res["count"]: break
+        for k, f in found.items():
+            for i, u in enumerate(f["csv"]):
+                try: get(u, os.path.join(d, f"{k}-{i}.csv")); time.sleep(0.3)
+                except Exception as e: print(f"    it-comuni {f['title']}: {e}", flush=True)
+        json.dump(found, open(idx, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    tot = collections.Counter()
+    for p in sorted(glob.glob(os.path.join(d, "*.csv"))):
+        raw = open(p, "rb").read()
+        for enc in ("utf-8-sig", "cp1252"):
+            try: txt = raw.decode(enc); break
+            except UnicodeDecodeError: pass
+        rows = list(csv.reader(io.StringIO(txt), delimiter=max(";,\t", key=txt.split("\n", 1)[0].count)))
+        if not rows: continue
+        h = [x.strip().lower() for x in rows[0]]
+        names = [(i, "m" if re.search(r"masch|_m$", x) else "f" if re.search(r"femm|_f$", x) else None)
+                 for i, x in enumerate(h) if re.search(r"nome", x) and not re.search(r"numero|cognom", x)]
+        counts = [i for i, x in enumerate(h) if re.search(r"occorr|numero|^n\.?$|^n_|totale|frequenz|conteggio|^num", x)]
+        si = [i for i, x in enumerate(h) if re.search(r"sesso|genere", x)]
+        for r in rows[1:]:
+            for i, sx in names:
+                if i >= len(r) or not r[i].strip(): continue
+                if sx is None:
+                    v = r[si[0]].strip().upper()[:1] if si and si[0] < len(r) else ""
+                    sx = "f" if v in ("F", "D") else "m" if v in ("M", "U") else "?"
+                cc = [k for k in counts if k > i and k < len(r)]
+                v = re.sub(r"[.,]0+$", "", r[cc[0]].strip()) if cc else "1"
+                tot[(r[i].strip(), sx)] += int(v) if v.isdigit() else 1
+    people = collections.Counter()
+    for (n, sx), c in tot.items(): people[fold(n)] += c
+    for (n, sx), c in tot.items():
+        if people[fold(n)] >= 2: yield n, sx, c
+
+# Other Wiktionaries' given-name categories: (wiki, how to find its categories, category must match, category must not match)
+WIKTS = [("fr", "prefix:Prénoms", r"^Catégorie:Prénoms", r"$^"),
+         ("de", "intitle:Vorname", r"^Kategorie:Vorname", r"Wartung"),
+         ("pl", "intitle:imiona", r"imiona", r"odojcowsk|nazwisk"),
+         ("fi", "intitle:etunimet", r"etunimet", r"yleisnimistyneet|sukunim"),
+         ("ca", "intitle:prenoms", r"[Pp]renoms", r"cognom"),
+         ("pt", "intitle:prenome", r"Prenome", r"sobrenome|apelido"),
+         ("cs", "intitle:křestní", r"křestní jména", r"příjmení"),
+         ("hu", "intitle:keresztnevek", r"[Kk]eresztnevek", r"vezetékn")]
+def wiktionaries():
+    # The French, German, Polish, Finnish, Catalan, Portuguese, Czech and Hungarian Wiktionaries (CC BY-SA 4.0): every entry
+    # in their given-name categories, for every language (patronymic, surname and maintenance categories left out). Only
+    # page titles are used. One request a second with maxlag; each finished category is appended to
+    # raw/wikt-other-given-names.part so a stopped run resumes; the finished list is raw/wikt-other-given-names.tsv
+    p = os.path.join(RAW, "wikt-other-given-names.tsv"); part = p[:-4] + ".part"
+    if not os.path.exists(p) and not OFFLINE:
+        def api(w, **q):
+            q.update(format="json", maxlag="5")
+            for attempt in range(30):
+                try:
+                    time.sleep(1)
+                    with urllib.request.urlopen(urllib.request.Request(f"https://{w}.wiktionary.org/w/api.php?" + urllib.parse.urlencode(q), headers=UA), timeout=90) as r: d = json.load(r)
+                    if d.get("error", {}).get("code") == "maxlag": time.sleep(15); continue
+                    return d
+                except Exception as e:
+                    print(f"    {w}.wiktionary: {e}; waiting", flush=True); time.sleep(60 if "429" in str(e) else 10)
+            raise SystemExit("Wiktionary API kept failing")
+        done = {(c["wiki"], c["cat"]) for c in map(json.loads, open(part, encoding="utf-8"))} if os.path.exists(part) else set()
+        with open(part, "a", encoding="utf-8") as fh:
+            for w, find, inc, exc in WIKTS:
+                cats, cont = [], {}
+                while True:
+                    if find.startswith("prefix:"):
+                        d = api(w, action="query", list="allcategories", acprefix=find[7:], aclimit=500, **cont)
+                        cats += ["Catégorie:" + c["*"] for c in d["query"]["allcategories"]]
+                    else:
+                        d = api(w, action="query", list="search", srsearch=find, srnamespace=14, srlimit=500, **cont)
+                        cats += [x["title"] for x in d["query"]["search"]]
+                    if "continue" not in d: break
+                    cont = d["continue"]
+                for cat in cats:
+                    if not re.search(inc, cat) or re.search(exc, cat) or (w, cat) in done: continue
+                    pages, cont = [], {}
+                    while True:
+                        d = api(w, action="query", list="categorymembers", cmtitle=cat, cmlimit=500, cmtype="page", cmnamespace=0, **cont)
+                        pages += [m["title"] for m in d["query"]["categorymembers"]]
+                        if "continue" not in d: break
+                        cont = d["continue"]
+                    fh.write(json.dumps({"wiki": w, "cat": cat, "pages": pages}, ensure_ascii=False) + "\n"); fh.flush()
+                print(f"    {w}.wiktionary: {len(cats):,} categories", flush=True)
+        with open(p, "w", encoding="utf-8") as out:
+            for c in map(json.loads, open(part, encoding="utf-8")):
+                for t in c["pages"]: out.write(f"{c['wiki']}\t{t}\t{c['cat']}\n")
+    if not os.path.exists(p): return
+    for line in open(p, encoding="utf-8"):
+        w, t, c = line.rstrip("\n").split("\t")
+        f = re.search(r"(?i)féminin|femenin|feminin|weiblich|Vorname f\b|żeńsk|naisten|ženská|női", c)
+        m = re.search(r"(?i)masculin|männlich|Vorname m\b|męsk|miesten|mužská|férfi", c)
+        yield t, "u" if re.search(r"(?i)mixte|unisex|epicè", c) else "f" if f and not m else "m" if m and not f else "?", 0
+
+SOURCES = [("ar","RENAPER Argentina 1922-2015", argentina), ("lists", "official name lists (data/name-lists.tsv)", name_lists),
            ("br", "IBGE Censo 2010 + 2022 (Brazil)", brazil), ("cl", "Registro Civil Chile 1920-2021", chile),
            ("wd", "Wikidata given names", wikidata), ("jp", "JMnedict given names", jmnedict),
            ("fr", "INSEE deaths file 1970-2025 (France)", france),
@@ -330,7 +628,17 @@ SOURCES = [("ar", "RENAPER Argentina 1922-2015", argentina), ("lists", "official
            ("it", "ISTAT Conta nomi 1999-2024 (Italy)", italy), ("tr", "TÜİK İstatistiklerle Çocuk 2014-2025 (Türkiye)", turkey),
            ("tw", "Ministry of the Interior name statistics 2023 (Taiwan), CC-CEDICT pinyin", taiwan),
            ("be", "Statbel first names of newborns 1995-2025 (Belgium)", belgium), ("es", "INE names with 20+ residents (Spain)", spain),
-           ("se", "Statistics Sweden TAB622 tilltalsnamn with 10+ bearers", sweden)]
+           ("se", "Statistics Sweden TAB622 tilltalsnamn with 10+ bearers", sweden),
+           ("dk", "Danmarks Statistik, every first name registered in Denmark 2020", denmark),
+           ("lv", "PMLP Natural Persons Register given names 2019-2026 (Latvia)", latvia),
+           ("gl", "Statistics Greenland first names (NAXT5-7)", greenland), ("si", "SURS names with 5+ bearers (Slovenia)", slovenia),
+           ("fo", "Hagstova Føroya first names 1985-2025 (Faroe Islands)", faroe),
+           ("bs", "Basel-Stadt residents' and newborns' first names 1979-2025", basel),
+           ("zh", "Kanton Zürich newborns' first names", zurich_canton),
+           ("frc", "French towns' birth registers (data.gouv.fr, Licence Ouverte)", france_communes),
+           ("qc", "Retraite Québec Banque de prénoms 1980-2025", quebec),
+           ("itc", "Italian towns' name registers (dati.gov.it), 2+ people", italy_communes),
+           ("wikt2", "French, German, Polish, Finnish, Catalan, Portuguese, Czech, Hungarian Wiktionaries", wiktionaries)]
 
 # pieces of a compound given name that are never names on their own: particles, and the connecting words of devotional
 # names ("María de los Ángeles", "Ana del Sagrado Corazón", "José de San Martín")

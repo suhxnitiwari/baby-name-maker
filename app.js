@@ -48,7 +48,9 @@ let DB = [], DB_READY = false;
 const DB_KEYS = new Map(), DB_G = { f: "girl", m: "boy", u: "either", "?": null };
 const CC_LABEL = { us: "US", ca: "Canada", qc: "Québec", au: "Australia", uk: "Eng & Wales", nir: "N. Ireland", ie: "Ireland", fr: "France", es: "Spain", ch: "Switzerland",
   ar: "Argentina", br: "Brazil", cl: "Chile", pl: "Poland", de: "Germany", at: "Austria", no: "Norway", lu: "Luxembourg", pt: "Portugal", il: "Israel", fi: "Finland", be: "Belgium", sct: "Scotland", nz: "New Zealand",
-  dk: "Denmark", cz: "Czechia", cy: "Cyprus", hu: "Hungary", is: "Iceland", ro: "Romania", jp: "Japan", wd: "Wikidata", wikt: "Wiktionary" };
+  dk: "Denmark", cz: "Czechia", cy: "Cyprus", hu: "Hungary", is: "Iceland", ro: "Romania", jp: "Japan", wd: "Wikidata", wikt: "Wiktionary",
+  it: "Italy", tr: "Türkiye", tw: "Taiwan", se: "Sweden", lv: "Latvia", gl: "Greenland", si: "Slovenia", fo: "Faroe Islands", bs: "Basel", zh: "Zürich",
+  frc: "French towns", itc: "Italian towns", wikt2: "Wiktionary" };
 function eastAsian(d) {
   const rows = [];
   for (const [n, g, kanji, kana, ways, m] of d.ja || [])
@@ -71,13 +73,14 @@ const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.
   .map(u => getJSON(u).catch(() => [])))
   .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, en, es, pt, de, fi, fa, eg]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...en, ...es, ...pt, ...de, ...fi, ...fa, ...eg])).catch(e => console.error(e));
 const BOLLYWOOD = new Map();   // folded first name → "In Bollywood: Varun Dhawan, actor…" (any name, from the records or the lists)
-function addStoried(rows) {
+async function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
-  for (let [n, g, o, l, r, m, src, texts, kind, also, ease] of rows) {
+  // in slices, so tens of thousands of rows never freeze the page (the mobile keeps moving, typing stays smooth)
+  await slowly(rows, ([n, g, o, l, r, m, src, texts, kind, also, ease]) => {
     if (src) src = src.replace(/^A (?=[AEIOU])/, "An ");
     const x = texts ? texts.split(",") : [], k = fold(n), cur = have.get(k);
     // a star's first name only adds its line to a name the site already knows: it says nothing about origin or who the name is for
-    if (src && src.startsWith("In Bollywood:")) { BOLLYWOOD.set(k, src); continue; }
+    if (src && src.startsWith("In Bollywood:")) { BOLLYWOOD.set(k, src); return; }
     // the ancient layers (Arabia before Islam, Mexico before 1521, Greece, Rome) say who bore the name: that line shows on the card
     const hist = src && /^(Used (in Arabia )?before|Used in ancient Greece|Used in early Armenia|Used in ancient Iran|Used in ancient Egypt|A god's name in|A goddess's name in|(?=.*\bShahnameh\b)|An ancient|The modern form of the ancient|The name of the .{1,30} (goddess|god)\b|A Classical Nahuatl word)/.test(src) ? src : "";
     // "A German name, from Ancient Greek Σουσάννα, from Hebrew…": the chain says where the name comes from, not the list it is on
@@ -88,13 +91,15 @@ function addStoried(rows) {
       // lists loaded before it: Inês is Portuguese, Aino Finnish, Máret Sámi, whichever list happened to name them first
       // …and within that list, the language itself (Finnish) beats a group that uses it (Finnish Orthodox): Onni is Finnish
       const plain = o === l, better = !cur.spec || (plain && cur.o !== cur.l);
-      if (ease !== undefined && o && !cur.hand && better) {
+      // a bare listing ("A Portuguese given name (Wiktionary).") shows use, not origin: Ilze stays Latvian
+      const bare = /^An? [\p{L} -]+?( given)? name( \(Wiktionary\))?\.$/u.test((src || "").trim());
+      if (ease !== undefined && o && !cur.hand && better && !bare) {
         if (cur.o !== o) { if (cur.o) cur.oo = [...new Set([cur.o, ...(cur.oo || [])])].filter(c => c !== o); cur.o = o; cur.l = l || cur.l; }
         cur.spec = true;
       }
       if (hist && !(cur.hist || []).includes(hist)) cur.hist = [...(cur.hist || []), hist];
       // being borne in the Greek world says nothing about where a name comes from (Esther, Elias): it only adds the line
-      if (/^Used in ancient Greece/.test(hist)) continue;
+      if (/^Used in ancient Greece/.test(hist)) return;
       // an early Armenian Mariam or Erato was borrowed (Hebrew, Greek): only an Armenian or Iranian name takes "Armenian" as its origin
       if (hist && !(o === "Armenian" && !/Armenian|Iranian|Parthian|Persian/.test(l || ""))) cur.anc ||= [o, l && l !== o ? l : ""].filter(Boolean).join(" · ");
       if (o && o !== cur.o) cur.oo = [...new Set([...(cur.oo || []), o])];
@@ -102,17 +107,18 @@ function addStoried(rows) {
       if (!cur.o && o) { cur.o = o; cur.l = cur.l || l; }
       cur.x = [...new Set([...(cur.x || []), ...x])]; cur.r = [...new Set([...cur.r, ...(r ? r.split(",") : [])])];
       // a Japanese, Korean or Chinese reading's meaning belongs to that reading, not to a Georgian Nino or an Italian Gino
-      if (!(["Japanese", "Korean", "Chinese"].includes(o) && cur.o && cur.o !== o)) cur.m ||= m; cur.src = cur.src ? (src && !cur.src.includes(src) && src.startsWith("Given to") ? `${cur.src} ${src}` : cur.src) : src; continue; }
+      if (!(["Japanese", "Korean", "Chinese"].includes(o) && cur.o && cur.o !== o)) cur.m ||= m; cur.src = cur.src ? (src && !cur.src.includes(src) && src.startsWith("Given to") ? `${cur.src} ${src}` : cur.src) : src; return; }
     const e = { n, g: { g: "girl", b: "boy", e: "either" }[g], o, l, r: r ? r.split(",") : [], m, src, type: kind === "root" ? "root" : "real", x, oo: also || [], ...(hist ? { hist: [hist] } : {}), ...(ety ? { ety } : {}), ...(ease !== undefined ? { spec: true } : {}) };
     (kind === "root" ? ROOT_NAMES : REAL).push(e); ALL_NAMED.push(e); have.set(k, e); TAKEN.add(k); indexName(e);
-  }
+  });
   // hand-written names join their broad basket too (a Zulu name is also African)
   const GROUP = { African: "Zulu,Xhosa,Sotho,Tswana,Swahili,Akan,Somali,Ethiopian,Yoruba,Igbo,Hausa,Congolese,Sudanese,South Sudanese,Nubian",
     "South Asian": "Indian,Punjabi,Urdu,Pashtun,Afghan,Nepali,Tamil,Telugu,Bengali", Pacific: "Hawaiian,Samoan,Tongan,Fijian,Māori", Slavic: "Slavic,Russian,Ukrainian,Polish",
     "Latin American": "Mexican,Nahua,Maya,Purépecha,Zapotec,Mixtec,Colombian,Dominican,Puerto Rican,Cuban,Taíno,Argentine,Mapuche,Guaraní,Quechua",
     "Indigenous American": "Nahua,Maya,Purépecha,Zapotec,Mixtec,Taíno,Mapuche,Guaraní,Quechua", "Central Asian": "Uzbek,Afghan,Mongolian,Kazakh,Tajik" };
-  for (const x of REAL) for (const [grp, list] of Object.entries(GROUP))
-    if (x.o !== grp && [x.o, ...(x.oo || [])].some(c => c && list.split(",").includes(c.replace(/^Classic /, "").replace(/ \(.*\)$/, ""))) && !(x.oo || []).includes(grp)) x.oo = [...(x.oo || []), grp];
+  const groups = Object.entries(GROUP).map(([grp, list]) => [grp, new Set(list.split(","))]);
+  await slowly(REAL, x => { for (const [grp, set] of groups)
+    if (x.o !== grp && [x.o, ...(x.oo || [])].some(c => c && set.has(c.replace(/^Classic /, "").replace(/ \(.*\)$/, ""))) && !(x.oo || []).includes(grp)) x.oo = [...(x.oo || []), grp]; });
   fillSelects();
 }
 // ── the sacred thread (data/sacred.json, built by scripts/build_sacred.py from data/sacred/*.tsv) ──
@@ -124,24 +130,25 @@ const PERSONLIKE = new Set(["human", "prophet", "sage", "saint", "disciple", "ro
 const SACRED = new Map(), SACRED_SEX = new Map(); // folded name → cited references; the sex of the people the text gives that name
 let SACRED_FIG = {};
 const FIG_FORMS = new Map(); // figure → every name form it carries, across traditions (Abraham, Avraham, Ibrahim)
-const sacredReady = Promise.all([getJSON("data/sacred.json?v=8").catch(() => null), storied]).then(([d]) => {
+const sacredReady = Promise.all([getJSON("data/sacred.json?v=8").catch(() => null), storied]).then(async ([d]) => {
   if (!d) return;
   SACRED_FIG = d.f;
   const have = new Map(ALL_NAMED.map(x => [fold(x.n), x]));
-  for (const [n, sex, rows] of d.n) {
+  // appended in place and in slices: a figure cited in thousands of hadith would otherwise be copied over and over, freezing the page
+  await slowly(d.n, ([n, sex, rows]) => {
     const refs = rows.map(([t, c, text, at, url, s, role, fid, orig, tr, rel, occ]) =>
       ({ t: d.t[t], c: d.c[c], text, at, url, s, role, fid, orig, tr, rel, occ, kind: (d.f[fid] || [])[1] || "" }));
     const k = fold(n);
-    SACRED.set(k, [...(SACRED.get(k) || []), ...refs]);
+    (SACRED.get(k) || SACRED.set(k, []).get(k)).push(...refs);
     if (sex) SACRED_SEX.set(k, SACRED_SEX.has(k) && SACRED_SEX.get(k) !== sex ? "e" : sex);
-    for (const r of refs) if (r.s !== "s") FIG_FORMS.set(r.fid, [...(FIG_FORMS.get(r.fid) || []), { n, ...r }]);
+    for (const r of refs) if (r.s !== "s") (FIG_FORMS.get(r.fid) || FIG_FORMS.set(r.fid, []).get(r.fid)).push({ n, ...r });
     const named = refs.filter(r => r.s !== "s" && r.role !== "w" && PERSONLIKE.has(r.kind) && !(r.kind === "deity" && ["Jewish", "Christian", "Islamic"].includes(r.t))), cur = have.get(k);
-    if (cur) { cur.r = [...new Set([...cur.r, ...named.map(r => r.t)])]; continue; }
+    if (cur) { cur.r = [...new Set([...cur.r, ...named.map(r => r.t)])]; return; }
     // a person named in a text but not yet a known given name: kept for "named in the text" searches only, and only as someone's own name (not an epithet like Gadabhrit)
-    if (!named.some(r => r.role === "p") || !sex) continue;
+    if (!named.some(r => r.role === "p") || !sex) return;
     const e = { n, g: { g: "girl", b: "boy", e: "either" }[sex], o: "", l: "", r: [...new Set(named.map(r => r.t))], m: "", src: "", type: "real", x: [], oo: [], sacredOnly: true };
     REAL.push(e); ALL_NAMED.push(e); have.set(k, e); TAKEN.add(k); indexName(e);
-  }
+  });
   fillSelects();
   const known = new Set([...$("#fText").options].map(o => o.value));
   $("#fText").insertAdjacentHTML("beforeend", [...new Set(d.c)].filter(c => !known.has(c) && !Object.values(TEXT_ALIAS).flat().includes(c)).map(c => `<option value="${esc(c)}">the ${esc(c)}</option>`).join(""));
@@ -201,7 +208,9 @@ function threadHTML(x) {
     `<li><span class="mark m-c" title="Cultural usage">○</span><div><b>${esc(TRADITION[t])}</b><small>Cultural usage · common in the tradition; no cited text yet</small></div></li>`).join("")}</ul></div>`;
 }
 const dbReady = Promise.all([getText("data/names-db.tsv?v=3"), storied]).then(async ([t]) => {
-  const ours = new Set(ALL_NAMED.map(x => fold(x.n)));
+  const ours = new Set();
+  await slowly(ALL_NAMED, x => ours.add(fold(x.n)));
+  await breathe();
   await slowly(t.split("\n"), line => {
     if (!line) return;
     const [n, g, cc, cnt] = line.split("\t"), k = fold(n), ccs = cc.split(",");
@@ -217,7 +226,7 @@ const dbReady = Promise.all([getText("data/names-db.tsv?v=3"), storied]).then(as
   dispatchEvent(new Event("namesdb"));
   // the long tail (data/names-extra.tsv: Argentina 1922–2015, France's deaths file, Brazil 2022, official lists, Wikidata…) arrives once
   // the page is idle; it counts, and any name typed is found, but Find only suggests those held by at least 5 people
-  (window.requestIdleCallback || (f => setTimeout(f, 1500)))(() => getText("data/names-extra.tsv?v=1").then(async t => {
+  (window.requestIdleCallback || (f => setTimeout(f, 1500)))(() => getText("data/names-extra.tsv?v=2").then(async t => {
     await slowly(t.split("\n"), line => {
       if (!line) return;
       const [n, g, cc, cnt] = line.split("\t"), k = fold(n);
@@ -1338,7 +1347,7 @@ const Count = (() => {
   };
 })();
 // the rest of the ledger, from data/stats.json: each number climbs the same way once the page wakes
-fetch("data/stats.json?v=4").then(r => r.json()).then(st => {
+fetch("data/stats.json?v=5").then(r => r.json()).then(st => {
   $("#ledgerSub").textContent = `${st.passages.toLocaleString()} cited passages · ${st.traditions} faiths & mythologies · records from ${st.from} to ${st.to}`;
   const els = $$("#ledger [data-stat]"), still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   els.forEach(el => el.textContent = still ? st[el.dataset.stat].toLocaleString() : "1");
