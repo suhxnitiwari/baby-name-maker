@@ -523,6 +523,120 @@ def belgium():
             for n, v in d[s]: c[int(y)][sex][n] = int(v)
     return c
 
+# names the site already pairs with a Latin spelling (data/native-forms.json, data/arabic-forms.json): Фатима = Fatima, ليلى = Layla.
+# A printed name in another script takes that spelling first; only a name the site doesn't know is romanized by its official system.
+_HARAKAT = re.compile("[\u064B-\u0652\u0670\u0640]")
+_ALEF = str.maketrans("أإآٱ", "اااا")   # hamza seats vary in print (احمد, أحمد): matched as one letter, but each printed spelling stays its own row
+def _known():
+    k = {}
+    nf = json.load(open(os.path.join(HERE, "data/native-forms.json"), encoding="utf-8"))
+    for latin, forms in nf.items():
+        for f, lang in forms:
+            k.setdefault((lang, _HARAKAT.sub("", f).translate(_ALEF).lower()), latin)
+    for latin, f in json.load(open(os.path.join(HERE, "data/arabic-forms.json"), encoding="utf-8")).items():
+        k.setdefault(("Arabic", _HARAKAT.sub("", f).translate(_ALEF).lower()), latin)
+    return k
+KNOWN = None
+def known(lang, native):
+    global KNOWN
+    if KNOWN is None: KNOWN = _known()
+    hit = KNOWN.get((lang, _HARAKAT.sub("", native.strip()).translate(_ALEF).lower()))
+    return " ".join(w[:1].upper() + w[1:] for w in hit.split()) if hit else None
+
+def top_tsv(path, system=None, native=None, periods=None, keep_open=False, lang=None, keep_script=False):
+    # raw/<code>/<code>-top.tsv, one row per name read out of an agency's release:
+    #   period_start  period_end  F|M  rank  latin  native  count
+    # latin is the agency's own Latin spelling; when it prints only another script, the Latin comes from that script's
+    # official system (romanize_names.py) and the original is kept in `native`. A blank count = published as ranks only.
+    # A period that starts at 0 ("born up to 1935") has no first year and is left out unless keep_open
+    from romanize_names import romanize
+    c, r = new(), ranked()
+    rows = []
+    for line in open(f"{RAW}/{path}", encoding="utf-8"):
+        if line.startswith("#") or not line.strip(): continue
+        a, b, s, rk, lat, nat, v = (line.rstrip("\n").split("\t") + [""] * 7)[:7]
+        if (a == "0" or not a.strip()) and not keep_open: continue          # an open-ended group ("born up to 1953") has no first year
+        if s not in ("F", "M"): continue                                     # a list that doesn't split girls from boys can't be placed
+        n = title(lat) if lat.strip() else ((lang and known(lang, nat)) or (romanize(nat, system) if system and nat else None))
+        if not n and keep_script and nat.strip(): n = nat.strip()           # no known spelling and no letter-by-letter system (Arabic): as printed
+        if not n: continue
+        if nat and native is not None: native[n] = nat.strip()
+        rows.append((int(a), int(b), "girl" if s == "F" else "boy", int(rk), n, int(v) if v.strip() else None, nat.strip()))
+    for a, b, sex, rk, n, v, nat in sorted(rows, key=lambda t: (t[0], t[2], t[3])):
+        if periods is not None and b != a: periods[str(a)] = [a, b]
+        if (n in c[a][sex] or n in r[a][sex]) and nat and nat != n: n = nat   # two printed spellings of one name stay apart (احمد, أحمد)
+        if v is None: r[a][sex].append(n)
+        else: c[a][sex][n] = v
+    return c, r
+
+EE_PERIODS = {}
+
+def estonia(): return top_tsv("ee/ee-top.tsv", periods=EE_PERIODS)[0]
+
+SERBIA_NATIVE, RS_PERIODS = {}, {}
+
+def serbia_ranks(): return top_tsv("rs/rs-top.tsv", "serbian", SERBIA_NATIVE, RS_PERIODS)[1]
+
+def slovenia(): return top_tsv("si/si-top.tsv")[0]
+
+def hungary(): return top_tsv("hu/hu-top.tsv")[0]
+
+def czechia(): return top_tsv("cz/cz-top.tsv")[0]
+def czechia_ranks(): return top_tsv("cz/cz-top.tsv")[1]
+
+def portugal(): return top_tsv("pt/pt-top.tsv")[0]
+
+def victoria(): return top_tsv("vic/vic-top.tsv")[0]
+
+def western_australia(): return top_tsv("wa/wa-top.tsv")[0]
+def western_australia_ranks(): return top_tsv("wa/wa-top.tsv")[1]
+
+KOREA_NATIVE = {}
+
+def korea(): return top_tsv("kr/kr-top.tsv", "korean", KOREA_NATIVE)[0]
+
+ISRAEL_NATIVE = {k: {} for k in ("jewish", "muslim", "christian-arab", "druze")}
+
+def israel(sector, community):
+    # CBS counts names in Hebrew letters (Arab-sector names too). The Latin spelling comes from raw/il-latin.csv (hebrew_names.py),
+    # matched on letters, community and sex, and only where it is a known pairing (Wikidata / the Bible) or the usual spelling:
+    # its "verified reading" guesses at unwritten vowels (סלוא = Clo for Salwa), so those names stay in Hebrew letters.
+    # If two spellings would share one Latin form in the same year, the second keeps its Hebrew letters (never merged)
+    latin = {(r["hebrew"], r["community"], r["sex"]): r["name"] for r in csv.DictReader(open(f"{RAW}/il-latin.csv", encoding="utf-8"))
+             if r["how"] in ("known pairing", "usual spelling")}
+    c = new()
+    for a, b, s, rk, _, heb, v in (l.rstrip("\n").split("\t") for l in open(f"{RAW}/il/il-top-{sector}.tsv", encoding="utf-8") if not l.startswith("#")):
+        sex = "girl" if s == "F" else "boy"
+        n = latin.get((heb, community, "f" if s == "F" else "m"))
+        if not n or n in c[int(a)][sex]: n = heb
+        else: ISRAEL_NATIVE[sector][n] = heb
+        c[int(a)][sex][n] = int(v)
+    return c
+
+# ── added October 2026, second batch: the remaining agencies' own releases, normalised into raw/<code>/<code>-top.tsv ──
+GR_P, IS_P, CW_P, MY_P = {}, {}, {}, {}
+def tunisia(): return top_tsv("tn/tn-top.tsv")
+def curacao(): return top_tsv("cw/cw-top.tsv", periods=CW_P)[0]
+def philippines(): return top_tsv("ph/ph-top.tsv")
+def montevideo(): return top_tsv("uy/uy-top.tsv")[0]
+def jordan(): return top_tsv("jo/jo-top.tsv", lang="Arabic", keep_script=True)[0]
+def croatia(): return top_tsv("hr/hr-top.tsv")[0]
+def liechtenstein(): return top_tsv("li/li-top.tsv")[0]
+# Greek: ELOT 743 only. The site's own Greek pairings include Hungary's Greek-minority list, written the Hungarian way (Joannisz)
+def greece_ranks(): return top_tsv("gr/gr-top.tsv", "greek", periods=GR_P)[1]
+def kazakhstan(): return top_tsv("kz/kz-top.tsv", "kazakh", lang="Kazakh")[0]
+def armenia(): return top_tsv("am/am-top.tsv", "armenian", lang="Armenian")[0]
+def kyrgyzstan(): return top_tsv("kg/kg-top.tsv", "kyrgyz", lang="Kyrgyz")[0]
+def rwanda(): return top_tsv("rw/rw-top.tsv")[0]
+def wales(): return top_tsv("wls/wls-top.tsv")[0]
+def spain_newborns(): return top_tsv("es-nac/es-nac-top.tsv")[0]
+def iceland_ranks(): return top_tsv("is/is-top.tsv", periods=IS_P)[1]
+def iceland_newborns(): return top_tsv("is-nac/is-nac-top.tsv")[0]
+def malaysia(group, skip_before=0):
+    c = top_tsv(f"my/my-{group}-top.tsv", periods=MY_P)[0]
+    for y in [y for y in c if y < skip_before]: del c[y]
+    return c
+
 # coverage: "all" = every name above a publication threshold; "top" = a ranked list only
 # badge: "full" (all names above a threshold, ongoing), "ranked" (top-N only), "ended" (series no longer updated),
 #        "population" (people counted in a register or census by when they were born, not newborn registrations)
@@ -589,7 +703,7 @@ PLACES = [
     dict(key="fi", label="Finland", group="", region="Europe", agency="Digital and Population Data Services Agency", dataset="Nimipalvelu: suosituimmat etunimet", license="CC BY 4.0",
          coverage="top", badge="population", decades=True, threshold=5, rule="People in the Finnish population register, by the decade they were born, counting every first name a person has (not only the one they go by). Names with fewer than 5 bearers aren't published.", fn=finland),
     dict(key="es", label="Spain", group="", region="Europe", agency="Instituto Nacional de Estadística (INE)", dataset="Nombres más frecuentes por fecha de nacimiento (Censos de población anuales, 1 January 2025)", license="Free reuse citing INE as the source",
-         coverage="top", badge="population", decades=True, threshold=None, rule="People living in Spain on 1 January 2025, by the decade they were born, from INE's table of the 50 most frequent names of each decade (residents counted, not births; people who died or left before 2025 are missing). 1920 stands for everyone born before 1930; 2020 covers 2020–2024. Compound names count as their own name (Maria Carmen). INE prints names without accents; they are shown as printed.", fn=spain_decades),
+         coverage="top", badge="population", decades=True, threshold=None, rule="People living in Spain on 1 January 2025, by the decade they were born: the 50 most frequent names of each decade (residents counted, not births; people who died or left before 2025 are missing). 1920 stands for everyone born before 1930; 2020 covers 2020–2024. Compound names count as their own name (María Carmen). INE prints names without accents; they are shown as printed.", fn=spain_decades),
     dict(key="it", label="Italy", group="", region="Europe", agency="ISTAT", dataset="Conta nomi: names of babies registered at birth (survey Iscritti in anagrafe per nascita)", license="CC BY 4.0 (Istat)",
          coverage="all", badge="full", threshold=1, rule="Babies of the resident population registered at birth, by year of birth, from 1999. Every first name is counted, down to one baby, written as ISTAT prints it: compound names whole (Giovanni Pio) and an accented last letter as an apostrophe (Nicolo' for Nicolò). ISTAT does not correct spelling mistakes or a name that doesn't match the baby's sex.", fn=italy),
     dict(key="tr", label="Türkiye", group="", region="Middle East & West Asia", agency="Turkish Statistical Institute (TÜİK)", dataset="İstatistiklerle Çocuk (Statistics on Child): most used names of babies born in the year", license="Free to use with attribution (TÜİK)",
@@ -599,6 +713,89 @@ PLACES = [
          rule="People in Taiwan's household register on 30 June 2023, by when they were born (ten-year periods counted in Republic of China years: 1912–1920, 1921–1930, and so on; the last is 2021 to June 2023). Living people, not newborn registrations. Names are in Chinese characters as registered; the pinyin for search comes from the CC-CEDICT dictionary, not from the ministry, and is left out where a character has more than one reading.", fn=taiwan),
     dict(key="be", label="Belgium", group="", region="Europe", agency="Statbel", dataset="First names of newborns 1995–2025", license="Statbel open data (attribution)",
          coverage="all", badge="full", threshold=5, rule="Statbel publishes names given to at least 5 newborns in a year in Belgium.", fn=belgium),
+    # ── added October 2026: each from the agency's own release, normalised into raw/<code>/<code>-top.tsv (see top_tsv) ──
+    #   ee  Statistics Estonia, Nimede statistika "Populaarsed eesnimed sünniaasta järgi" (stat.ee/nimed/TOP_AASTAD), population
+    #       register on 1 January 2026, top 10 per five-year period of birth with counts: raw/ee/ee-stat-nimed-top-aastad-2026.html
+    #   rs  Statistical Office of the Republic of Serbia, Census 2022 "Најчешћа имена и презимена" (publikacije.stat.gov.rs
+    #       G20244001), tables 1-2, the ten most common names by period of birth, ranks only: raw/rs/rs-rzs-popis2022-*.pdf
+    dict(key="ee", label="Estonia", group="", region="Europe", agency="Statistics Estonia (Statistikaamet)", dataset="Nimede statistika: popular first names by year of birth (population register, 1 January 2026)", license="Source: Statistics Estonia, population register",
+         coverage="top", badge="population", period=5, periods=EE_PERIODS, threshold=None, rule="People in the Estonian population register on 1 January 2026, by the five-year period they were born (living residents, not newborn registrations), top 10 per period with counts; tied names share a rank. Statistics Estonia also lists everyone born up to 1935 as one group, left out here.", fn=estonia),
+    dict(key="rs", label="Serbia", group="", region="Europe", agency="Statistical Office of the Republic of Serbia (RZS)", dataset="Census 2022: Најчешћа имена и презимена (Most common names and surnames), tables 1–2", license="Source: RZS",
+         coverage="top", badge="population", period=10, periods=RS_PERIODS, threshold=None, native=SERBIA_NATIVE,
+         rule="People counted in the 2022 census (30 September 2022), by the decade they were born; the last period runs 2011–2022. Ranks only (top 10, no counts). RZS prints the names in Cyrillic; the Latin is Serbia's own Latin alphabet, which matches Cyrillic letter for letter. People born in 1940 or earlier form one group, left out here. No census was held in Kosovo.", fn=new, ranked=serbia_ranks),
+    #   si  SURS SiStat 05X2001S / 05X2002S, names of newborn boys and girls 1992-2025 (top 20 with SURS's own ranks): raw/si/
+    #   hu  Ministry of the Interior, Deputy State Secretariat for Registers, "A 100 leggyakrabban választott utónév az előző évben
+    #       született gyermekek körében", editions 2011-2026 (births 2010-2025), kormany.hu: raw/hu/hu-top100-newborn-names-*.xls(x)
+    #   cz  ČSÚ "Nejoblíbenější dětská jména": TOP 100 xlsx 2022-2025; 2010-2021 from the table (an image) in ČSÚ's presentation
+    #       of 28 May 2026, slides 6-7, read by eye and checked against the xlsx years it shares: raw/cz/
+    #   pt  IRN "Registo de Nomes (Feminino / Masculino)", top 20 names registered 2017-2023 (dados.gov.pt, CC BY-SA): raw/pt/
+    #   vic Births, Deaths and Marriages Victoria "Popular Baby Names" 2008-2025 (DataVic, CC BY 4.0), top 100 xlsx per year: raw/vic/
+    #   wa  WA Registry of Births, Deaths and Marriages, its yearly media releases on wa.gov.au (2013 top 3, 2015 top 20 with counts,
+    #       2019-2025 top 10 ranks): raw/wa/
+    #   kr  Supreme Court of Korea, family-relationship registration statistics (stfamily.scourt.go.kr, report 1811 "상위 출생신고
+    #       이름 현황"), top 20 names in birth registrations 2008-2025, read through the service's own query: raw/kr/
+    #   il  Central Bureau of Statistics (Israel) media release 391/2025, table 1: current first names of people born 1949-2024 by
+    #       sex and population group (11_25_391t1.xlsx), one place per group, never merged: raw/il/
+    dict(key="si", label="Slovenia", group="", region="Europe", agency="Statistical Office of the Republic of Slovenia (SURS)", dataset="SiStat 05X2001S / 05X2002S: names of newborn boys and girls", license="Source: SURS",
+         coverage="all", badge="full", threshold=5, rule="Names of babies born in Slovenia, in their legal form from the Central Population Register, top 20 with SURS's own ranks. SURS lists a name only if at least 5 babies got it in some year (6 for 1992–1998).", fn=slovenia),
+    dict(key="hu", label="Hungary", group="", region="Europe", agency="Ministry of the Interior, Deputy State Secretariat for Registers", dataset="A 100 leggyakrabban választott utónév (the 100 most chosen first names of children born the previous year)", license="Source: Ministry of the Interior (Hungary)",
+         coverage="top", badge="ranked", threshold=None, rule="Top names of children born in the year, counted by their first given name in the personal-data and address register on 1 January of the next year. The ministry prints names in capitals; they are shown in ordinary case.", fn=hungary),
+    dict(key="cz", label="Czechia", group="", region="Europe", agency="Czech Statistical Office (ČSÚ)", dataset="Nejoblíbenější dětská jména (most popular children's names), from the Basic Population Register", license="Source: ČSÚ",
+         coverage="top", badge="ranked", threshold=None, rule="Top 20 names of children born in Czechia, from the population register (ČSÚ calls the results indicative). Ranks only until 2024; counts from 2025. Each spelling counts on its own. 2010–2021 are read from the table in ČSÚ's 2026 presentation; 2022–2025 from its TOP 100 files.", fn=czechia, ranked=czechia_ranks),
+    dict(key="pt", label="Portugal", group="", region="Europe", agency="Instituto dos Registos e do Notariado (IRN)", dataset="Registo de Nomes: top 20 nomes próprios registados (dados.gov.pt)", license="CC BY-SA",
+         coverage="top", badge="ranked", threshold=None, rule="The 20 first names registered most often in Portugal each year, as the registry (IRN) publishes them; IRN doesn't say whether only babies' first names are counted.", fn=portugal),
+    dict(key="vic", label="Victoria", group="Australia", region="Oceania", agency="Births, Deaths and Marriages Victoria", dataset="Popular Baby Names (DataVic)", license="CC BY 4.0",
+         coverage="top", badge="ranked", threshold=None, rule="Top 100 names of births registered in Victoria each year.", fn=victoria),
+    dict(key="wa", label="Western Australia", group="Australia", region="Oceania", agency="WA Registry of Births, Deaths and Marriages (Department of Justice)", dataset="Popular baby names, from the Registry's yearly announcements on wa.gov.au", license="Source: Government of Western Australia",
+         coverage="top", badge="ranked", threshold=None, rule="Births registered in Western Australia. Only the Registry's own announcements are still online: the top 3 for 2013, the top 20 with counts for 2015 (from its top-50 table) and the top 10 as ranks for 2019–2025; 2014 and 2016–2018 aren't published anywhere. Tied names share a rank.", fn=western_australia, ranked=western_australia_ranks),
+    dict(key="kr", label="South Korea", group="", region="East Asia", agency="Supreme Court of Korea (family relationship registration)", dataset="상위 출생신고 이름 현황 (top names in birth registrations), family registration statistics", license="Source: Supreme Court of Korea",
+         coverage="top", badge="ranked", threshold=None, native=KOREA_NATIVE, rule="Top 20 given names in birth registrations, by year of registration (late registrations of earlier births included), from 2008 when the family-relationship register began; the court calls the figures provisional. Names are registered in Hangul; the Latin is the Revised Romanization, syllable by syllable, as it is used for given names.", fn=korea),
+    dict(key="il-jewish", label="Jewish", group="Israel", region="Middle East & West Asia", agency="Central Bureau of Statistics (Israel)", dataset="Current first names of people born 1949–2024, by sex and population group (media release 391/2025, table 1)", license="Source: CBS Israel",
+         coverage="all", badge="full", threshold=None, native=ISRAEL_NATIVE["jewish"], rule="Jewish babies in Israel, by year of birth, counted by the first name they hold today (so a name changed later counts under the new one); small counts are suppressed. CBS publishes each population group on its own; they are kept apart here. CBS writes every name in Hebrew letters (Arab names too); a name is shown in Latin letters only where its usual spelling is known, otherwise as CBS writes it.", fn=lambda: israel("jewish", "Jewish")),
+    dict(key="il-muslim", label="Muslim", group="Israel", region="Middle East & West Asia", agency="Central Bureau of Statistics (Israel)", dataset="Current first names of people born 1949–2024, by sex and population group (media release 391/2025, table 1)", license="Source: CBS Israel",
+         coverage="all", badge="full", threshold=None, native=ISRAEL_NATIVE["muslim"], rule="Muslim babies in Israel, by year of birth, counted by the first name they hold today (so a name changed later counts under the new one); small counts are suppressed. CBS publishes each population group on its own; they are kept apart here. CBS writes every name in Hebrew letters (Arab names too); a name is shown in Latin letters only where its usual spelling is known, otherwise as CBS writes it.", fn=lambda: israel("muslim", "Muslim")),
+    dict(key="il-christian-arab", label="Christian Arab", group="Israel", region="Middle East & West Asia", agency="Central Bureau of Statistics (Israel)", dataset="Current first names of people born 1949–2024, by sex and population group (media release 391/2025, table 1)", license="Source: CBS Israel",
+         coverage="all", badge="full", threshold=None, native=ISRAEL_NATIVE["christian-arab"], rule="Christian Arab babies in Israel, by year of birth, counted by the first name they hold today (so a name changed later counts under the new one); small counts are suppressed. CBS publishes each population group on its own; they are kept apart here. CBS writes every name in Hebrew letters (Arab names too); a name is shown in Latin letters only where its usual spelling is known, otherwise as CBS writes it.", fn=lambda: israel("christian-arab", "Christian-Arab")),
+    dict(key="il-druze", label="Druze", group="Israel", region="Middle East & West Asia", agency="Central Bureau of Statistics (Israel)", dataset="Current first names of people born 1949–2024, by sex and population group (media release 391/2025, table 1)", license="Source: CBS Israel",
+         coverage="all", badge="full", threshold=None, native=ISRAEL_NATIVE["druze"], rule="Druze babies in Israel, by year of birth, counted by the first name they hold today (so a name changed later counts under the new one); small counts are suppressed. CBS publishes each population group on its own; they are kept apart here. CBS writes every name in Hebrew letters (Arab names too); a name is shown in Latin letters only where its usual spelling is known, otherwise as CBS writes it.", fn=lambda: israel("druze", "Druze")),
+    dict(key="tn", label="Tunisia", group="", region="Africa", agency="Institut National de la Statistique (INS)", dataset="Les prénoms des nouveau-nés les plus populaires (press release, 29 December 2023), from the civil-status registers", license="Source: INS Tunisia",
+         coverage="top", badge="ranked", threshold=None, rule="Top 10 names of newborns for 1922, every tenth year from 1950 to 2020, 2021 and 2022, with counts (1922 as ranks only), in INS's own Latin spelling. The 2010 boys' list is left out: INS printed the 2020 list in its place.", fn=lambda: tunisia()[0], ranked=lambda: tunisia()[1]),
+    dict(key="cw", label="Curaçao", group="", region="Latin America", agency="Central Bureau of Statistics Curaçao (data: Kranshi population register)", dataset="Most popular names in Curaçao, by age and gender (2018)", license="Free to use citing CBS Curaçao",
+         coverage="top", badge="population", threshold=None, periods=CW_P, rule="People in Curaçao's population register in 2018, by age group turned into years of birth (0–14 = 2004–2018 and so on), top 20 with counts. Living residents, not newborn registrations; the 65-and-over group is left out because it has no first year.", fn=curacao),
+    dict(key="ph", label="Philippines", group="", region="East Asia", agency="Philippine Statistics Authority (PSA)", dataset="Most common baby names, from registered live births (via the Wayback Machine; psa.gov.ph blocks scripts)", license="Source: PSA",
+         coverage="top", badge="ranked", threshold=None, rule="Registered live births, exact first names, not adjusted for late registration: top 20 for 2005, top 10 for 2014, 2015, 2017, 2018 and 2020–2023, with counts. 2016 and 2019 weren't published online.", fn=lambda: philippines()[0]),
+    dict(key="uy-mvd", label="Montevideo", group="Uruguay", region="Latin America", agency="Intendencia de Montevideo (Registro Civil)", dataset="Partidas de Registro Civil de Montevideo: nombre_nacim_x_anio_sexo (catalogodatos.gub.uy)", license="Licencia de Datos Abiertos de Uruguay",
+         coverage="top", badge="full", threshold=None, rule="Births registered in Montevideo by year, sex and first name, 1940–2012 (one department, about 40% of Uruguay's births; no national list exists). Top 20 shown. Names as registered, without accents; 2012 is missing November and December.", fn=montevideo),
+    dict(key="jo", label="Jordan", group="", region="Middle East & West Asia", agency="Civil Status and Passports Department (CSPD)", dataset="Annual reports: most frequent names of newborns by sex and year of birth (2015–2024)", license="Open Jordanian License (opendata.gov.jo)",
+         coverage="top", badge="ranked", threshold=None, rule="Births registered in Jordan by year of birth, top 20 with counts. CSPD prints names in Arabic; a name is shown in Latin letters only where its usual spelling is known, otherwise as CSPD writes it, and two printed spellings of one name (احمد, أحمد) stay apart.", fn=jordan),
+    dict(key="hr", label="Croatia", group="", region="Europe", agency="Ministry of Justice, Administration and Digital Transformation (birth register)", dataset="Statistički prikaz, table 2: the 50 most frequent names of children born in the year", license="Source: MPUDT Croatia",
+         coverage="top", badge="ranked", threshold=None, rule="Top names of children born in Croatia each year, 2021–2025, with counts (top 20 shown of the ministry's 50). Names in capitals in the source, shown in ordinary case.", fn=croatia),
+    dict(key="li", label="Liechtenstein", group="", region="Europe", agency="Amt für Statistik", dataset="Neugeborenennamen (names of newborns), publication 261", license="CC BY 4.0",
+         coverage="top", badge="ranked", threshold=None, rule="Names of babies born in Liechtenstein (about 350 a year), names given at least twice, 2018–2022; for 2023–2024 only the few names the office announced. The office groups spellings that sound alike (Sofia, Sophia).", fn=liechtenstein),
+    dict(key="gr", label="Greece", group="", region="Europe", agency="Hellenic Statistical Authority (ELSTAT)", dataset="2021 Census: most common names by year of birth (poster)", license="Source: ELSTAT",
+         coverage="top", badge="population", threshold=None, periods=GR_P, rule="People counted in the 2021 census (born in Greece, Greek citizens), by decade of birth, top 10, ranks only (ELSTAT gives percentages, not counts). Names are printed in Greek capitals; the Latin is ELOT 743, the system on Greek passports.", fn=new, ranked=greece_ranks),
+    dict(key="kz", label="Kazakhstan", group="", region="Middle East & West Asia", agency="Bureau of National Statistics (stat.gov.kz)", dataset="Popular names among newborns (Популярные имена service)", license="Source: Bureau of National Statistics",
+         coverage="top", badge="ranked", threshold=None, rule="Top 20 names of newborns in Kazakhstan each year, 1990–2025, with counts. The bureau prints names in Cyrillic; the Latin is the site's known spelling where it has one, otherwise BGN/PCGN.", fn=kazakhstan),
+    dict(key="am", label="Armenia", group="", region="Middle East & West Asia", agency="Statistical Committee of Armenia (Armstat)", dataset="Names most often given to newborns, by sex (appendix to the annual Socio-Economic Situation report)", license="Source: Armstat",
+         coverage="top", badge="ranked", threshold=None, rule="Top names of newborns in Armenia each year, 2008–2025, with counts (top 20 shown). Armstat prints the names in Armenian script; the Latin is the site's known spelling where it has one, otherwise BGN/PCGN as on Armenian passports.", fn=armenia),
+    dict(key="kg", label="Kyrgyzstan", group="", region="Middle East & West Asia", agency="State Institution Kyzmat (civil-status register)", dataset="TOP-10 popular names of girls and boys (data.gov.kg)", license="CC BY",
+         coverage="top", badge="ranked", threshold=None, rule="Top 10 names given in Kyrgyzstan in 2023, with counts. Names in Cyrillic in the source; the Latin is the site's known spelling where it has one, otherwise BGN/PCGN. Spellings are kept apart (Мухаммад, Мухаммед).", fn=kyrgyzstan),
+    dict(key="rw", label="Rwanda", group="", region="Africa", agency="National Institute of Statistics of Rwanda (CRVS)", dataset="Rwanda Vital Statistics Report, annex: top 20 most preferred babies' Kinyarwanda names", license="Source: NISR",
+         coverage="top", badge="ranked", threshold=None, rule="The child's own Kinyarwanda name (what NISR calls a surname, though it isn't a family name), for births registered in the same year, 2020–2025, with counts; Christian or other first names aren't in these tables. Some years in NISR's own tables look misprinted (2021 girls); they're kept as printed.", fn=rwanda),
+    dict(key="wls", label="Wales", group="UK", region="Europe", agency="Office for National Statistics (ONS)", dataset="Baby names in England and Wales, table 3: top names for babies in Wales", license="Open Government Licence",
+         coverage="top", badge="full", threshold=None, rule="Live births registered in the year whose mother usually lives in Wales, 1997–2025, with counts (top 20 shown). The England & Wales place counts both together.", fn=wales),
+    dict(key="es-nac", label="Newborns", group="Spain", region="Europe", agency="Instituto Nacional de Estadística (INE)", dataset="Nacimientos según el nombre del nacido (births by the baby's name)", license="CC BY 4.0 (INE)",
+         coverage="top", badge="full", threshold=None, rule="Babies born in Spain each year, 2002–2024, with counts (top 20 shown). Unlike the Spain place built from residents, these are births. INE prints names in capitals without accents.", fn=spain_newborns),
+    dict(key="is", label="Population", group="Iceland", region="Europe", agency="Statistics Iceland (Hagstofa Íslands)", dataset="Ranks of names by age group, 1 January 2023 (MAN11105, MAN11115)", license="Free use, citing the source",
+         coverage="top", badge="population", threshold=None, periods=IS_P, rule="People living in Iceland on 1 January 2023, by five-year group of birth (ranks only, top 20); older groups are survivors only and every group includes immigrants. A population snapshot, not births.", fn=new, ranked=iceland_ranks),
+    dict(key="is-nac", label="Newborns", group="Iceland", region="Europe", agency="Registers Iceland (Þjóðskrá)", dataset="Vinsælustu nöfnin (the most popular names of newborns)", license="Source: Registers Iceland",
+         coverage="top", badge="ranked", threshold=None, rule="First given names of babies born in 2021 and 2022, with counts. Later years are published only as charts that don't separate girls and boys.", fn=iceland_newborns),
+    dict(key="my-malay", label="Malay", group="Malaysia", region="East Asia", agency="National Registration Department (JPN), data.gov.my", dataset="Baby Name Popularity dashboard", license="CC BY 4.0",
+         coverage="top", badge="population", threshold=None, periods=MY_P, rule="Living Malaysians in the identity-card register, by decade of birth (1940s–2010s), top 10 with counts. JPN lists Malay, Chinese and Indian names separately and never combined; kept apart here. Names are lower case in the source.", fn=lambda: malaysia('malay')),
+    dict(key="my-chinese", label="Chinese", group="Malaysia", region="East Asia", agency="National Registration Department (JPN), data.gov.my", dataset="Baby Name Popularity dashboard", license="CC BY 4.0",
+         coverage="top", badge="population", threshold=None, periods=MY_P, rule="Living Malaysians in the identity-card register, by decade of birth, top 10 with counts. The 1940s and 1950s are left out: their lists are mostly surnames, from the order of names on old ID records.", fn=lambda: malaysia('chinese', 1960)),
+    dict(key="my-indian", label="Indian", group="Malaysia", region="East Asia", agency="National Registration Department (JPN), data.gov.my", dataset="Baby Name Popularity dashboard", license="CC BY 4.0",
+         coverage="top", badge="population", threshold=None, periods=MY_P, rule="Living Malaysians in the identity-card register, by decade of birth (1940s–2010s), top 10 with counts.", fn=lambda: malaysia('indian')),
 ]
 if all(moscow_files().values()):
     PLACES.append(dict(key="ru-moscow", label="Moscow (city)", group="Russia", region="Europe", agency="Moscow Government open data / Moscow civil registry (ZAGS)",

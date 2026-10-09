@@ -285,7 +285,7 @@ const SHORT = { us: "US", ca: "Canada", au: "NSW", ew: "Eng & Wales", fr: "Franc
 // pronunciations: a dictionary for names people have, then the rules of each name's language (phonetics.js)
 getJSON("data/pron.json?v=1").then(d => PH.load(d)).catch(() => {});
 getJSON("data/popularity.json?v=6").then(d => { POP = d; }).catch(() => {});
-getJSON("data/years.json?v=2").then(d => { YEARS = d; Charts.ready(); }).catch(() => {});
+getJSON("data/years.json?v=4").then(d => { YEARS = d; Charts.ready(); }).catch(() => {});
 function popRanks(name, g) {
   if (!POP) return [];
   const sexes = g === "either" ? ["g", "b"] : [(g || gender)[0]], out = [];
@@ -1347,7 +1347,7 @@ const Count = (() => {
   };
 })();
 // the rest of the ledger, from data/stats.json: each number climbs the same way once the page wakes
-fetch("data/stats.json?v=5").then(r => r.json()).then(st => {
+fetch("data/stats.json?v=6").then(r => r.json()).then(st => {
   $("#ledgerSub").textContent = `${st.passages.toLocaleString()} cited passages · ${st.traditions} faiths & mythologies · records from ${st.from} to ${st.to}`;
   const els = $$("#ledger [data-stat]"), still = matchMedia("(prefers-reduced-motion: reduce)").matches;
   els.forEach(el => el.textContent = still ? st[el.dataset.stat].toLocaleString() : "1");

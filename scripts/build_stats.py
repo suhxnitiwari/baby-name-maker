@@ -24,7 +24,12 @@ PLACE = {"the United States": "US", "Canada": "CA", "England & Wales": "GB", "Sc
          "France": "FR", "Catalonia": "ES", "Switzerland": "CH", "Brazil": "BR", "Chile": "CL", "Poland": "PL", "Berlin": "DE", "Austria": "AT",
          "Norway": "NO", "Luxembourg": "LU", "Finland": "FI", "Denmark": "DK", "New Zealand": "NZ", "New South Wales": "AU", "Queensland": "AU",
          "Sweden": "SE", "the Netherlands": "NL", "Bulgaria": "BG", "Latvia": "LV", "Moldova": "MD", "South Africa": "ZA",
-         "Federation of BiH": "BA", "Republika Srpska": "BA", "Spain": "ES", "Italy": "IT", "Türkiye": "TR", "Taiwan": "TW", "Belgium": "BE"}
+         "Federation of BiH": "BA", "Republika Srpska": "BA", "Spain": "ES", "Italy": "IT", "Türkiye": "TR", "Taiwan": "TW", "Belgium": "BE",
+         "Estonia": "EE", "Serbia": "RS", "Slovenia": "SI", "Hungary": "HU", "Czechia": "CZ", "Portugal": "PT", "Victoria": "AU",
+         "Western Australia": "AU", "South Korea": "KR", "Jewish": "IL", "Muslim": "IL", "Christian Arab": "IL", "Druze": "IL",
+         "Tunisia": "TN", "Curaçao": "CW", "Philippines": "PH", "Montevideo": "UY", "Jordan": "JO", "Croatia": "HR", "Liechtenstein": "LI",
+         "Greece": "GR", "Kazakhstan": "KZ", "Armenia": "AM", "Kyrgyzstan": "KG", "Rwanda": "RW", "Wales": "GB",
+         "Malay": "MY", "Chinese": "MY", "Indian": "MY", "Moscow (city)": "RU"}
 
 countries, records = set(), 0
 for f in ["names-db.tsv", "names-extra.tsv"]:
@@ -36,9 +41,15 @@ for f in ["names-db.tsv", "names-extra.tsv"]:
         if f == "names-db.tsv" and len(x) > 3 and x[3].isdigit():
             records += int(x[3])
 places = json.load(open(D("years.json"), encoding="utf-8"))["places"]
+# places named inside a country group ("Newborns" under Iceland or Spain) are matched by their key
+KEY = {"es-nac": "ES", "is": "IS", "is-nac": "IS"}
+for p in places:
+    if p["label"] not in PLACE and p.get("key") in KEY: PLACE[p["label"] + "/" + p["key"]] = KEY[p["key"]]; p["label"] = p["label"] + "/" + p["key"]
 missing = [p["label"] for p in places if p["label"] not in PLACE]
 assert not missing, f"map these places to a country: {missing}"
 countries |= {PLACE[p["label"]] for p in places}
+# official name lists kept as their own files: Azerbaijan's Ministry of Justice list of names (data/az-names.json)
+if os.path.exists(D("az-names.json")): countries.add("AZ")
 
 sac = json.load(open(D("sacred.json"), encoding="utf-8"))
 nf = json.load(open(D("native-forms.json"), encoding="utf-8"))
