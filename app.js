@@ -130,7 +130,7 @@ const PERSONLIKE = new Set(["human", "prophet", "sage", "saint", "disciple", "ro
 const SACRED = new Map(), SACRED_SEX = new Map(); // folded name → cited references; the sex of the people the text gives that name
 let SACRED_FIG = {};
 const FIG_FORMS = new Map(); // figure → every name form it carries, across traditions (Abraham, Avraham, Ibrahim)
-const sacredReady = Promise.all([getJSON("data/sacred.json?v=8").catch(() => null), storied]).then(async ([d]) => {
+const sacredReady = Promise.all([getJSON("data/sacred.json?v=9").catch(() => null), storied]).then(async ([d]) => {
   if (!d) return;
   SACRED_FIG = d.f;
   const have = new Map(ALL_NAMED.map(x => [fold(x.n), x]));
@@ -285,7 +285,9 @@ const SHORT = { us: "US", ca: "Canada", au: "NSW", ew: "Eng & Wales", fr: "Franc
 // pronunciations: a dictionary for names people have, then the rules of each name's language (phonetics.js)
 getJSON("data/pron.json?v=1").then(d => PH.load(d)).catch(() => {});
 getJSON("data/popularity.json?v=6").then(d => { POP = d; }).catch(() => {});
-getJSON("data/years.json?v=4").then(d => { YEARS = d; Charts.ready(); }).catch(() => {});
+// the time machine's data is small and needed the moment someone scrolls to it: it doesn't queue behind the million-name files
+fetch("data/years.json?v=4").then(r => settled.then(() => r.json())).then(d => { YEARS = d; Charts.ready(); }).catch(() => {});
+addEventListener("scroll", () => settle(), { once: true, passive: true });
 function popRanks(name, g) {
   if (!POP) return [];
   const sexes = g === "either" ? ["g", "b"] : [(g || gender)[0]], out = [];
