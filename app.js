@@ -25,8 +25,29 @@ for (const ev of ["pointerdown", "keydown", "wheel", "touchstart"]) addEventList
 // and the files are read one at a time, with a breath between, instead of all in the same instant
 let queue = Promise.resolve();
 const inTurn = f => { const p = queue.then(() => new Promise(r => setTimeout(r, 0))).then(f); queue = p.catch(() => {}); return p; };
-const getJSON = u => fetch(u).then(r => settled.then(() => inTurn(() => r.json())));
-const getText = u => fetch(u).then(r => settled.then(() => inTurn(() => r.text())));
+// the big files are read by a background worker (loader.js) and arrive in small pieces, so typing never waits on a parse
+let LOADER = null, loadId = 0;
+const loads = new Map();
+try {
+  LOADER = new Worker("loader.js?v=3");
+  LOADER.onmessage = ({ data: m }) => {
+    const job = loads.get(m.id);
+    if (!job) return;
+    if (m.error) { loads.delete(m.id); return job.no(new Error(m.error)); }
+    if (m.done) { loads.delete(m.id); return job.ok(job.root); }
+    if (m.shape === null) { job.root = {}; return; }                                   // one big lookup, arriving in batches
+    if (m.shape) { job.root = Object.fromEntries(Object.entries(m.shape).map(([k, t]) => [k, t === "a" ? [] : t === "o" ? {} : null])); return; }
+    if (!m.at.length) { if (m.items) { for (const x of m.items) job.root.push(x); } else if (m.pairs) { for (const [kk, v] of m.pairs) job.root[kk] = v; } else job.root = m.value; return; }
+    const k = m.at[0];
+    if (m.items) { const a = job.root[k]; for (const x of m.items) a.push(x); }
+    else if (m.pairs) { const o = job.root[k]; for (const [kk, v] of m.pairs) o[kk] = v; }
+    else job.root[k] = m.value;
+  };
+} catch (e) { LOADER = null; }
+const viaWorker = (u, kind) => new Promise((ok, no) => { const id = ++loadId; loads.set(id, { ok, no, root: [] }); LOADER.postMessage({ id, url: new URL(u, location.href).href, kind }); });
+const getJSON = u => LOADER ? settled.then(() => viaWorker(u, "json")) : fetch(u).then(r => settled.then(() => inTurn(() => r.json())));
+// a text file comes back as its lines
+const getLines = u => LOADER ? settled.then(() => viaWorker(u, "lines")) : fetch(u).then(r => settled.then(() => inTurn(() => r.text()))).then(t => t.split("\n"));
 // long loops give the page a breath every ~10ms, so the mobile keeps moving and typing stays smooth while a million names load
 const breathe = () => new Promise(r => setTimeout(r, 0));
 async function slowly(items, fn) {
@@ -55,14 +76,15 @@ const CC_LABEL = { us: "US", ca: "Canada", qc: "Québec", au: "Australia", uk: "
   dk: "Denmark", cz: "Czechia", cy: "Cyprus", hu: "Hungary", is: "Iceland", ro: "Romania", jp: "Japan", wd: "Wikidata", wikt: "Wiktionary",
   it: "Italy", tr: "Türkiye", tw: "Taiwan", se: "Sweden", lv: "Latvia", gl: "Greenland", si: "Slovenia", fo: "Faroe Islands", bs: "Basel", zh: "Zürich",
   frc: "French towns", itc: "Italian towns", wikt2: "Wiktionary" };
-function eastAsian(d) {
+// built in small steps: the three lists hold 60,000 names
+async function eastAsian(d) {
   const rows = [];
-  for (const [n, g, kanji, kana, ways, m] of d.ja || [])
-    rows.push([n, g, "Japanese", "Japanese", "", m, (kanji ? `Written ${kanji} (${m})` + (ways > 1 ? `, one of ${ways} ways to write ${n} in kanji` : "") + ". " : "") + `In kana: ${kana}.`, "", "real"]);
-  for (const [n, g, hangul, hanja, m, real] of d.ko || [])
-    rows.push([n, g, "Korean", "Korean", "", m, `Written ${hangul} (${hanja}): ${m}.` + (real ? "" : " Built the way Korean names are made: two name syllables, each with its hanja."), "", real ? "real" : "root"]);
-  for (const [n, g, hanzi, pinyin, m, real] of d.zh || [])
-    rows.push([n, g, "Chinese", "Mandarin", "", m, `Written ${hanzi} (${pinyin}): ${m}.` + (real ? "" : " Built from two given-name characters."), "", real ? "real" : "root"]);
+  await slowly(d.ja || [], ([n, g, kanji, kana, ways, m]) =>
+    rows.push([n, g, "Japanese", "Japanese", "", m, (kanji ? `Written ${kanji} (${m})` + (ways > 1 ? `, one of ${ways} ways to write ${n} in kanji` : "") + ". " : "") + `In kana: ${kana}.`, "", "real"]));
+  await slowly(d.ko || [], ([n, g, hangul, hanja, m, real]) =>
+    rows.push([n, g, "Korean", "Korean", "", m, `Written ${hangul} (${hanja}): ${m}.` + (real ? "" : " Built the way Korean names are made: two name syllables, each with its hanja."), "", real ? "real" : "root"]));
+  await slowly(d.zh || [], ([n, g, hanzi, pinyin, m, real]) =>
+    rows.push([n, g, "Chinese", "Mandarin", "", m, `Written ${hanzi} (${pinyin}): ${m}.` + (real ? "" : " Built from two given-name characters."), "", real ? "real" : "root"]));
   return rows;
 }
 // names from sacred texts, Hebrew names from Israel, Japanese/Korean/Chinese names, and 120+ cultures
@@ -75,12 +97,13 @@ const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.
   "data/english-names.json?v=1", "data/spanish-names.json?v=2",
   "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2", "data/persian-names.json?v=2", "data/egyptian-names.json?v=1", "data/sea-names.json?v=2", "data/hebrew-extra.json?v=1", "data/latin-names.json?v=1", "data/strongs-meanings.json?v=1", "data/bible-places.json?v=1", "data/hindu-names.json?v=4"]
   .map(u => getJSON(u).catch(() => [])))
-  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, fm, ct, en, es, pt, de, fi, fa, eg, sea, he2, la, sm, bp, hi]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...fm, ...ct, ...en, ...es, ...pt, ...de, ...fi, ...fa, ...eg, ...sea, ...he2, ...la, ...sm, ...bp, ...hi])).catch(e => console.error(e));
+  .then(async ([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, fm, ct, en, es, pt, de, fi, fa, eg, sea, he2, la, sm, bp, hi]) => addStoried([a, bx, d, e, await eastAsian(c), med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, fm, ct, en, es, pt, de, fi, fa, eg, sea, he2, la, sm, bp, hi])).catch(e => console.error(e));
 const BOLLYWOOD = new Map();   // folded first name → ["In Bollywood: Varun Dhawan, actor…", "Known today: Taylor Swift, …"] (any name, from the records or the lists)
-async function addStoried(rows) {
+// the lists arrive as a list of lists, taken one after another, never copied into one giant array first
+async function addStoried(lists) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
   // in slices, so tens of thousands of rows never freeze the page (the mobile keeps moving, typing stays smooth)
-  await slowly(rows, ([n, g, o, l, r, m, src, texts, kind, also, ease]) => {
+  for (const rows of lists) await slowly(rows, ([n, g, o, l, r, m, src, texts, kind, also, ease]) => {
     if (src) src = src.replace(/^A (?=[AEIOU])/, "An ");
     const x = texts ? texts.split(",") : [], k = fold(n), cur = have.get(k);
     // a star's first name only adds its line to a name the site already knows: it says nothing about origin or who the name is for
@@ -140,7 +163,8 @@ const sacredReady = Promise.all([getJSON("data/sacred.json?v=10").catch(() => nu
   if (!d) return;
   liveStat("texts", d.c.length);                 // every scripture and epic a name is cited from
   SACRED_FIG = d.f;
-  const have = new Map(ALL_NAMED.map(x => [fold(x.n), x]));
+  // the name index already exists (BY_NAME); rebuilding a map of 400,000 names here froze the page for a third of a second
+  const have = { get: k => (BY_NAME.get(k) || []).find(x => x.type !== "attested"), set: () => {} };
   // appended in place and in slices: a figure cited in thousands of hadith would otherwise be copied over and over, freezing the page
   await slowly(d.n, ([n, sex, rows]) => {
     const refs = rows.map(([t, c, text, at, url, s, role, fid, orig, tr, rel, occ]) =>
@@ -214,11 +238,11 @@ function threadHTML(x) {
   return `<div class="sthread"><p class="sthread-h">Sacred thread</p><ul>${lines.join("")}${cultural.map(t =>
     `<li><span class="mark m-c" title="Cultural usage">○</span><div><b>${esc(TRADITION[t])}</b><small>Cultural usage · common in the tradition; no cited text yet</small></div></li>`).join("")}</ul></div>`;
 }
-const dbReady = Promise.all([getText("data/names-db.tsv?v=3"), storied]).then(async ([t]) => {
+const dbReady = Promise.all([getLines("data/names-db.tsv?v=3"), storied]).then(async ([lines]) => {
   const ours = new Set();
   await slowly(ALL_NAMED, x => ours.add(fold(x.n)));
   await breathe();
-  await slowly(t.split("\n"), line => {
+  await slowly(lines, line => {
     if (!line) return;
     const [n, g, cc, cnt] = line.split("\t"), k = fold(n), ccs = cc.split(",");
     const e = { n, g: DB_G[g], cc: ccs, cnt: +cnt, o: ccs.length === 1 && ccs[0] === "il" ? "Israeli" : "", l: "", r: [], m: "", src: "", type: "attested" };
@@ -233,8 +257,8 @@ const dbReady = Promise.all([getText("data/names-db.tsv?v=3"), storied]).then(as
   dispatchEvent(new Event("namesdb"));
   // the long tail (data/names-extra.tsv: Argentina 1922–2015, France's deaths file, Brazil 2022, official lists, Wikidata…) arrives once
   // the page is idle; it counts, and any name typed is found, but Find only suggests those held by at least 5 people
-  (window.requestIdleCallback || (f => setTimeout(f, 1500)))(() => getText("data/names-extra.tsv?v=2").then(async t => {
-    await slowly(t.split("\n"), line => {
+  (window.requestIdleCallback || (f => setTimeout(f, 1500)))(() => getLines("data/names-extra.tsv?v=2").then(async lines => {
+    await slowly(lines, line => {
       if (!line) return;
       const [n, g, cc, cnt] = line.split("\t"), k = fold(n);
       if (DB_KEYS.has(k)) return;
@@ -256,8 +280,8 @@ const KIND_LABEL = { attested: "Real name", real: "Real name", root: "Built from
 // and never overwrite a meaning we already have
 let MEAN = {}, RELS = new Map();
 const meaningFor = n => MEAN[n.toLowerCase()] || MEAN[fold(n)] || null;
-function addMeanings() {
-  return slowly([...REAL, ...ROOT_NAMES, ...DB], x => {
+async function addMeanings() {
+  for (const list of [REAL, ROOT_NAMES, DB]) await slowly(list, x => {   // list by list: copying 700,000 entries into one array froze the page
     if (x.m) return;
     const w = meaningFor(x.n);
     if (w && (w.m || w.ety)) { x.m = w.m || ""; x.ety = w.ety || ""; delete x.t; }
@@ -324,11 +348,21 @@ function fillSelect(el, anyLabel, values, label = v => v) {
   if (values.includes(cur)) el.value = cur;
   fit(el);
 }
+// the culture, faith and language menus, gathered from every named entry: one pass in small steps, so it never freezes typing;
+// a call while one is running just asks for one more pass when it ends
+let filling = null, fillAgain = false;
 function fillSelects() {
-  const cultures = uniq([...ALL_NAMED.flatMap(x => [x.o, ...(x.oo || [])]), DB_READY ? "Israeli" : ""]);
-  $$('[data-fill="culture"]').forEach(el => fillSelect(el, el.dataset.any || "any", cultures));
-  $$('[data-fill="religion"]').forEach(el => fillSelect(el, el.dataset.any || "any faith", uniq(ALL_NAMED.flatMap(x => x.r)).sort((a, b) => !!TRADITION[b] - !!TRADITION[a]), v => TRADITION[v] || v));
-  $$('[data-fill="lang"]').forEach(el => fillSelect(el, el.dataset.any || "any language", uniq(ALL_NAMED.map(x => x.l))));
+  if (filling) { fillAgain = true; return filling; }
+  filling = (async () => {
+    const cultures = new Set(), faiths = new Set(), langs = new Set();
+    await slowly(ALL_NAMED, x => { if (x.o) cultures.add(x.o); if (x.oo) for (const c of x.oo) c && cultures.add(c); for (const r of x.r) r && faiths.add(r); if (x.l) langs.add(x.l); });
+    if (DB_READY) cultures.add("Israeli");
+    const sorted = set => [...set].sort((a, b) => a.localeCompare(b));
+    $$('[data-fill="culture"]').forEach(el => fillSelect(el, el.dataset.any || "any", sorted(cultures)));
+    $$('[data-fill="religion"]').forEach(el => fillSelect(el, el.dataset.any || "any faith", sorted(faiths).sort((a, b) => !!TRADITION[b] - !!TRADITION[a]), v => TRADITION[v] || v));
+    $$('[data-fill="lang"]').forEach(el => fillSelect(el, el.dataset.any || "any language", sorted(langs)));
+  })();
+  return filling.finally(() => { filling = null; if (fillAgain) { fillAgain = false; fillSelects(); } });
 }
 const fillThemes = () => $$('[data-fill="theme"]').forEach(el => fillSelect(el, el.dataset.any || "anything", THEME_ORDER[gender]));
 // size each blank in a sentence to its words, so it reads like a sentence
