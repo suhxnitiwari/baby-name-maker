@@ -57,7 +57,8 @@ const NOTE = { "Amitabh Bachchan": "actor, the 'Angry Young Man' of Hindi cinema
   "Sunil Dutt": "actor, producer and director (1929–2005), Mother India and Mujhe Jeene Do, later a minister and social activist",
   "Shahid Kapoor": "actor, Jab We Met, Haider and Kabir Singh, films since 2003",
   "Aryan Khan": "director of the series The Ba***ds of Bollywood (2025)",
-  "Bipasha Basu": "actor, Jism, Raaz and Dhoom 2, and the star of the song 'Bipasha' in Jodi Breakers (2012); films since 2001" };
+  "Bipasha Basu": "actor, Jism, Raaz and Dhoom 2, and the star of the song 'Bipasha' in Jodi Breakers (2012); films since 2001",
+  "Ananya Panday": "actor, Student of the Year 2 and Kesari Chapter 2, films since 2019" };
 const rows = [];
 for (const [f, ps] of byFirst) {
   ps.sort((a, b) => b.s - a.s);
