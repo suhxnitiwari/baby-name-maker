@@ -1000,6 +1000,8 @@ const Hero = (() => {
   }
   inp.addEventListener("focus", takeOver);
   inp.addEventListener("pointerdown", takeOver);
+  // any sign of a person (a key, a tap, a scroll) ends the demo at once, so it never types over them
+  for (const ev of ["keydown", "pointerdown", "wheel", "touchstart"]) addEventListener(ev, takeOver, { passive: true });
   inp.addEventListener("input", () => {
     takeOver();
     // no name repeats a letter three times running (Suhaniiii → Suhanii); 26 characters fits a first and last name
@@ -1172,6 +1174,19 @@ const Duet = (() => {
     if (!val(mom) || !val(dad)) return (val(mom) ? dad : mom).focus();
     MB.ensure(); keys(); run(true); el.blur();
   }));
+  // each added clause gets a small × that takes it back out (and empties it), and its button returns to the list
+  $$('#duet [id^="x-"]').forEach(clause => {
+    const x = document.createElement("button");
+    x.type = "button"; x.className = "clause-x"; x.textContent = "×"; x.setAttribute("aria-label", "Take this out");
+    clause.appendChild(x);
+    x.addEventListener("click", () => {
+      clause.hidden = true;
+      clause.querySelectorAll("input, select").forEach(f => { f.value = ""; fit(f); });
+      const add = $(`#duetAdd [data-extra="${clause.id.slice(2)}"]`); if (add) add.hidden = false;
+      $("#duetAddWrap").hidden = false;
+      if (!$("#duetResult").hidden) run();
+    });
+  });
   // the extras live behind "+ Add something meaningful"
   $("#duetAdd").addEventListener("click", e => {
     const b = e.target.closest("[data-extra]"); if (!b) return;
