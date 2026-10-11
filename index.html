@@ -493,6 +493,30 @@
   .crib .cradle-empty { position: absolute; left: 0; right: 0; top: 70%; padding: 0; font-size: clamp(1rem, 2vw, 1.4rem); }
   .cradle-empty { font: italic 400 1.6rem/1.3 var(--serif); color: var(--muted); text-align: center; padding: 30px 0 0; }
 
+  /* sharing the cradle: the story card, and a shortlist someone sent */
+  .cradle-acts { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .go.quiet { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px rgba(87,68,55,.35); }
+  .go.quiet:hover { box-shadow: inset 0 0 0 1px var(--rose); }
+  #shareSheet { position: fixed; left: 50%; bottom: 0; z-index: 70; width: min(560px, 100%); max-height: 92svh; overflow: auto; background: var(--paper); border-radius: 22px 22px 0 0;
+    box-shadow: 0 -30px 80px -30px rgba(80,50,30,.45); padding: 26px 28px 30px; transform: translate(-50%, 105%); transition: transform .6s var(--ease); text-align: center; }
+  #shareSheet.on { transform: translate(-50%, 0); }
+  #shareSheet h3 { font: 400 clamp(2rem, 6vw, 2.6rem)/1 var(--serif); margin: 6px 0 16px; } #shareSheet h3 i { color: var(--rose); }
+  .sheet-x { all: unset; cursor: pointer; position: absolute; top: 14px; right: 18px; font-size: 1.6rem; color: var(--muted); }
+  .share-seg { display: inline-flex; margin-bottom: 12px; }
+  .share-pick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 12px; }
+  .share-pick button, .shared-votes button { all: unset; cursor: pointer; font: 400 1.05rem var(--serif); padding: 4px 12px; border-radius: 999px; box-shadow: inset 0 0 0 1px var(--rule); color: var(--ink); }
+  .share-pick button[aria-pressed="true"], .shared-votes button[aria-pressed="true"] { background: var(--rose); color: #fff7ee; box-shadow: none; }
+  .share-card canvas { width: min(300px, 70vw); height: auto; aspect-ratio: 9 / 16; border-radius: 14px; box-shadow: 0 20px 50px -24px rgba(80,50,30,.5); }
+  .share-acts { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 14px; margin-top: 18px; }
+  .share-note { font: italic 400 1rem/1.35 var(--serif); color: var(--muted); max-width: 40ch; margin: 14px auto 0; }
+  .shared { max-width: 640px; margin: 0 auto 28px; padding: 26px 28px; background: var(--paper); border-radius: 18px; box-shadow: 0 20px 50px -30px rgba(80,50,30,.35); }
+  .shared h3 { font: 400 clamp(1.9rem, 4vw, 2.5rem)/1 var(--serif); margin: 6px 0 14px; } .shared h3 i { color: var(--rose); }
+  .shared-match { font: italic 400 1.2rem var(--serif); color: var(--rose); margin: 0 0 10px; }
+  .shared-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 10px 0; border-top: 1px solid var(--rule); }
+  .shared-row.match .shared-name { color: var(--rose); }
+  .shared-name { all: unset; cursor: pointer; font: 400 1.7rem/1 var(--serif); color: var(--ink); margin-right: auto; } .shared-name span { font-size: .9rem; color: var(--brass); }
+  .shared-theirs { font: 500 .58rem var(--mono); letter-spacing: .13em; text-transform: uppercase; color: var(--muted); }
+  .shared-votes { display: flex; gap: 6px; }
   /* the same-song sheet */
   #spellSheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 70; max-height: 86svh; overflow: auto; background: var(--paper);
     border-radius: 22px 22px 0 0; box-shadow: 0 -30px 80px -30px rgba(80,50,30,.45); padding: 28px 40px 40px; transform: translateY(105%); transition: transform .6s var(--ease); }
@@ -639,6 +663,7 @@
 </section>
 
 <!-- same song, different letters -->
+<div id="shareSheet" hidden role="dialog" aria-modal="true" aria-label="Share the cradle"></div>
 <div id="spellSheet" hidden role="dialog" aria-modal="true" aria-labelledby="spellTitle">
   <div class="sheet-top">
     <div>
@@ -683,7 +708,7 @@
     <label class="q"><span class="ql">Length</span>
       <select id="fLen"><option value="">any length</option><option value="3-4">short · 3–4 letters</option><option value="5-6">medium · 5–6</option><option value="7-8">long · 7–8</option><option value="9-99">extra long · 9+</option></select></label>
     <label class="q"><span class="ql">Last name <i>optional</i></span><input id="fLast" placeholder="to hear them together"></label>
-    <label class="q"><span class="ql">Middle name <i>optional</i></span><input id="fMiddle" placeholder="to check the initials"></label>
+    <label class="q"><span class="ql">Middle name <i>optional</i></span><input id="fMiddle" placeholder="one or two, for the initials"></label>
     <details class="q wide more-q"><summary>Leave out names</summary>
       <div class="more-grid">
         <label class="q"><span class="ql">Not starting with</span><input id="fNoStart" placeholder="e.g. s, j"></label>
@@ -693,7 +718,8 @@
         <label class="q"><span class="ql">Syllables</span><select id="fSyl"><option value="">any</option><option value="2-9">not one syllable</option><option value="1-2">no more than 2</option><option value="1-3">no more than 3</option></select></label>
         <label class="q"><span class="ql">Popularity</span><select id="fNotTop"><option value="">any</option><option value="50">not in a top 50</option><option value="100">not in a top 100</option></select></label>
         <label class="q check"><input type="checkbox" id="fNoMade"><span>Made-up names</span></label>
-        <label class="q check"><input type="checkbox" id="fNoInitials" checked><span>Initials that spell a word</span></label>
+        <label class="q check"><input type="checkbox" id="fNoInitials" checked><span>Initials that spell something rude</span></label>
+        <label class="q check"><input type="checkbox" id="fNoWordInitials"><span>Initials that make any word (S.A.T., D.O.G.)</span></label>
         <label class="q check"><input type="checkbox" id="fNoClash"><span>Names that run into the last name</span></label>
       </div>
     </details>
@@ -794,8 +820,9 @@
 <section class="room" id="cradle" aria-labelledby="cradleTitle">
   <div class="room-head">
     <div><p class="kick">05 · saved on this device</p><h2 id="cradleTitle">The <i>cradle.</i></h2><p class="lede">Your little playlist of maybes. Tap ♡ on any name to hang it here.</p></div>
-    <button class="go hidden" id="cradlePlay">▶ Play all</button>
+    <div class="cradle-acts"><button class="go hidden" id="cradlePlay">▶ Play all</button><button class="go quiet hidden" id="cradleShare">Share</button></div>
   </div>
+  <div class="shared" id="sharedList" hidden></div>
   <div class="crib" id="crib"><div class="crib-rock"><div class="crib-art" id="cribArt"></div><div class="hang" id="cradleMobile"></div><p class="cradle-empty" id="cradleEmpty">Nothing in the cradle yet.</p></div></div>
 </section>
 
@@ -824,6 +851,7 @@
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=207"></script>
+<script src="app.js?v=211"></script>
+<script src="share.js?v=2"></script>
 </body>
 </html>

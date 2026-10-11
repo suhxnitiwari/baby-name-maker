@@ -383,7 +383,7 @@ function matches(x, f, letters = true) {
   if (f.vibe && !vibeMatch(x, f.vibe)) return false;
   if (f.syl) { const [lo, hi] = f.syl.split("-").map(Number), c = sylCount(x.n); if (c < lo || c > hi) return false; }
   if (f.noMade && (x.type === "invented" || x.type === "root")) return false;
-  if (f.noInitials && f.last && BAD_INITIALS.has((x.n[0] + (f.middle ? f.middle[0] : "") + f.last[0]).toUpperCase())) return false;
+  if ((f.noInitials || f.noWordInitials) && f.last) { const [k] = initialsFlag(x.n, f.middle, f.last); if (k === "bad" && f.noInitials || k === "word" && f.noWordInitials) return false; if (f.noInitials && loginFlag(x.n, f.last)) return false; }
   if (f.noClash && f.last) { const a = fold(x.n).slice(-1), b = fold(f.last)[0]; if (a === b) return false; }   // Clara Anderson, Jack King
   if (f.notTop && popRanks(x.n, x.g).some(r => r[1] <= f.notTop)) return false;   // in any country's latest top 50 or 100
   return true;
@@ -472,9 +472,32 @@ function compose(f, want = 4) {
   return [...out].map(n => ({ n, g: gender, o: "", l: "", r: [], m: "", src: "", type: "invented", badge: "Composed for you" }));
 }
 // full name flow: how the first name runs into the last
-const BAD_INITIALS = new Set("ASS BUM FAT PIG PMS STD WTF DIE DUM BAD SAD MAD HAG POO PEE RAT SOB FU BS PP VD OD DUD SOS CRY".split(" "));
+// initials: first + middle(s) + last, first + last alone (the middle is often dropped), and the monogram (last initial in the centre).
+// Two lists: words no child should carry, always flagged; and everyday words that are harmless but kids notice, flagged only on request
+const BAD_INITIALS = new Set(("ASS ARS ARSE BAD BUM BUTT CUM DIC DICK DIE DIES DUM DUMB DUD DUB FAT FUK FUC FCK FUCK SHIT SLUT HOE HO KKK ISIS PMS STD STI SEX TIT TITS " +
+  "POS SOB SMD WTF PEE POO POOP PUS PUKE GAS HAG OAF HATE SAD MAD PIG RAT CRY FU BS BJ BM BO PP WC VD OD DIK FAG KYS NAZI COCK CUNT TWAT PISS CRAP DAMN HELL ANL ANAL CNT AIDS TB SHART FART LICE SCAB SMEG LSD PCP").split(" "));
+const WORD_INITIALS = new Set(("KET METH WEED ATM SAT DOG CEO ETA IRS NDA PR TAX APE BAT BUG COW EEL MUD AFK BOT DLC LAG NPC URL EGG HAM JAM OIL POT RUG BOO BRAT " +
+  "FIB GAG MEH BAG BOX CAN COD FAN PAD PIN TAG BUS CAR GPS MPH VAN GUN ILL MUG SIN FLU IBS ER MD HR DJ EW LOL SMH FOMO BAMF ODO TOW CON FAK WAS BEG GUP GUS SAG " +
+  "POX ROT GUT FAR WAG GAY BOOB NUT NUTS ZIT GOD SPY LIE LIAR WAR ICE COP CIA FBI DEA TNT IOU OMG BFF PIE PEA CAT RAG TOE TOT EMO NERD WET CLOWN GEEK DORK").split(" "));
+function initialSets(first, middle, last) {
+  const mids = (middle || "").split(/\s+/).filter(Boolean).map(w => w[0]), f = (first || "")[0], l = (last || "")[0];
+  if (!f || !l) return [];
+  return [...new Set([f + mids.join("") + l, f + l, f + l + mids.join("")].map(x => x.toUpperCase()))];
+}
+// school logins and work emails: s + hart is "shart", pen + o is "peno" (first initial + last name, first three letters + last initial)
+function loginFlag(first, last) {
+  const f = fold(first).replace(/[^a-z]/g, ""), l = fold(last).replace(/[^a-z]/g, "");
+  if (!f || !l) return "";
+  return [f[0] + l, f.slice(0, 3) + l[0], f + l[0]].map(x => x.toUpperCase()).find(x => BAD_INITIALS.has(x) || BAD_INITIALS.has(x.slice(0, 4)) && x.length === 4) || "";
+}
+// "bad" for words no child should carry, "word" for an everyday word, "" when the initials are clear
+function initialsFlag(first, middle, last) {
+  const sets = initialSets(first, middle, last);
+  const hit = list => sets.find(x => list.has(x));
+  return hit(BAD_INITIALS) ? ["bad", hit(BAD_INITIALS)] : hit(WORD_INITIALS) ? ["word", hit(WORD_INITIALS)] : ["", ""];
+}
 const sylCount = n => (fold(n).replace(/y(?=[aeiou])/g, "Y").match(/[aeiouy]+/g) || []).length;
-function flowCheck(first, last, middle = "") {
+function flowCheck(first, last, middle = "", wordsToo = false) {
   const f = fold(first), l = fold(last), notes = [], good = [], sf = sylCount(first), sl = sylCount(last);
   if (f.slice(-1) === l[0] && /[aeiouy]/.test(l[0])) notes.push(`“${f.slice(-1)}” runs into “${l[0]}”`);
   else if (f.slice(-1) === l[0]) notes.push("the sounds blur together");
@@ -482,8 +505,11 @@ function flowCheck(first, last, middle = "") {
   if (f[0] === l[0]) good.push("alliterative");
   if (sf !== sl) good.push(`${sf} + ${sl} syllable rhythm`); else if (sf >= 3) notes.push(`${sf} + ${sl} syllables feels long`);
   if (f.length + l.length > 18) notes.push("a long full name");
-  const ini = (first[0] + (middle ? middle[0] : "") + last[0]).toUpperCase();
-  if (BAD_INITIALS.has(ini)) notes.push(`the initials spell ${ini.split("").join(".")}.`);
+  const login = loginFlag(first, last);
+  if (login) notes.push(`a school login could read “${login.toLowerCase()}”`);
+  const [kind, ini] = initialsFlag(first, middle, last);
+  if (kind === "bad") notes.push(`the initials spell ${ini.split("").join(".")}.`);
+  else if (kind === "word" && wordsToo) notes.push(`the initials make ${ini.split("").join(".")}., a word kids may notice`);
   return { ok: !notes.length, notes, good };
 }
 
@@ -499,6 +525,7 @@ const Cradle = (() => {
     if (!root) return;
     $("#cradleEmpty").classList.toggle("hidden", !!list.length);
     $("#cradlePlay").classList.toggle("hidden", list.length < 2);
+    $("#cradleShare")?.classList.toggle("hidden", !list.length);
     Hang.render(root, list.map((n, k) => ({ key: fold(n), len: 18 + (14 - (MB.melody(n).ev.find(e => e.kind === "main")?.i ?? 4)) * 3 + (k % 3) * 14,
       html: `<button class="charm" data-play-name="${esc(n)}"><svg class="bow" viewBox="0 0 40 22" aria-hidden="true"><path d="M20 11c-6-9-17-9-17 0s11 9 17 0c6-9 17-9 17 0s-11 9-17 0zM20 11l-5 10M20 11l5 10"/></svg><span>${esc(n)}</span></button><button class="untie" data-untie="${esc(n)}" aria-label="Take ${esc(n)} out of the cradle">×</button>` })));
   }
@@ -661,7 +688,7 @@ function moreHTML(x) {
   const isNew = x.badge === "New blend" || x.badge === "Composed for you" || x.type === "invented";
   const spell = spellingsOf(x.n, soundAlikes(x.n)).filter(s => s.common).slice(0, 4);
   const last = Find.surname();
-  const fl = last ? flowCheck(x.n, last, Find.middle()) : null;
+  const fl = last ? flowCheck(x.n, last, Find.middle(), Find.wordsToo()) : null;
   return `${Piano.html([Piano.voice(x.n, "", own)])}
     <div class="row-detail">
       <div>
@@ -1040,7 +1067,7 @@ const Find = (() => {
     F.culture = $("#fRoots").value; F.theme = $("#fTheme").value;
     F.first2 = fold($("#fStart").value); F.ends = fold($("#fEnd").value); F.len = $("#fLen").value; F.last = $("#fLast").value.trim(); F.middle = $("#fMiddle").value.trim();
     F.noStart = list($("#fNoStart").value); F.noEnd = list($("#fNoEnd").value); F.notTop = +$("#fNotTop").value || 0;
-    F.noHas = list($("#fNoHas").value); F.syl = $("#fSyl").value; F.noMade = $("#fNoMade").checked; F.noInitials = $("#fNoInitials").checked; F.noClash = $("#fNoClash").checked;
+    F.noHas = list($("#fNoHas").value); F.syl = $("#fSyl").value; F.noMade = $("#fNoMade").checked; F.noInitials = $("#fNoInitials").checked; F.noClash = $("#fNoClash").checked; F.noWordInitials = $("#fNoWordInitials").checked;
     F.noLike = ($("#fNoLike").value.split(/[\s,]+/).filter(Boolean).map(t => [fold(t), soundKey(t)])); if (!F.noLike.length) F.noLike = null;
     F.religion = $("#fFaith").value; F.close = $("#fClose").value; F.text = $("#fText").value; F.lang = $("#fLang").value;
   };
@@ -1083,7 +1110,7 @@ const Find = (() => {
   }
   $("#findMore").onclick = () => { $("#findRows").insertAdjacentHTML("beforeend", drawFrom(pools, 8, seen).map(x => rowHTML(x)).join("")); $("#findMore").classList.toggle("hidden", !poolsLeft(pools)); };
   addEventListener("namesdb", () => { if (!$("#findOut").hidden) search(); });
-  return { refresh: () => { if (!$("#findOut").hidden) search(); }, surname: () => capName(F.last || Duet.surname() || ""), middle: () => capName(F.middle || "") };
+  return { refresh: () => { if (!$("#findOut").hidden) search(); }, surname: () => capName(F.last || Duet.surname() || ""), middle: () => capName(F.middle || ""), wordsToo: () => !!F.noWordInitials };
 })();
 
 // ─────────────────────────────────────────────────────────────
