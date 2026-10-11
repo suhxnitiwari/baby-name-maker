@@ -94,6 +94,7 @@ Neel|b|Indian|Sanskrit||blue|
 Neil|b|Irish|Irish||cloud or champion (Irish, uncertain); in India, blue (Sanskrit नील)|From Irish Niall (Old Irish Níall), whose origin is uncertain, perhaps 'cloud' or 'champion'. In India it is also the English spelling of Neel, written नील, Sanskrit nīla 'dark blue'. (Wiktionary; Monier-Williams)
 Raj|b|Indian|Sanskrit||king, ruler; to reign|Written राज, from Sanskrit rāja 'king' (in compounds, from rājan) and rāj 'to reign, rule'; used across Hindi, Marathi, Gujarati, Punjabi and Bengali. (Monier-Williams)
 Shagun|g|Hindi|Sanskrit||good omen, auspicious sign|Written शगुन, the Hindi word for an omen or auspicious sign (and the gift of money given for luck at a wedding), from Sanskrit śakuna 'a bird; an omen', since omens were read from birds. (Wiktionary; Monier-Williams)
+Ritvik|b|Indian|Sanskrit||a priest who offers sacrifice at the right season|Written ऋत्विक, from Sanskrit ṛtvij (ऋत्विज्), from ṛtu 'season' and yaj 'to sacrifice': a priest who sacrifices at the proper time. (Monier-Williams)
 Kala|g|Indian|Sanskrit||art; a digit of the moon (Sanskrit); the sun (Hawaiian)|Written कला, Sanskrit kalā: an art, a small part, one sixteenth of the moon's disc. Also a Hawaiian name, from ka lā, 'the sun'. (Monier-Williams; Wiktionary)
 Riya|g|Indian|Sanskrit||singer|
 Priya|g|Indian|Sanskrit||beloved|
