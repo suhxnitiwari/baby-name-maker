@@ -48,7 +48,8 @@ const NOTE = { "Amitabh Bachchan": "actor, the 'Angry Young Man' of Hindi cinema
   "Hrithik Roshan": "actor and dancer, a star since Kaho Naa... Pyaar Hai (2000)",
   "Govinda": "actor, comedy hero and dancer of more than 120 films, films since 1986",
   "Shashi Kapoor": "actor (1938–2017), in about 160 films, including 12 in English",
-  "Prithviraj Kapoor": "actor and director (1906–1972), Emperor Akbar in Mughal-e-Azam (1960), the patriarch of the Kapoor family" };
+  "Prithviraj Kapoor": "actor and director (1906–1972), Emperor Akbar in Mughal-e-Azam (1960), the patriarch of the Kapoor family",
+  "Rajesh Khanna": "actor (1942–2012), the first superstar of Hindi cinema, with 15 hits in a row from Aradhana (1969) to Anand (1971)" };
 const rows = [];
 for (const [f, ps] of byFirst) {
   ps.sort((a, b) => b.s - a.s);
