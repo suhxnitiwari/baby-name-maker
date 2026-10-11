@@ -69,9 +69,9 @@ const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1",
   "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=11", "data/famous-names.json?v=66", "data/city-names.json?v=2",
   "data/english-names.json?v=1", "data/spanish-names.json?v=2",
-  "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2", "data/persian-names.json?v=2", "data/egyptian-names.json?v=1", "data/sea-names.json?v=1", "data/hebrew-extra.json?v=1", "data/latin-names.json?v=1"]
+  "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2", "data/persian-names.json?v=2", "data/egyptian-names.json?v=1", "data/sea-names.json?v=1", "data/hebrew-extra.json?v=1", "data/latin-names.json?v=1", "data/strongs-meanings.json?v=1", "data/bible-places.json?v=1"]
   .map(u => getJSON(u).catch(() => [])))
-  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, fm, ct, en, es, pt, de, fi, fa, eg, sea, he2, la]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...fm, ...ct, ...en, ...es, ...pt, ...de, ...fi, ...fa, ...eg, ...sea, ...he2, ...la])).catch(e => console.error(e));
+  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, fm, ct, en, es, pt, de, fi, fa, eg, sea, he2, la, sm, bp]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...fm, ...ct, ...en, ...es, ...pt, ...de, ...fi, ...fa, ...eg, ...sea, ...he2, ...la, ...sm, ...bp])).catch(e => console.error(e));
 const BOLLYWOOD = new Map();   // folded first name → ["In Bollywood: Varun Dhawan, actor…", "Known today: Taylor Swift, …"] (any name, from the records or the lists)
 async function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
@@ -80,7 +80,7 @@ async function addStoried(rows) {
     if (src) src = src.replace(/^A (?=[AEIOU])/, "An ");
     const x = texts ? texts.split(",") : [], k = fold(n), cur = have.get(k);
     // a star's first name only adds its line to a name the site already knows: it says nothing about origin or who the name is for
-    if (src && /^(In Bollywood|Known today|Also a city):/.test(src)) { (BOLLYWOOD.get(k) || BOLLYWOOD.set(k, []).get(k)).push(src); return; }
+    if (src && /^(In Bollywood|Known today|Also a city|A place in the Bible):/.test(src)) { (BOLLYWOOD.get(k) || BOLLYWOOD.set(k, []).get(k)).push(src); return; }
     // the ancient layers (Arabia before Islam, Mexico before 1521, Greece, Rome) say who bore the name: that line shows on the card
     const hist = src && /^(Used (in Arabia )?before|Used in ancient Greece|Used in early Armenia|Used in ancient Iran|Used in ancient Egypt|A god's name in|A goddess's name in|(?=.*\bShahnameh\b)|An ancient|The modern form of the ancient|The name of the .{1,30} (goddess|god)\b|A Classical Nahuatl word)/.test(src) ? src : "";
     // "A German name, from Ancient Greek Σουσάννα, from Hebrew…": the chain says where the name comes from, not the list it is on
@@ -742,7 +742,7 @@ const Hero = (() => {
   // the name in its own scripts (data/native-forms.json): only the languages of the name's own cultures, so Sofia gets Σοφία and
   // Софья but not a Japanese spelling of a borrowed name; same-sounding spellings share theirs (Fatima ← Fatimah's فاطمة)
   let NATIVE = {};
-  getJSON("data/native-forms.json?v=23").then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
+  getJSON("data/native-forms.json?v=24").then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
   const LANG_OF = { Arab: "Arabic", Arabic: "Arabic", "Pre-Islamic Arabian": "Arabic", Indian: "Hindi Sanskrit Marathi", "South Asian": "Hindi Sanskrit Urdu Bengali", Hindi: "Hindi Sanskrit",
     Israeli: "Hebrew", Hebrew: "Hebrew", Jewish: "Hebrew", Persian: "Persian", Iranian: "Persian", Chinese: "Chinese", Japanese: "Japanese", Korean: "Korean",
     Greek: "Greek", Russian: "Russian", Slavic: "Russian Ukrainian Bulgarian Serbian", Ukrainian: "Ukrainian", Armenian: "Armenian", Georgian: "Georgian",
