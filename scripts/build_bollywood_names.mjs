@@ -56,7 +56,8 @@ const NOTE = { "Amitabh Bachchan": "actor, the 'Angry Young Man' of Hindi cinema
   "Rajesh Khanna": "actor (1942–2012), the first superstar of Hindi cinema, with 15 hits in a row from Aradhana (1969) to Anand (1971)",
   "Sunil Dutt": "actor, producer and director (1929–2005), Mother India and Mujhe Jeene Do, later a minister and social activist",
   "Shahid Kapoor": "actor, Jab We Met, Haider and Kabir Singh, films since 2003",
-  "Aryan Khan": "director of the series The Ba***ds of Bollywood (2025)" };
+  "Aryan Khan": "director of the series The Ba***ds of Bollywood (2025)",
+  "Bipasha Basu": "actor, Jism, Raaz and Dhoom 2, and the star of the song 'Bipasha' in Jodi Breakers (2012); films since 2001" };
 const rows = [];
 for (const [f, ps] of byFirst) {
   ps.sort((a, b) => b.s - a.s);
