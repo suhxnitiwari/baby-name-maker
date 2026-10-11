@@ -93,7 +93,7 @@ async function eastAsian(d) {
 // …then medieval England and France, Old Norse, and Azerbaijan's official list (data/medieval-names.json, data/az-names.json)
 const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=10", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=2",
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1",
-  "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=15", "data/famous-names.json?v=77", "data/city-names.json?v=2",
+  "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=15", "data/famous-names.json?v=78", "data/city-names.json?v=2",
   "data/english-names.json?v=1", "data/spanish-names.json?v=2",
   "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2", "data/persian-names.json?v=2", "data/egyptian-names.json?v=1", "data/sea-names.json?v=2", "data/hebrew-extra.json?v=1", "data/latin-names.json?v=1", "data/strongs-meanings.json?v=1", "data/bible-places.json?v=1", "data/hindu-names.json?v=4"]
   .map(u => getJSON(u).catch(() => [])))
@@ -1300,6 +1300,7 @@ const Charts = (() => {
     Hang.render($("#chMobile"), list.map(([n, ct], k) => ({ key: y + n, len: 40 + k * 22 + (k % 2) * 14,
       html: `<button class="charm" data-play-name="${esc(n)}"><small>${k + 1}</small><span>${esc(n)}</span><em>${ct != null ? ct.toLocaleString() : ""}</em></button>` })), { stagger: 60 });
     // with no counts (ranked snapshots) the bar shows rank instead
+    if ($("#chList").children.length) $("#chList").classList.add("shown");
     $("#chList").innerHTML = full.slice(5).map(([n, ct], j, _, k = j + 5) => `<li><span>${k + 1}</span><b><button data-play-name="${esc(n)}">${esc(n)}</button>${/\s/.test(n.trim()) ? `<small class="two" title="Registered as one two-part name, counted apart from its single name">two-part name</small>` : ""}</b><i style="--w:${(counted ? ct / max * 100 : 100 - k * 100 / full.length).toFixed(1)}%"></i><em>${counted ? ct.toLocaleString() + (place.rounded ? "*" : "") : ""}</em></li>`).join("");
     clearTimeout(timer);
     if (!quiet && MB.on) timer = setTimeout(() => playName(list[0][0]), 650);
@@ -1414,12 +1415,13 @@ $("#cradlePlay").onclick = () => Cradle.playAll();
     const ls = lx == null ? lines(label) : [label], ly = lx == null ? y + r + 34 : y + 8;
     // the whole column answers a click: string, charm, label and the space around them
     const hit = hw ? `<rect class="hit" x="${x - hw}" y="${top}" width="${hw * 2}" height="${ly - top + ls.length * 30 + 10}"/>` : "";
+    // the charm drops in once (the outer group) and swings on hover (the inner one): on one element the two fought, and the charm vanished
     return `<g class="ex-charm" tabindex="0" role="button" aria-label="${label}" data-go="${go}" style="transform-origin:${x}px ${top}px;--d:${k * 70}ms">
-      ${hit}<line x1="${x}" y1="${top}" x2="${x}" y2="${y - r * .8}"/>
+      <g class="sway" style="transform-origin:${x}px ${top}px">${hit}<line x1="${x}" y1="${top}" x2="${x}" y2="${y - r * .8}"/>
       <circle class="bead" cx="${x}" cy="${top + (y - top) * .45}" r="7"/>
       <g class="shape" transform="translate(${x} ${y}) scale(${r})" fill="url(#ex-${go})">${SH[shape]}</g>
       <text class="lbl" x="${lx ?? x}" y="${ly}" text-anchor="${anchor || "middle"}">${ls.map((t, i) => `<tspan x="${lx ?? x}" dy="${i ? "1.1em" : 0}">${t}</tspan>`).join("")}</text>
-    </g>`;
+    </g></g>`;
   };
   let narrow = null;
   function build() {
@@ -1452,7 +1454,7 @@ function bindExplore() { $$(".ex-charm").forEach((el, k) => {
     closeExplore();
     const go = el.dataset.go;
     if (go === "spell") return Spell.open(Hero.name || "Layla");
-    setTimeout(() => $("#" + go).scrollIntoView({ behavior: "smooth" }), 250);
+    requestAnimationFrame(() => $("#" + go).scrollIntoView({ behavior: "instant" }));   // straight there: a long smooth scroll felt slow
     if (go === "stage") setTimeout(() => $("#heroName").focus({ preventScroll: true }), 800);
   });
 }); }
