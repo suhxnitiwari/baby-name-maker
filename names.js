@@ -92,6 +92,7 @@ Karan|b|Indian|Sanskrit|Hindu||after Karna, warrior of the Mahabharata
 Yash|b|Indian|Sanskrit||fame, glory|
 Neel|b|Indian|Sanskrit||blue|
 Neil|b|Irish|Irish||cloud or champion (Irish, uncertain); in India, blue (Sanskrit नील)|From Irish Niall (Old Irish Níall), whose origin is uncertain, perhaps 'cloud' or 'champion'. In India it is also the English spelling of Neel, written नील, Sanskrit nīla 'dark blue'. (Wiktionary; Monier-Williams)
+Raj|b|Indian|Sanskrit||king, ruler; to reign|Written राज, from Sanskrit rāja 'king' (in compounds, from rājan) and rāj 'to reign, rule'; used across Hindi, Marathi, Gujarati, Punjabi and Bengali. (Monier-Williams)
 Kala|g|Indian|Sanskrit||art; a digit of the moon (Sanskrit); the sun (Hawaiian)|Written कला, Sanskrit kalā: an art, a small part, one sixteenth of the moon's disc. Also a Hawaiian name, from ka lā, 'the sun'. (Monier-Williams; Wiktionary)
 Riya|g|Indian|Sanskrit||singer|
 Priya|g|Indian|Sanskrit||beloved|
