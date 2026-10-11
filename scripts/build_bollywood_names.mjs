@@ -41,7 +41,9 @@ for (const p of people) {
 // (the whole description after the name, replacing the one built from credits)
 const NOTE = { "Amitabh Bachchan": "actor, the 'Angry Young Man' of Hindi cinema, films since 1969",
   "Ranbir Kapoor": "actor, Sanju and Animal, films since 2007",
-  "Dharmendra": "actor, romantic hero of the 1960s and action hero of the 1970s to 90s, in more than 300 films since 1960" };
+  "Dharmendra": "actor, romantic hero of the 1960s and action hero of the 1970s to 90s, in more than 300 films since 1960",
+  "Dilip Kumar": "actor, born Muhammad Yusuf Khan (1922–2021), the 'Abhinay Samrat', Emperor of Acting, who brought method acting to Indian cinema, films since 1944",
+  "Salman Khan": "actor, son of the screenwriter Salim Khan, a star since Maine Pyar Kiya (1989), films since 1988" };
 const rows = [];
 for (const [f, ps] of byFirst) {
   ps.sort((a, b) => b.s - a.s);
