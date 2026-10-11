@@ -794,6 +794,23 @@ const Hero = (() => {
     return best && best.cnt >= 10 * (((dbEntry(x.n) || {}).cnt) || 1) ? best.y : null;
   }
   // "Used in Arabia before Islam: … Written هند. (Ibn Saʿd; meaning: Lane)" → the sentence, then its source after a dot, without the script or meaning notes
+  // "Known today": one person to a line, real people before characters, the first three shown and the rest a tap away
+  const CHARACTER = /\bplayed by\b|\bin (Friends|Gossip Girl|Modern Family|Jane the Virgin|Full House|Fuller House|Full House and Fuller House|Bridgerton|Stranger Things|Suits|Game of Thrones|Grey's Anatomy|The Office|Sex and the City|Good Luck Charlie|Gilmore Girls|Obsession \(2026\))\b/;
+  function knownList(lines) {
+    const items = [];
+    for (const h of lines) {
+      if (!h.startsWith("Known today:")) continue;
+      for (const part of h.replace(/^Known today:\s*/, "").replace(/\.$/, "").split(/;\s+(?:and\s+)?(?=[A-Z0-9'])/))
+        if (/^[a-z]/.test(part) && items.length) items[items.length - 1] += "; " + part;   // "…in Griselda; a judge on America's Got Talent"
+        else items.push(part.replace(/^and\s+/, ""));
+    }
+    if (!items.length) return "";
+    const sorted = [...items.filter(x => !CHARACTER.test(x)), ...items.filter(x => CHARACTER.test(x))];
+    const li = (x, i) => `<span class="hc-known-i${i > 2 ? " more" : ""}">${esc(x)}</span>`;
+    return `<span class="hc-known"><span class="hc-known-h">Known today</span>${sorted.map(li).join("")}` +
+      (sorted.length > 3 ? `<button class="hc-known-more inline">+ ${sorted.length - 3} more</button>` : "") + `</span>`;
+  }
+  document.addEventListener("click", e => { const b = e.target.closest(".hc-known-more"); if (b) { b.parentElement.classList.add("open"); b.remove(); } });
   function histLine(h) {
     h = h.replace(/\s*Written [^.]+\.\s*/, " ").trim();
     let depth = 0, at = -1;
@@ -826,7 +843,8 @@ const Hero = (() => {
       (maybe ? `<span class="hc-maybe">Did you mean <button class="inline" data-hero-name="${esc(maybe.n)}">${esc(maybe.n)}</button>?</span>` : "") +
       (m ? `<span class="hc-mean">“${esc(m)}”</span>` : "") + (cite ? `<span class="hc-src">${esc(cite)}</span>` : "") +
       (x.hist ? x.hist.map(h => `<span class="hc-hist">${esc(histLine(h))}</span>`).join("") : "") +
-      (BOLLYWOOD.has(k) ? BOLLYWOOD.get(k).map(h => `<span class="hc-hist hc-bw">${esc(histLine(h))}</span>`).join("") : "") +
+      (BOLLYWOOD.has(k) ? BOLLYWOOD.get(k).filter(h => !h.startsWith("Known today:")).map(h => `<span class="hc-hist hc-bw">${esc(histLine(h))}</span>`).join("") : "") +
+      knownList(BOLLYWOOD.get(k) || []) +
       (pop ? `<span class="hc-chart">${esc(pop)}</span>` : "");
   }
   if (touched) $("#typeHint").classList.add("gone");

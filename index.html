@@ -47,6 +47,12 @@
   .hero-card .hc-src::before { content: "source · "; }
   .hero-card .hc-hist { font: italic 400 .98rem/1.35 var(--serif); color: var(--muted); max-width: 46ch; margin-top: 2px; }
   .hero-card .hc-bw { color: var(--rose); }
+  .hero-card .hc-known { display: grid; gap: 1px; max-width: 46ch; margin-top: 4px; }
+  .hero-card .hc-known-h { font: 500 .56rem/1.4 var(--mono); letter-spacing: .13em; text-transform: uppercase; color: var(--muted); }
+  .hero-card .hc-known-i { font: italic 400 .98rem/1.35 var(--serif); color: var(--rose); }
+  .hero-card .hc-known-i.more { display: none; }
+  .hero-card .hc-known.open .hc-known-i.more { display: block; }
+  .hero-card .hc-known-more { justify-self: start; font: 500 .56rem/1.4 var(--mono); letter-spacing: .13em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
   /* a name picked in the time machine opens its card under the list */
   .tm-note { margin-top: 22px; padding: 18px 22px 16px; border-radius: 16px; background: rgba(255,251,244,.75); box-shadow: inset 0 0 0 1px rgba(110,89,75,.18); animation: settle .5s var(--drop) both; }
   .tm-note h3 { font: 400 2.1rem/1 var(--serif); margin: 0 0 8px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
@@ -802,6 +808,6 @@
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=202"></script>
+<script src="app.js?v=203"></script>
 </body>
 </html>
