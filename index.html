@@ -681,6 +681,14 @@
     <label class="q"><span class="ql">Length</span>
       <select id="fLen"><option value="">any length</option><option value="3-4">short · 3–4 letters</option><option value="5-6">medium · 5–6</option><option value="7-8">long · 7–8</option><option value="9-99">extra long · 9+</option></select></label>
     <label class="q"><span class="ql">Last name <i>optional</i></span><input id="fLast" placeholder="to hear them together"></label>
+    <label class="q"><span class="ql">Middle name <i>optional</i></span><input id="fMiddle" placeholder="to check the initials"></label>
+    <details class="q wide more-q"><summary>Leave out names</summary>
+      <div class="more-grid">
+        <label class="q"><span class="ql">Not starting with</span><input id="fNoStart" placeholder="e.g. s, j"></label>
+        <label class="q"><span class="ql">Not ending with</span><input id="fNoEnd" placeholder="e.g. son, ly"></label>
+        <label class="q"><span class="ql">Popularity</span><select id="fNotTop"><option value="">any</option><option value="50">not in a top 50</option><option value="100">not in a top 100</option></select></label>
+      </div>
+    </details>
     <details class="q wide more-q"><summary>Faith, sacred texts and language</summary>
       <div class="more-grid">
         <label class="q"><span class="ql">Rooted in</span><select id="fFaith" data-fill="religion" data-any="any tradition"></select></label>
@@ -808,6 +816,6 @@
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=203"></script>
+<script src="app.js?v=204"></script>
 </body>
 </html>

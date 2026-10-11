@@ -374,9 +374,12 @@ function matches(x, f, letters = true) {
     const n = fold(x.n);
     if (f.first2 && !n.startsWith(f.first2)) return false;
     if (f.ends && !n.endsWith(f.ends)) return false;
+    if (f.noStart && f.noStart.some(p => n.startsWith(p))) return false;   // what the parents have ruled out
+    if (f.noEnd && f.noEnd.some(p => n.endsWith(p))) return false;
   }
   if (!lenOk(x.n, f.len)) return false;
   if (f.vibe && !vibeMatch(x, f.vibe)) return false;
+  if (f.notTop && popRanks(x.n, x.g).some(r => r[1] <= f.notTop)) return false;   // in any country's latest top 50 or 100
   return true;
 }
 function buildPools(f) {
@@ -439,7 +442,7 @@ function closest(f) {
 // new names that keep the letters, length and feel exactly (meanings are left to the parents)
 function compose(f, want = 4) {
   const P = PARTS[gender], split = t => [...new Set(t.trim().split(/\s+/))], pre = f.first2, capW = t => t.charAt(0).toUpperCase() + t.slice(1);
-  const fits = n => sayable(n) && !TAKEN.has(fold(n)) && (!pre || fold(n).startsWith(pre)) && (!f.ends || fold(n).endsWith(f.ends)) &&
+  const fits = n => sayable(n) && !TAKEN.has(fold(n)) && (!pre || fold(n).startsWith(pre)) && (!f.ends || fold(n).endsWith(f.ends)) && !(f.noStart || []).some(p => fold(n).startsWith(p)) && !(f.noEnd || []).some(p => fold(n).endsWith(p)) &&
     lenOk(n, f.len) && (!f.vibe || vibeMatch({ n, g: gender, o: "", l: "", r: [], m: "", src: "", type: "invented" }, f.vibe));
   const starts = split(P.start).filter(t => !pre || t.toLowerCase().startsWith(pre) || pre.startsWith(t.toLowerCase()));
   const starters = starts.length ? starts : [capW(pre)], enders = f.ends ? [f.ends] : split(P.end), mids = split(P.mid);
@@ -455,7 +458,7 @@ function compose(f, want = 4) {
 // full name flow: how the first name runs into the last
 const BAD_INITIALS = new Set("ASS BUM FAT PIG PMS STD WTF DIE DUM BAD SAD MAD HAG POO PEE RAT SOB FU BS PP VD OD DUD SOS CRY".split(" "));
 const sylCount = n => (fold(n).replace(/y(?=[aeiou])/g, "Y").match(/[aeiouy]+/g) || []).length;
-function flowCheck(first, last) {
+function flowCheck(first, last, middle = "") {
   const f = fold(first), l = fold(last), notes = [], good = [], sf = sylCount(first), sl = sylCount(last);
   if (f.slice(-1) === l[0] && /[aeiouy]/.test(l[0])) notes.push(`“${f.slice(-1)}” runs into “${l[0]}”`);
   else if (f.slice(-1) === l[0]) notes.push("the sounds blur together");
@@ -463,8 +466,8 @@ function flowCheck(first, last) {
   if (f[0] === l[0]) good.push("alliterative");
   if (sf !== sl) good.push(`${sf} + ${sl} syllable rhythm`); else if (sf >= 3) notes.push(`${sf} + ${sl} syllables feels long`);
   if (f.length + l.length > 18) notes.push("a long full name");
-  const ini = (first[0] + last[0]).toUpperCase();
-  if (BAD_INITIALS.has(ini)) notes.push(`the initials spell ${ini}`);
+  const ini = (first[0] + (middle ? middle[0] : "") + last[0]).toUpperCase();
+  if (BAD_INITIALS.has(ini)) notes.push(`the initials spell ${ini.split("").join(".")}.`);
   return { ok: !notes.length, notes, good };
 }
 
@@ -642,7 +645,7 @@ function moreHTML(x) {
   const isNew = x.badge === "New blend" || x.badge === "Composed for you" || x.type === "invented";
   const spell = spellingsOf(x.n, soundAlikes(x.n)).filter(s => s.common).slice(0, 4);
   const last = Find.surname();
-  const fl = last ? flowCheck(x.n, last) : null;
+  const fl = last ? flowCheck(x.n, last, Find.middle()) : null;
   return `${Piano.html([Piano.voice(x.n, "", own)])}
     <div class="row-detail">
       <div>
@@ -1014,11 +1017,13 @@ const Spell = (() => {
 // ─────────────────────────────────────────────────────────────
 const FEEL_LABEL = { soft: "soft", bold: "bold", elegant: "romantic", timeless: "timeless", modern: "modern", playful: "playful", rare: "rare" };
 const Find = (() => {
-  const F = { vibe: "", culture: "", theme: "", first2: "", ends: "", len: "", last: "", religion: "", close: "", lang: "", text: "" };
+  const F = { vibe: "", culture: "", theme: "", first2: "", ends: "", len: "", last: "", middle: "", religion: "", close: "", lang: "", text: "", noStart: null, noEnd: null, notTop: 0 };
+  const list = v => { const a = v.split(/[\s,]+/).map(t => fold(t.replace(/^-|-$/g, ""))).filter(Boolean); return a.length ? a : null; };   // "s, j" or "-son, -ly"
   let pools = null, seen = new Set();
   const read = () => {
     F.culture = $("#fRoots").value; F.theme = $("#fTheme").value;
-    F.first2 = fold($("#fStart").value); F.ends = fold($("#fEnd").value); F.len = $("#fLen").value; F.last = $("#fLast").value.trim();
+    F.first2 = fold($("#fStart").value); F.ends = fold($("#fEnd").value); F.len = $("#fLen").value; F.last = $("#fLast").value.trim(); F.middle = $("#fMiddle").value.trim();
+    F.noStart = list($("#fNoStart").value); F.noEnd = list($("#fNoEnd").value); F.notTop = +$("#fNotTop").value || 0;
     F.religion = $("#fFaith").value; F.close = $("#fClose").value; F.text = $("#fText").value; F.lang = $("#fLang").value;
   };
   const pressVibe = () => $$('#quick [data-key="vibe"] button').forEach(b => b.setAttribute("aria-pressed", b.dataset.v === F.vibe));
@@ -1060,7 +1065,7 @@ const Find = (() => {
   }
   $("#findMore").onclick = () => { $("#findRows").insertAdjacentHTML("beforeend", drawFrom(pools, 8, seen).map(x => rowHTML(x)).join("")); $("#findMore").classList.toggle("hidden", !poolsLeft(pools)); };
   addEventListener("namesdb", () => { if (!$("#findOut").hidden) search(); });
-  return { refresh: () => { if (!$("#findOut").hidden) search(); }, surname: () => capName(F.last || Duet.surname() || "") };
+  return { refresh: () => { if (!$("#findOut").hidden) search(); }, surname: () => capName(F.last || Duet.surname() || ""), middle: () => capName(F.middle || "") };
 })();
 
 // ─────────────────────────────────────────────────────────────
