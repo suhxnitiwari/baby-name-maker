@@ -1,0 +1,112 @@
+[
+ {
+  "name": "Keva",
+  "file": "data/culture-names.json",
+  "action": "respell",
+  "new_name": "Keo",
+  "reason": "Letter-by-letter transliteration of កែវ; the attested spelling is Keo (see data/sea-names.json for the full row)."
+ },
+ {
+  "name": "Phala",
+  "file": "data/culture-names.json",
+  "action": "respell",
+  "new_name": "Phalla",
+  "reason": "Letter-by-letter transliteration of ផល្លា; the attested spelling is Phalla (see data/sea-names.json for the full row)."
+ },
+ {
+  "name": "Pvana",
+  "file": "data/culture-names.json",
+  "action": "respell",
+  "new_name": "Phuong",
+  "reason": "Letter-by-letter transliteration of ភួង; the attested spelling is Phuong (see data/sea-names.json for the full row)."
+ },
+ {
+  "name": "Smbat",
+  "file": "data/culture-names.json",
+  "action": "untag",
+  "tag": "Khmer",
+  "reason": "Smbat (Սմբատ) is Armenian; no Khmer source names it. Remove 'Khmer' from also and the 'Also a Khmer name.' clause."
+ },
+ {
+  "name": "Stri",
+  "file": "data/culture-names.json",
+  "action": "respell",
+  "new_name": "Srey",
+  "reason": "Letter-by-letter transliteration of ស្រី; the attested spelling is Srey (see data/sea-names.json for the full row)."
+ },
+ {
+  "name": "Subha",
+  "file": "data/culture-names.json",
+  "action": "respell",
+  "new_name": "Sophea",
+  "reason": "Letter-by-letter transliteration of សុភា; the attested spelling is Sophea (see data/sea-names.json for the full row)."
+ },
+ {
+  "name": "-u",
+  "file": "data/culture-names.json",
+  "action": "drop",
+  "reason": "Letter-by-letter transliteration of ဝါ, not a spelling Burmese families use; no source-attested spelling found."
+ },
+ {
+  "name": "Dang",
+  "file": "data/culture-names.json",
+  "action": "respell",
+  "new_name": "Tin",
+  "reason": "Letter-by-letter transliteration of တင်; 98 of the 100 Burmese people on Wikidata whose name contains တင် write it Tin (see data/sea-names.json for the full row)."
+ },
+ {
+  "name": "Hbar-ba",
+  "file": "data/culture-names.json",
+  "action": "drop",
+  "reason": "Letter-by-letter transliteration of ပန်း, not a spelling Burmese families use; no source-attested spelling found."
+ },
+ {
+  "name": "Hua",
+  "file": "data/culture-names.json",
+  "action": "respell",
+  "new_name": "Win",
+  "reason": "Letter-by-letter transliteration of ဝင်း; 297 of the 305 Burmese people on Wikidata whose name contains ဝင်း write it Win (see data/sea-names.json for the full row)."
+ },
+ {
+  "name": "Huai",
+  "file": "data/culture-names.json",
+  "action": "respell",
+  "new_name": "Ye",
+  "reason": "Letter-by-letter transliteration of ရဲ; 37 of the 51 Burmese people on Wikidata whose name contains ရဲ write it Ye (see data/sea-names.json for the full row)."
+ },
+ {
+  "name": "Khyat",
+  "file": "data/culture-names.json",
+  "action": "respell",
+  "new_name": "Chit",
+  "reason": "Letter-by-letter transliteration of ချစ်; 29 of the 29 Burmese people on Wikidata whose name contains ချစ် write it Chit (see data/sea-names.json for the full row)."
+ },
+ {
+  "name": "Khyen",
+  "file": "data/culture-names.json",
+  "action": "respell",
+  "new_name": "Chan",
+  "reason": "Letter-by-letter transliteration of ချမ်း; 11 of the 13 Burmese people on Wikidata whose name contains ချမ်း write it Chan (see data/sea-names.json for the full row)."
+ },
+ {
+  "name": "Phlu",
+  "file": "data/culture-names.json",
+  "action": "respell",
+  "new_name": "Phyu",
+  "reason": "Letter-by-letter transliteration of ဖြူ; 19 of the 27 Burmese people on Wikidata whose name contains ဖြူ write it Phyu (see data/sea-names.json for the full row)."
+ },
+ {
+  "name": "Kongmā",
+  "file": "data/culture-names.json",
+  "action": "respell",
+  "new_name": "Kongma",
+  "reason": "Macron comes from a scholarly transliteration on the Wikidata item; the Royal Institute (RTGS) spelling of กงมา, used on Thai documents, has no diacritics."
+ },
+ {
+  "name": "Sagat",
+  "file": "data/culture-names.json",
+  "action": "untag",
+  "tag": "Thai",
+  "reason": "Owner flagged the Thai tag. Its only source is Wikidata Q110677429, which merges four unrelated names (Kazakh Сағат, Thai สกัด, Hindi सगत, Bengali সগত); the one Thai bearer is the boxer Sagat Petchyindee and สกัด is the verb 'to block'. The same merge also makes this a Bengali row that shows Cyrillic ('Written Сағат'); the main session may want to drop or rebuild the row."
+ }
+]
