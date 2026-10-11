@@ -96,6 +96,8 @@ Raj|b|Indian|Sanskrit||king, ruler; to reign|Written राज, from Sanskrit r�
 Shagun|g|Hindi|Sanskrit||good omen, auspicious sign|Written शगुन, the Hindi word for an omen or auspicious sign (and the gift of money given for luck at a wedding), from Sanskrit śakuna 'a bird; an omen', since omens were read from birds. (Wiktionary; Monier-Williams)
 Ritvik|b|Indian|Sanskrit||a priest who offers sacrifice at the right season|Written ऋत्विक, from Sanskrit ṛtvij (ऋत्विज्), from ṛtu 'season' and yaj 'to sacrifice': a priest who sacrifices at the proper time. (Monier-Williams)
 Amitabh|b|Indian|Sanskrit||of boundless splendour|Written अमिताभ, from Sanskrit amitābha: amita 'unmeasured, boundless' + ābhā 'splendour'; also the name of the Buddha Amitābha. (Monier-Williams)
+Sundar|b|Indian|Sanskrit||beautiful, handsome|Written सुन्दर, from Sanskrit sundara 'beautiful, handsome, lovely'. (Monier-Williams)
+Satya|e|Indian|Sanskrit|Hindu|truth; true, real, sincere|Written सत्य, from Sanskrit satya 'true, real, sincere; truth', from sat 'being, real'. (Monier-Williams)
 Noa|g|Hebrew|Hebrew|Jewish,Christian|movement|Written נֹעָה, from nua 'to move'; one of the five daughters of Zelophehad, who won daughters the right to inherit (Numbers 26:33). A different name from Noah of the Flood, נֹחַ 'rest'. (Strong's H5270)
 Selah|g|Hebrew|Hebrew|Jewish,Christian|a pause in a psalm|Written סֶלָה, a word that closes verses in the Psalms and Habakkuk, probably a musical pause; it is not anyone's name in the Bible. (Strong's H5542)
 Rishi|b|Indian|Sanskrit|Hindu|seer, sage; an inspired poet of the Vedic hymns|Written ऋषि, from Sanskrit ṛṣi: the seers to whom the Vedic hymns were revealed, a singer of sacred hymns. (Monier-Williams; Wiktionary)
