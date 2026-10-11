@@ -35,6 +35,7 @@ MW_XML = os.path.join(ROOT, "raw", "sacred", "mw", "xml", "mw.xml")
 OFFLINE = "--offline" in sys.argv
 UA = "Lullabyte/1.0 (https://github.com/suhxnitiwari/baby-name-maker; suhxnitiwari@gmail.com)"
 fold = S.fold
+T0 = time.time()
 
 INDIAN = {"Hindi", "Bengali", "Gujarati", "Tamil", "Telugu", "Marathi", "Punjabi", "Odia", "Kannada", "Nepali", "Sindhi", "Malayali",
           "Malayalam", "Assamese", "Indian", "Sanskrit", "Konkani", "South Asian", "Urdu", "Maithili", "Bhojpuri", "Bollywood"}
@@ -267,6 +268,8 @@ def mw_spellings(iast, masc):
 # ───────────────────────────────────────────────────────────── Indic scripts → Devanagari (same layout, other block)
 BLOCKS = {0x980: "Bengali", 0xA00: "Gurmukhi", 0xA80: "Gujarati", 0xB00: "Odia", 0xC00: "Telugu", 0xC80: "Kannada", 0xD00: "Malayalam"}
 def to_deva(s):
+    # Malayalam chillu letters and the Gurmukhi tippi/addak have no slot in the shared layout
+    s = s.replace("ൻ", "ന്").replace("ർ", "ര്").replace("ൽ", "ല്").replace("ൾ", "ള്").replace("ൺ", "ണ്").replace("ੰ", "ਂ").replace("ੱ", "")
     out = []
     for ch in s:
         cp = ord(ch)
@@ -1276,7 +1279,8 @@ def assemble():
     sah = [r for r in sah if fold(r["name"]) in born]
     srows, sreview, sstats = scripture_rows()
     tam = tamil_rows()
-    more = sah + srows + tam
+    more = sah + srows + tam + ramayana_rows()
+    figures_rows()
     write_more(more)
     sacred_more = collections.defaultdict(set)
     for r in more:
@@ -1431,8 +1435,22 @@ def assemble():
     final = keep
     for r in final.values():                      # last guard: no banned word in any meaning
         if r[5] and BANNED.search(r[5]) and not r[5].startswith("a name of"): r[5] = ", ".join(suitable_parts(r[5]))
+    report["_origin"] = origin
+    json.dump({"final": final, "report": report}, open(os.path.join(RAW, "prereview.json"), "w", encoding="utf-8"), ensure_ascii=False)
+    finish(final, report)
+
+
+def finish(final, report):
+    origin = report.pop("_origin", {}); t0 = T0
     apply_review(final, report)
+    report["hand meanings not found in MW (left as built)"] = apply_hand(final)
+    deva_check(final)
     write_review(final)
+    write_review_log()
+    C0 = collections.Counter(a for *_, a in REVIEW_LOG if not a.startswith("Devanagari"))
+    report["review-all"] = {"fixed": C0["fixed"], "blanked": C0["blanked"],
+                            "dropped": sum(v for a, v in C0.items() if a.startswith("dropped")),
+                            "Devanagari fixed": sum(1 for *_, a in REVIEW_LOG if a.startswith("Devanagari"))}
     rows = sorted(final.values(), key=lambda r: (r[10], fold(r[0]), r[0]))
     with open(OUT, "w", encoding="utf-8") as f:
         f.write("[\n" + ",\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n]\n")
@@ -1503,11 +1521,57 @@ def mw_text(key1):
     return _MWT.get(key1, "")
 
 
+def hand_decisions():
+    """raw/hindu/hand/*.txt, written while reading every row: Name=meaning (a Monier-Williams sense of the row's own
+    headword, checked word by word), Name=- (blank: no good sense), Name=X (drop: not an Indian given name, or unfit)"""
+    out = {}
+    for f in sorted(glob.glob(os.path.join(RAW, "hand", "*.txt"))):
+        for line in open(f, encoding="utf-8"):
+            if "=" in line and not line.startswith("#"):
+                n, v = line.rstrip("\n").split("=", 1); out[n.strip()] = v.strip()
+    return out
+
+
+def apply_hand(final):
+    H = hand_decisions()
+    unverified = []
+    for k in list(final):
+        r = final[k]
+        v = H.get(r[0])
+        if v is None or v == "keep":
+            # automatic tidy: no odd tail after a deity; a compound chain stays only when a reader kept it ("keep")
+            m = re.match(r"^(a name of [^;]+); (.*)$", r[5])
+            if m and not POSITIVE.search(m.group(2)): r[5] = m.group(1); REVIEW_LOG.append((r[0], m.group(0), r[5], "fixed"))
+            if v is None and " + " in r[5] and "‘" in r[5]: v = "-"
+            else: continue
+        old = r[5]
+        if v == "X":
+            REVIEW_LOG.append((r[0], old, "", "dropped")); del final[k]; continue
+        if v == "-":
+            r[5] = ""
+            r[6] = re.sub(r"(Sanskrit [^\s‘(]+)(, which MW divides into [^(]*?)? ‘[^’]*’", r"\1", r[6], count=1)
+            r[6] = re.sub(r", which MW divides into [^(]*?(?= \()", "", r[6])
+            REVIEW_LOG.append((r[0], old, "", "blanked")); continue
+        sk = re.search(r"Sanskrit ([a-zāīūṛṝḷṃḥṅñṭḍṇśṣ]+)", r[6])
+        key = iast2slp(sk.group(1)) if sk else ""
+        txt = " ".join(mw_text(x) for x in {key, key + "a", key[:-1] + "a", key[:-1], key[:-1] + "A"} if x) + " " + apte().get(key, "")
+        words = [w for w in re.findall(r"[a-zāīūṛśṣṇṭḍ'’-]{4,}", v.lower()) if not re.search(r"[āīūṛśṣṇṭḍ]", w) or w in txt]
+        miss = [w for w in re.findall(r"[a-zāīūṛśṣṇṭḍ]{4,}", v.lower()) if w.isascii() and w not in txt and w not in
+                ("name", "wife", "father", "from", "with", "that", "which", "free", "mother", "son", "daughter")]
+        if miss:
+            unverified.append((r[0], v, miss)); continue
+        r[5] = v
+        if old and f"‘{old}’" in r[6]: r[6] = r[6].replace(f"‘{old}’", f"‘{v}’")
+        else: r[6] = re.sub(r"(Sanskrit [^\s‘(]+)(, which MW divides into [^(]*?)?( ‘[^’]*’)?(?= \()", lambda x: f"{x.group(1)} ‘{v}’", r[6], count=1)
+        REVIEW_LOG.append((r[0], old, v, "fixed"))
+    return unverified
+
+
 def apply_review(final, report):
     bad, done = [], 0
     for k in list(final):
         r = final[k]
-        if r[0] in DROP: del final[k]; continue
+        if r[0] in DROP: REVIEW_LOG.append((r[0], r[5], "", "dropped")); del final[k]; continue
         if r[0] in OVERRIDE:
             key1, m = OVERRIDE[r[0]]
             if m:
@@ -1516,6 +1580,7 @@ def apply_review(final, report):
                 if miss: bad.append((r[0], m, miss)); continue
             old = r[5]
             r[5] = m
+            REVIEW_LOG.append((r[0], old, m, "fixed" if m else "blanked"))
             if old and f"‘{old}’" in r[6]: r[6] = r[6].replace(f"‘{old}’", f"‘{m}’" if m else "")
             elif not m: r[6] = re.sub(r"(Sanskrit [^\s‘(]+) ‘[^’]*’", r"\1", r[6], count=1)
             elif m and not r[6].count(f"‘{m}’"): r[6] = re.sub(r"(Sanskrit [^\s‘(]+) ‘[^’]*’", lambda x: f"{x.group(1)} ‘{m}’", r[6], count=1)
@@ -1524,6 +1589,37 @@ def apply_review(final, report):
     for r in final.values(): r[6] = r[6].replace("  (", " (").replace("’’", "’")
     report["hand review"] = {"meanings replaced": done, "dropped (another culture's name or no good sense)": sorted(DROP),
                              "override not found in MW (left as built)": bad}
+
+# ───────────────────────────────────────────────────────────── the native script must spell the whole name
+REVIEW_LOG = []          # (name, old meaning, new meaning, action) → raw/hindu/review-all.tsv
+
+
+def deva_check(final):
+    """'Written X': X read back (indic_check.matches, the merge step's own test) must carry the whole name. A wrong or partial
+    spelling is replaced by the Devanagari of the Sanskrit headword when that one matches; otherwise the row goes."""
+    import indic_check as IC
+    for k in list(final):
+        r = final[k]
+        m = re.search(r"Written ([^\s,.;]+)", r[6])
+        if not m: continue
+        x = m.group(1)
+        dv = x if re.search(r"[ऀ-ॿ]", x) else to_deva(x)
+        if not dv or IC.matches(r[0], dv): continue
+        sk = re.search(r"Sanskrit ([a-zāīūṛṝḷṃḥṅñṭḍṇśṣ]+)", r[6])
+        alt = S.deva(sk.group(1)) if sk else ""
+        if alt and IC.matches(r[0], alt):
+            r[6] = r[6].replace(f"Written {x}", f"Written {alt}", 1)
+            r[6] = re.sub(r" Sanskrit [ऀ-ॿ]+\.$", "", r[6])
+            REVIEW_LOG.append((r[0], r[5], r[5], f"Devanagari fixed: {x} → {alt}"))
+        else:
+            REVIEW_LOG.append((r[0], r[5], "", f"dropped: {x} does not spell the name"))
+            del final[k]
+
+
+def write_review_log():
+    with open(os.path.join(RAW, "review-all.tsv"), "w", encoding="utf-8") as f:
+        f.write("name\told_meaning\tnew_meaning\taction\n")
+        for row in REVIEW_LOG: f.write("\t".join(str(c).replace("\t", " ") for c in row) + "\n")
 
 def given_attested(st):
     """folded Latin spellings Wiktionary or Wikidata give as given names of the languages of India"""
@@ -1552,7 +1648,6 @@ def write_review(final):
         for k in top:
             r = final[k]; f.write(f"{r[0]}\t{births[k]}\t{r[5]}\t{r[6][:120]}\n")
 
-
 def sacred_more_corpora():
     return ["Brahmanda Purana", "Markandeya Purana", "Narada Purana", "Vamana Purana", "Padma Purana", "Bhavishya Purana", "Brahmavaivarta Purana"]
 
@@ -1572,5 +1667,171 @@ def write_more(rows):
     print(f"wrote {len(out):,} rows → {MORE}", file=sys.stderr)
 
 
+# ───────────────────────────────────────────────────────────── second pass: poet-saints, classical authors, Rāmāyaṇa retellings
+AUTHORS = os.path.join(DATA, "sacred", "indic-authors.tsv")
+# (English Wikipedia title, the name families use, corpus, tradition, subtradition, entity_type, native-label language)
+FIGURES = [
+    ("Mirabai", "Mira", "Bhakti poet-saints", "Hindu", "Vaishnava", "saint", "hi"),
+    ("Surdas", "Surdas", "Bhakti poet-saints", "Hindu", "Vaishnava", "saint", "hi"),
+    ("Tulsidas", "Tulsidas", "Bhakti poet-saints", "Hindu", "Vaishnava", "saint", "hi"),
+    ("Kabir", "Kabir", "Bhakti poet-saints", "Hindu", "Sant", "saint", "hi"),
+    ("Dnyaneshwar", "Dnyaneshwar", "Bhakti poet-saints", "Hindu", "Varkari", "saint", "mr"),
+    ("Tukaram", "Tukaram", "Bhakti poet-saints", "Hindu", "Varkari", "saint", "mr"),
+    ("Eknath", "Eknath", "Bhakti poet-saints", "Hindu", "Varkari", "saint", "mr"),
+    ("Namdev", "Namdev", "Bhakti poet-saints", "Hindu", "Varkari", "saint", "mr"),
+    ("Chaitanya Mahaprabhu", "Chaitanya", "Bhakti poet-saints", "Hindu", "Gaudiya Vaishnava", "saint", "bn"),
+    ("Ramanuja", "Ramanuja", "Bhakti poet-saints", "Hindu", "Sri Vaishnava", "saint", "ta"),
+    ("Madhvacharya", "Madhva", "Bhakti poet-saints", "Hindu", "Dvaita", "saint", "kn"),
+    ("Andal", "Andal", "Bhakti poet-saints", "Hindu", "Sri Vaishnava", "saint", "ta"),
+    ("Basava", "Basava", "Bhakti poet-saints", "Hindu", "Lingayat", "saint", "kn"),
+    ("Akka Mahadevi", "Mahadevi", "Bhakti poet-saints", "Hindu", "Lingayat", "saint", "kn"),
+    ("Lal Ded", "Lalleshwari", "Bhakti poet-saints", "Hindu", "Kashmir Shaiva", "saint", "hi"),
+    ("Narsinh Mehta", "Narsinh", "Bhakti poet-saints", "Hindu", "Vaishnava", "saint", "gu"),
+    ("Guru Nanak", "Nanak", "Bhakti poet-saints", "Sikh", "", "saint", "pa"),
+    ("Kanada (philosopher)", "Kanada", "Classical authors", "Hindu", "Vaisheshika", "sage", "hi"),
+    ("Akshapada Gautama", "Gautama", "Classical authors", "Hindu", "Nyaya", "sage", "hi"),
+    ("Kapila", "Kapila", "Classical authors", "Hindu", "Samkhya", "sage", "hi"),
+    ("Patanjali", "Patanjali", "Classical authors", "Hindu", "Yoga", "sage", "hi"),
+    ("Jaimini", "Jaimini", "Classical authors", "Hindu", "Mimamsa", "sage", "hi"),
+    ("Badarayana", "Badarayana", "Classical authors", "Hindu", "Vedanta", "sage", "hi"),
+    ("Pāṇini", "Panini", "Classical authors", "Hindu", "", "sage", "hi"),
+    ("Yāska", "Yaska", "Classical authors", "Hindu", "", "sage", "hi"),
+    ("Pingala", "Pingala", "Classical authors", "Hindu", "", "human", "hi"),
+    ("Charaka", "Charaka", "Classical authors", "Hindu", "", "human", "hi"),
+    ("Sushruta", "Sushruta", "Classical authors", "Hindu", "", "human", "hi"),
+    ("Vagbhata", "Vagbhata", "Classical authors", "Hindu", "", "human", "hi"),
+    ("Aryabhata", "Aryabhata", "Classical authors", "Hindu", "", "human", "hi"),
+    ("Brahmagupta", "Brahmagupta", "Classical authors", "Hindu", "", "human", "hi"),
+    ("Bhāskara I", "Bhaskara", "Classical authors", "Hindu", "", "human", "hi"),
+    ("Bhāskara II", "Bhaskara", "Classical authors", "Hindu", "", "human", "hi"),
+    ("Varāhamihira", "Varahamihira", "Classical authors", "Hindu", "", "human", "hi"),
+    ("Kalidasa", "Kalidasa", "Classical authors", "Hindu", "", "human", "hi"),
+    ("Bharata Muni", "Bharata", "Classical authors", "Hindu", "", "sage", "hi"),
+    ("Bhartrhari", "Bhartrihari", "Classical authors", "Hindu", "", "human", "hi"),
+    ("Adi Shankara", "Shankara", "Classical authors", "Hindu", "Advaita Vedanta", "saint", "hi"),
+]
+
+
+def figures_rows():
+    titles = [t for t, *_ in FIGURES]
+    body = get("https://en.wikipedia.org/w/api.php?" + urllib.parse.urlencode({"action": "query", "prop": "pageprops", "redirects": 1,
+               "titles": "|".join(titles), "format": "json"}), os.path.join(RAW, "authors-pageprops.json"))
+    d = json.loads(body).get("query", {})
+    to = {r["from"]: r["to"] for r in d.get("normalized", []) + d.get("redirects", [])}
+    qid = {p["title"]: p.get("pageprops", {}).get("wikibase_item", "") for p in d.get("pages", {}).values()}
+    FIXED = {"Akshapada Gautama": "Q2671506", "Badarayana": "Q4840620"}     # the Wikipedia titles redirect to the texts, not the men
+    res = lambda t: FIXED.get(t) or qid.get(t) or qid.get(to.get(t, ""), "") or qid.get(to.get(to.get(t, ""), ""), "")
+    qs = sorted({res(t) for t in titles if res(t)})
+    url = "https://www.wikidata.org/w/api.php?" + urllib.parse.urlencode({"action": "wbgetentities", "ids": "|".join(qs),
+          "props": "labels|descriptions|claims", "languages": "en|hi|mr|ta|kn|gu|pa|bn|sa|ks", "format": "json"})
+    ents = json.loads(get(url, os.path.join(RAW, "authors-wikidata.json"))).get("entities", {})
+    rows, missing = [], []
+    for title, name, corpus, trad, sub, etype, lc in FIGURES:
+        q = res(title); e = ents.get(q)
+        if not e: missing.append(title); continue
+        lab = e.get("labels", {}); desc = e.get("descriptions", {}).get("en", {}).get("value", "")
+        native = (lab.get(lc) or lab.get("hi") or lab.get("sa") or {}).get("value", "")
+        native = re.sub(r"^(आचार्य|संं?त|श्री|ಶ್ರೀ|ஸ்ரீ)\s*|\s*\(.*?\)|\s*(प्रथम|द्वितीय)$", "", native).strip()
+        sx = [c["mainsnak"].get("datavalue", {}).get("value", {}).get("id") for c in e.get("claims", {}).get("P21", [])]
+        sex = "girl" if "Q6581072" in sx else "boy" if "Q6581097" in sx else ""
+        en = lab.get("en", {}).get("value", title)
+        rows.append({"name": name, "figure_id": q, "figure": f"{en}, {desc}" if desc else en, "sex": sex, "original": native,
+                     "translit": "", "language": {"hi": "Hindi", "mr": "Marathi", "ta": "Tamil", "kn": "Kannada", "gu": "Gujarati",
+                     "pa": "Punjabi", "bn": "Bengali"}.get(lc, "Sanskrit"), "tradition": trad, "subtradition": sub, "corpus": corpus,
+                     "text": "", "passage": f"Wikidata {q}", "url": f"https://www.wikidata.org/wiki/{q}", "occurrences": "",
+                     "entity_type": etype, "name_role": "personal", "status": "association",
+                     "relation": f"{name} is the name this {'poet-saint' if corpus.startswith('Bhakti') else 'author'} is known by"
+                                 + (f" ({en})" if fold(en) != fold(name) else ""),
+                     "source": "Wikidata (CC0); English Wikipedia page title (CC BY-SA) for the item", "confidence": "0.9"})
+    with open(AUTHORS, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=S.COLS, delimiter="\t", quoting=csv.QUOTE_NONE, escapechar="\\", lineterminator="\n")
+        w.writeheader()
+        for r in rows: w.writerow({c: str(r.get(c, "")).replace("\t", " ") for c in S.COLS})
+    return rows, missing
+
+
+KAMBA = ["pmuni0414_01", "pmuni0414_02", "pmuni0422_01", "pmuni0422_02", "pmuni0430", "pmuni0455", "pmuni0478", "pmuni0539",
+         "pmuni0541_01", "pmuni0541_02", "pmuni0545_01", "pmuni0545_02", "pmuni0558_01", "pmuni0558_02", "pmuni0561_01", "pmuni0561_02"]
+ADHY = [("adhyaatmaRamBal.itx", 1), ("adhyaatmaRamAyo.itx", 2), ("adhyaatmaRamAra.itx", 3), ("adhyaatmaRamkiShkindhA.itx", 4),
+        ("adhyaatmaRamsundara.itx", 5), ("adhyaatmaRamyuddha.itx", 6), ("adhyaatmaRamuttara.itx", 7)]
+
+
+def ramayana_rows():
+    """Adhyātma Rāmāyaṇa (sanskritdocuments, through the epic matcher) and Kamba Rāmāyaṇam (Project Madurai): the Vālmīki
+    Rāmāyaṇa figures of indic.tsv found again in each retelling, first passage cited"""
+    for fn, _ in ADHY:
+        get(SD + "doc_raama/" + fn, os.path.join(RAW, "sd", fn), headers={"User-Agent": "Mozilla/5.0 (Macintosh) AppleWebKit/537.36 Chrome/120 Safari/537.36"})
+    keep_raw = S.RAW; S.RAW = RAW
+    try: verses = S.load_itx(ADHY, "AdhR", "Adhyatma Ramayana", mark_url="doc_raama/")
+    finally: S.RAW = keep_raw
+    figs = {}
+    for r in csv.DictReader(open(os.path.join(DATA, "sacred", "indic.tsv"), encoding="utf-8"), delimiter="\t", quoting=csv.QUOTE_NONE):
+        if r["corpus"] == "Valmiki Ramayana" and r["entity_type"] not in ("place", "tribe", "concept") and float(r["confidence"] or 0) >= 0.7:
+            figs.setdefault((r["translit"], r["figure_id"]), r)
+    rows = []
+    # Adhyātma: the same stem-class inflections the epic pass uses, for each Vālmīki name
+    cand = {S.norm_word(t.lower()): {"lex": "f" if r["sex"] == "girl" else "m", "safe_compound": False, "mw": t, "prio": 1}
+            for (t, q), r in figs.items()}
+    hits, _ = S.scan(verses, S.Matcher(cand))
+    for (t, q), r in figs.items():
+        h = hits.get(S.norm_word(t.lower()))
+        if not h or not h["free"]: continue
+        cite, sec, url, _txt = verses[h["verses"][0]][:4]
+        rows.append(dict(r, corpus="Adhyatma Ramayana", text="Adhyatma Ramayana (Brahmanda Purana)", passage=cite, url=url,
+                         occurrences=str(h["n"]), status="attested", source="sanskritdocuments.org e-text of the Adhyatma Ramayana; figure from indic.tsv",
+                         confidence="0.8"))
+    # Kamba: Tamil labels of the same figures (Wikidata), found as words in the Project Madurai e-text
+    qs = sorted({q for (t, q) in figs if q.startswith("Q")})
+    ta = {}
+    for i in range(0, len(qs), 50):
+        url = "https://www.wikidata.org/w/api.php?" + urllib.parse.urlencode({"action": "wbgetentities", "ids": "|".join(qs[i:i + 50]),
+              "props": "labels", "languages": "ta", "format": "json"})
+        for q, e in json.loads(get(url, os.path.join(RAW, "tamil", f"wd-ram-ta-{i}.json")) or b"{}").get("entities", {}).items():
+            v = e.get("labels", {}).get("ta", {}).get("value", "")
+            if v and " " not in v: ta[q] = v
+    texts = [(f, pm_text(f)) for f in KAMBA]
+    seen_fig = set()
+    for (t, q), r in figs.items():
+        # a figure's Tamil name attests the figure's own name only, not each Sanskrit epithet of it
+        if r["name_role"] != "personal" or q in seen_fig: continue
+        lab = ta.get(q)
+        if not lab: continue
+        stem = re.sub(r"(ன்|ம்|ர்|ள்)$", "", lab)
+        if len(stem) < 3: continue
+        rx = re.compile(r"(?<![஀-௿])" + re.escape(stem) + r"[஀-௿]{0,4}(?![஀-௿])")
+        for f, txt in texts:
+            m = rx.search(txt)
+            if not m: continue
+            before = txt[:m.start()]
+            num = re.findall(r"\n\s*(\d{1,5})\s*\n", before[-3000:])
+            rows.append(dict(r, original=lab, translit="", language="Tamil", corpus="Kamba Ramayanam", text="Iramavataram (Kambar)",
+                             passage=f"Project Madurai {f}" + (f", verse {num[-1]}" if num else ""), url=PM + f + ".html",
+                             occurrences=str(len(rx.findall(txt))), status="attested",
+                             relation=(r["relation"] + "; " if r["relation"] else "") + f"Tamil form {lab} (Wikidata label)",
+                             source="Project Madurai e-text of the Kamba Ramayanam; Tamil form from Wikidata (CC0); figure from indic.tsv",
+                             confidence="0.7"))
+            seen_fig.add(q)
+            break
+    return rows
+
+
+def second_pass():
+    authors, missing = figures_rows()
+    ram = ramayana_rows()
+    old = [r for r in csv.DictReader(open(MORE, encoding="utf-8"), delimiter="\t", quoting=csv.QUOTE_NONE)
+           if r["corpus"] not in ("Adhyatma Ramayana", "Kamba Ramayanam")]
+    write_more(old + ram)
+    rep = {"authors and poet-saints (indic-authors.tsv)": dict(collections.Counter(r["corpus"] for r in authors)),
+           "not found on Wikidata": missing, "Ramayana retellings (indic-more.tsv)": dict(collections.Counter(r["corpus"] for r in ram)),
+           "indic-more.tsv by corpus": dict(collections.Counter(r["corpus"] for r in csv.DictReader(open(MORE, encoding="utf-8"), delimiter="\t", quoting=csv.QUOTE_NONE)))}
+    json.dump(rep, open(os.path.join(RAW, "second-pass.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(json.dumps(rep, ensure_ascii=False, indent=1), file=sys.stderr)
+
 if __name__ == "__main__":
-    assemble()
+    if "--second-pass" in sys.argv:                 # poet-saints, classical authors, Rāmāyaṇa retellings
+        second_pass()
+    elif "--review-only" in sys.argv:                 # re-apply the hand review to the cached rows (seconds, not minutes)
+        c = json.load(open(os.path.join(RAW, "prereview.json"), encoding="utf-8"))
+        finish(c["final"], c["report"])
+    else:
+        assemble()

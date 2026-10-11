@@ -6,7 +6,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 // the ledger's numbers (data/stats.json, a few hundred bytes) are asked for first, ahead of the megabytes of names, so the
 // headline never sits on its placeholders; the live data then corrects them as it arrives (liveStat, by the ledger below)
-const STATS = fetch("data/stats.json?v=8", { priority: "high" }).then(r => r.json());
+const STATS = fetch("data/stats.json?v=9", { priority: "high" }).then(r => r.json());
 const LIVE = {};
 if ("scrollRestoration" in history) history.scrollRestoration = "manual"; // always open on the box
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -95,7 +95,7 @@ const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1",
   "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=15", "data/famous-names.json?v=78", "data/city-names.json?v=2",
   "data/english-names.json?v=1", "data/spanish-names.json?v=2",
-  "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2", "data/persian-names.json?v=2", "data/egyptian-names.json?v=1", "data/sea-names.json?v=2", "data/hebrew-extra.json?v=1", "data/latin-names.json?v=1", "data/strongs-meanings.json?v=1", "data/bible-places.json?v=1", "data/hindu-names.json?v=4"]
+  "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2", "data/persian-names.json?v=2", "data/egyptian-names.json?v=1", "data/sea-names.json?v=2", "data/hebrew-extra.json?v=1", "data/latin-names.json?v=1", "data/strongs-meanings.json?v=1", "data/bible-places.json?v=1", "data/hindu-names.json?v=5"]
   .map(u => getJSON(u).catch(() => [])))
   .then(async ([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, fm, ct, en, es, pt, de, fi, fa, eg, sea, he2, la, sm, bp, hi]) => addStoried([a, bx, d, e, await eastAsian(c), med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, fm, ct, en, es, pt, de, fi, fa, eg, sea, he2, la, sm, bp, hi])).catch(e => console.error(e));
 const BOLLYWOOD = new Map();   // folded first name → ["In Bollywood: Varun Dhawan, actor…", "Known today: Taylor Swift, …"] (any name, from the records or the lists)
@@ -159,7 +159,7 @@ const PERSONLIKE = new Set(["human", "prophet", "sage", "saint", "disciple", "ro
 const SACRED = new Map(), SACRED_SEX = new Map(); // folded name → cited references; the sex of the people the text gives that name
 let SACRED_FIG = {};
 const FIG_FORMS = new Map(); // figure → every name form it carries, across traditions (Abraham, Avraham, Ibrahim)
-const sacredReady = Promise.all([getJSON("data/sacred.json?v=10").catch(() => null), storied]).then(async ([d]) => {
+const sacredReady = Promise.all([getJSON("data/sacred.json?v=11").catch(() => null), storied]).then(async ([d]) => {
   if (!d) return;
   liveStat("texts", d.c.length);                 // every scripture and epic a name is cited from
   SACRED_FIG = d.f;
@@ -829,7 +829,7 @@ const Hero = (() => {
   // the name in its own scripts (data/native-forms.json): only the languages of the name's own cultures, so Sofia gets Σοφία and
   // Софья but not a Japanese spelling of a borrowed name; same-sounding spellings share theirs (Fatima ← Fatimah's فاطمة)
   let NATIVE = {};
-  getJSON("data/native-forms.json?v=29").then(d => { NATIVE = NATIVE_ALL = d;
+  getJSON("data/native-forms.json?v=30").then(d => { NATIVE = NATIVE_ALL = d;
     liveStat("languages", new Set(Object.values(d).flatMap(forms => forms.map(f => f[1]))).size);   // every language a name is written in
     const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
   const LANG_OF = { Arab: "Arabic", Arabic: "Arabic", "Pre-Islamic Arabian": "Arabic", Indian: "Hindi Sanskrit Marathi", "South Asian": "Hindi Sanskrit Urdu Bengali", Hindi: "Hindi Sanskrit",
