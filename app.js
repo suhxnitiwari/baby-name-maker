@@ -68,7 +68,7 @@ function eastAsian(d) {
 const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=9", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=2",
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1",
   "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=1",
-  "data/english-names.json?v=1", "data/spanish-names.json?v=1",
+  "data/english-names.json?v=1", "data/spanish-names.json?v=2",
   "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2", "data/persian-names.json?v=1", "data/egyptian-names.json?v=1"]
   .map(u => getJSON(u).catch(() => [])))
   .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, en, es, pt, de, fi, fa, eg]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...en, ...es, ...pt, ...de, ...fi, ...fa, ...eg])).catch(e => console.error(e));
@@ -286,7 +286,7 @@ const SHORT = { us: "US", ca: "Canada", au: "NSW", ew: "Eng & Wales", fr: "Franc
 getJSON("data/pron.json?v=1").then(d => PH.load(d)).catch(() => {});
 getJSON("data/popularity.json?v=6").then(d => { POP = d; }).catch(() => {});
 // the time machine's data is small and needed the moment someone scrolls to it: it doesn't queue behind the million-name files
-fetch("data/years.json?v=4").then(r => settled.then(() => r.json())).then(d => { YEARS = d; Charts.ready(); }).catch(() => {});
+fetch("data/years.json?v=5").then(r => settled.then(() => r.json())).then(d => { YEARS = d; Charts.ready(); }).catch(() => {});
 addEventListener("scroll", () => settle(), { once: true, passive: true });
 function popRanks(name, g) {
   if (!POP) return [];
@@ -742,7 +742,7 @@ const Hero = (() => {
   // the name in its own scripts (data/native-forms.json): only the languages of the name's own cultures, so Sofia gets Σοφία and
   // Софья but not a Japanese spelling of a borrowed name; same-sounding spellings share theirs (Fatima ← Fatimah's فاطمة)
   let NATIVE = {};
-  getJSON("data/native-forms.json?v=12").then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
+  getJSON("data/native-forms.json?v=14").then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
   const LANG_OF = { Arab: "Arabic", Arabic: "Arabic", "Pre-Islamic Arabian": "Arabic", Indian: "Hindi Sanskrit Marathi", "South Asian": "Hindi Sanskrit Urdu Bengali", Hindi: "Hindi Sanskrit",
     Israeli: "Hebrew", Hebrew: "Hebrew", Jewish: "Hebrew", Persian: "Persian", Iranian: "Persian", Chinese: "Chinese", Japanese: "Japanese", Korean: "Korean",
     Greek: "Greek", Russian: "Russian", Slavic: "Russian Ukrainian Bulgarian Serbian", Ukrainian: "Ukrainian", Armenian: "Armenian", Georgian: "Georgian",
@@ -762,7 +762,9 @@ const Hero = (() => {
     if (from) langs.add(from);
     const forms = [...own, ...nearForms.filter(([, l]) => l === from || l === x.l)];
     if (ARABIC[k0] && (langs.has("Arabic") || originOf(x).startsWith("Arabic"))) forms.unshift([ARABIC[k0], "Arabic"]);
-    forms.sort((a, b) => (b[1] === from) - (a[1] === from));
+    // the name's own language leads (Maya: Sanskrit माया before Gujarati and Russian), whichever part of the origin line names it
+    const lead = new Set([...originOf(x).split(" · ").map(t => t.replace(/^from /, "")), x.l].filter(Boolean));
+    forms.sort((a, b) => lead.has(b[1]) - lead.has(a[1]));
     for (const [f, lang] of forms) if (langs.has(lang) && !(CJK[lang] && origin !== lang) && !seen.has(lang) && !seen.has(f)) { seen.add(lang); seen.add(f); out.push([f, lang]); }
     if (!out.length && !x.o && !(x.oo || []).length && ARABIC[fold(x.n)]) out.push([ARABIC[fold(x.n)], "Arabic"]);
     if (out.length) return out.slice(0, 3);
@@ -1155,7 +1157,7 @@ const Charts = (() => {
   }
   function draw(quiet) {
     if (!YEARS || !place) return;
-    const y = years[at], full = (place.years[y][sex()] || []).slice(0, 10), list = full.slice(0, 5);   // the five that play hang; ten list in two even columns
+    const y = years[at], full = (place.years[y][sex()] || []).slice(0, 15), list = full.slice(0, 5);   // the top five hang (and play); the list carries on, 6–15
     const snapshot = (place.snapshots || []).includes(y);
     // a period is shown as the span it really covers (Latvia's "1920" is births 1918–1922), never as one year
     const span = place.periods && place.periods[y] ? place.periods[y] : place.period && !(place.single_years || []).includes(y) ? [y, y + place.period - 1] : null;
@@ -1168,7 +1170,7 @@ const Charts = (() => {
     Hang.render($("#chMobile"), list.map(([n, ct], k) => ({ key: y + n, len: 40 + k * 22 + (k % 2) * 14,
       html: `<button class="charm" data-play-name="${esc(n)}"><small>${k + 1}</small><span>${esc(n)}</span><em>${ct != null ? ct.toLocaleString() : ""}</em></button>` })), { stagger: 60 });
     // with no counts (ranked snapshots) the bar shows rank instead
-    $("#chList").innerHTML = full.map(([n, ct], k) => `<li><span>${k + 1}</span><b><button data-play-name="${esc(n)}">${esc(n)}</button>${/\s/.test(n.trim()) ? `<small class="two" title="Registered as one two-part name, counted apart from its single name">two-part name</small>` : ""}</b><i style="--w:${(counted ? ct / max * 100 : 100 - k * 100 / full.length).toFixed(1)}%"></i><em>${counted ? ct.toLocaleString() + (place.rounded ? "*" : "") : ""}</em></li>`).join("");
+    $("#chList").innerHTML = full.slice(5).map(([n, ct], j, _, k = j + 5) => `<li><span>${k + 1}</span><b><button data-play-name="${esc(n)}">${esc(n)}</button>${/\s/.test(n.trim()) ? `<small class="two" title="Registered as one two-part name, counted apart from its single name">two-part name</small>` : ""}</b><i style="--w:${(counted ? ct / max * 100 : 100 - k * 100 / full.length).toFixed(1)}%"></i><em>${counted ? ct.toLocaleString() + (place.rounded ? "*" : "") : ""}</em></li>`).join("");
     clearTimeout(timer);
     if (!quiet && MB.on) timer = setTimeout(() => playName(list[0][0]), 650);
   }
@@ -1275,12 +1277,20 @@ $("#cradlePlay").onclick = () => Cradle.playAll();
   };
   const defs = ROOMS.map(([go, , , c]) => `<radialGradient id="ex-${go}" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="${c}" stop-opacity=".75"/><stop offset=".55" stop-color="${c}"/><stop offset="1" stop-color="#8a7466" stop-opacity=".55"/></radialGradient>`).join("")
     + `<linearGradient id="ex-wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ecd2b0"/><stop offset="1" stop-color="#b98c5e"/></linearGradient>`;
-  const charm = (go, label, shape, x, top, y, r, k, lx, anchor) => `<g class="ex-charm" tabindex="0" role="button" aria-label="${label}" data-go="${go}" style="transform-origin:${x}px ${top}px;--d:${k * 70}ms">
-      <line x1="${x}" y1="${top}" x2="${x}" y2="${y - r * .8}"/>
+  // a long label breaks into two balanced lines, so it stays inside its own column ("Same song, / different letters")
+  const lines = t => { if (t.length <= 16) return [t]; const w = t.split(" "); let best = [t], d = 1e9;
+    for (let i = 1; i < w.length; i++) { const a = w.slice(0, i).join(" "), b = w.slice(i).join(" "), dd = Math.abs(a.length - b.length); if (dd < d) { d = dd; best = [a, b]; } } return best; };
+  const charm = (go, label, shape, x, top, y, r, k, lx, anchor, hw) => {
+    const ls = lx == null ? lines(label) : [label], ly = lx == null ? y + r + 34 : y + 8;
+    // the whole column answers a click: string, charm, label and the space around them
+    const hit = hw ? `<rect class="hit" x="${x - hw}" y="${top}" width="${hw * 2}" height="${ly - top + ls.length * 30 + 10}"/>` : "";
+    return `<g class="ex-charm" tabindex="0" role="button" aria-label="${label}" data-go="${go}" style="transform-origin:${x}px ${top}px;--d:${k * 70}ms">
+      ${hit}<line x1="${x}" y1="${top}" x2="${x}" y2="${y - r * .8}"/>
       <circle class="bead" cx="${x}" cy="${top + (y - top) * .45}" r="7"/>
       <g class="shape" transform="translate(${x} ${y}) scale(${r})" fill="url(#ex-${go})">${SH[shape]}</g>
-      <text class="lbl" x="${lx ?? x}" y="${lx == null ? y + r + 34 : y + 8}" text-anchor="${anchor || "middle"}">${label}</text>
+      <text class="lbl" x="${lx ?? x}" y="${ly}" text-anchor="${anchor || "middle"}">${ls.map((t, i) => `<tspan x="${lx ?? x}" dy="${i ? "1.1em" : 0}">${t}</tspan>`).join("")}</text>
     </g>`;
+  };
   let narrow = null;
   function build() {
     if (narrow === innerWidth < 760) return;
@@ -1293,7 +1303,7 @@ $("#cradlePlay").onclick = () => Cradle.playAll();
     } else {
       const W = 1000, gap = W / (ROOMS.length + 1);
       $("#exMobile").innerHTML = `<svg viewBox="0 0 ${W} 460"><defs>${defs}</defs><line class="hook" x1="500" y1="0" x2="500" y2="62"/><rect class="dowel" x="${gap * .5}" y="62" width="${W - gap}" height="12" rx="6" fill="url(#ex-wood)"/>${
-        ROOMS.map(([go, label, shape, , len], k) => charm(go, label, shape, gap * (k + 1), 70, 70 + len, shape === "cloud" ? 46 : 40, k)).join("")}</svg>`;
+        ROOMS.map(([go, label, shape, , len], k) => charm(go, label, shape, gap * (k + 1), 70, 70 + len, shape === "cloud" ? 46 : 40, k, null, null, gap / 2)).join("")}</svg>`;
     }
     bindExplore();
   }

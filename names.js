@@ -3171,6 +3171,8 @@ Behzod|b|Uzbek|Persian||well-born|Kamoliddin Behzod, master miniature painter of
 Firdavs|b|Uzbek|Persian||paradise|
 Ozod|b|Uzbek|Persian||free|
 Suhani|g|Hindi|Hindi||pleasant, beautiful, charming|Written सुहानी, the feminine of the Hindi word सुहाना (suhānā): pleasant, agreeable, and, as a verb, to seem attractive or to be an adornment. It comes from Sanskrit शुभान (śubhāná). (Wiktionary, after McGregor’s Oxford Hindi–English Dictionary)
+Suhana|g|Hindi|Sanskrit||pleasant, agreeable|Written सुहाना, the Hindi word सुहाना (suhānā): pleasant, agreeable; the same word Suhani is the feminine of. It comes from Sanskrit शुभान (śubhāná). (Wiktionary, after McGregor’s Oxford Hindi–English Dictionary)
+Sukhi|g|Indian|Sanskrit||happy, contented, at ease|Written सुखी, from Sanskrit सुखिन् (sukhin): happy, possessing happiness, at ease; used in Hindi and Punjabi. (Monier-Williams Sanskrit-English Dictionary)
 Nupur|g|Hindi|Hindi||anklet|Written नूपुर, from Sanskrit नूपुर (nūpura): an ornament for the toes or ankles, an anklet, a word used in the Mahabharata and classical poetry. (Monier-Williams Sanskrit–English Dictionary)
 Kapil|b|Hindi|Hindi|Hindu|tawny, reddish-brown|Written कपिल, from Sanskrit कपिल (kapila): brown, tawny, reddish. Also the name of an ancient sage, identified by some with Vishnu and held to be the founder of the Sāṃkhya school of philosophy (Mahabharata, Bhagavad Gita). (Monier-Williams Sanskrit–English Dictionary)
 Sonal|g|Indian|Hindi||gold, golden|Written सोनल. From Hindi सोना (sonā), Marathi सोन (son) or Gujarati સોનું (sonũ), “gold”, all from Sanskrit सुवर्ण (suvarṇa), literally “good colour”. (Behind the Name; Wiktionary)
