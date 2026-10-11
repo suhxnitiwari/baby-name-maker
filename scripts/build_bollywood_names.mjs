@@ -27,7 +27,11 @@ for (const f of Object.values(W.merge)) {
 }
 const WORD = { actor: "actor", director: "director", producer: "producer", composer: "composer", writer: "writer", screenwriter: "writer",
   cinematographer: "cinematographer", lyricist: "lyricist", singer: "singer", "playback singer": "singer", editor: "editor", choreographer: "choreographer" };
-const roleOf = n => { const m = roles.get(n); if (!m) return ""; const [r] = [...m].sort((a, b) => b[1] - a[1])[0]; return WORD[r] || ""; };
+const creditRole = n => { const m = roles.get(n); if (!m) return ""; const [r] = [...m].sort((a, b) => b[1] - a[1])[0]; return WORD[r] || ""; };
+// people with no credits on file: their main occupation (P106) from Wikidata, hand-checked, in data/bollywood-roles.json
+// (anyone Wikidata could not pin to one person is left out, and their line keeps no job)
+const ROLE = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "bollywood-roles.json"), "utf8"));
+const roleOf = n => creditRole(n) || ROLE[n] || "";
 
 const first = n => n.replace(/^(Dr|Mr|Mrs|Ms)\.? /, "").split(" ").find(w => w.length > 1 && !w.includes(".")) || "";
 const byFirst = new Map();
@@ -51,12 +55,15 @@ const NOTE = { "Amitabh Bachchan": "actor, the 'Angry Young Man' of Hindi cinema
   "Prithviraj Kapoor": "actor and director (1906–1972), Emperor Akbar in Mughal-e-Azam (1960), the patriarch of the Kapoor family",
   "Rajesh Khanna": "actor (1942–2012), the first superstar of Hindi cinema, with 15 hits in a row from Aradhana (1969) to Anand (1971)",
   "Sunil Dutt": "actor, producer and director (1929–2005), Mother India and Mujhe Jeene Do, later a minister and social activist",
-  "Shahid Kapoor": "actor, Jab We Met, Haider and Kabir Singh, films since 2003" };
+  "Shahid Kapoor": "actor, Jab We Met, Haider and Kabir Singh, films since 2003",
+  "Aryan Khan": "director of the series The Ba***ds of Bollywood (2025)" };
 const rows = [];
 for (const [f, ps] of byFirst) {
   ps.sort((a, b) => b.s - a.s);
   const [top] = ps;
-  const what = NOTE[top.n] || [roleOf(top.n), top.yr ? `films since ${top.yr}` : ""].filter(Boolean).join(", ");
+  const role = roleOf(top.n), film = /^(actor|director|producer|composer|writer|singer|lyricist|editor|cinematographer|choreographer|action director|dancer)\b/.test(role);
+  // "films since" only for people who make films: a cricketer or a royal on the board is not one (their year is often a birth year)
+  const what = NOTE[top.n] || [role, film && top.yr ? `films since ${top.yr}` : ""].filter(Boolean).join(", ");
   const line = `In Bollywood: ${top.n}${what ? `, ${what}` : ""}.`;
   rows.push([f, "", "", "", "", "", line, "", "real", []]);
 }
