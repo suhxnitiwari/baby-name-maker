@@ -67,11 +67,11 @@ function eastAsian(d) {
 // …then medieval England and France, Old Norse, and Azerbaijan's official list (data/medieval-names.json, data/az-names.json)
 const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.json?v=1", "data/culture-names.json?v=10", "data/also-cultures.json?v=1", "data/east-asian-names.json?v=2",
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1",
-  "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=2", "data/famous-names.json?v=37",
+  "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=2", "data/famous-names.json?v=40",
   "data/english-names.json?v=1", "data/spanish-names.json?v=2",
-  "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2", "data/persian-names.json?v=2", "data/egyptian-names.json?v=1", "data/sea-names.json?v=1", "data/hebrew-extra.json?v=1"]
+  "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2", "data/persian-names.json?v=2", "data/egyptian-names.json?v=1", "data/sea-names.json?v=1", "data/hebrew-extra.json?v=1", "data/latin-names.json?v=1"]
   .map(u => getJSON(u).catch(() => [])))
-  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, fm, en, es, pt, de, fi, fa, eg, sea, he2]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...fm, ...en, ...es, ...pt, ...de, ...fi, ...fa, ...eg, ...sea, ...he2])).catch(e => console.error(e));
+  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, fm, en, es, pt, de, fi, fa, eg, sea, he2, la]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...fm, ...en, ...es, ...pt, ...de, ...fi, ...fa, ...eg, ...sea, ...he2, ...la])).catch(e => console.error(e));
 const BOLLYWOOD = new Map();   // folded first name → ["In Bollywood: Varun Dhawan, actor…", "Known today: Taylor Swift, …"] (any name, from the records or the lists)
 async function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));

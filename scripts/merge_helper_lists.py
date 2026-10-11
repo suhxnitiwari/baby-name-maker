@@ -1,4 +1,4 @@
-"""Ready data/sea-names.json and data/hebrew-extra.json for the page, and apply data/sea-fixes.json to data/culture-names.json.
+"""Ready data/sea-names.json, data/hebrew-extra.json and data/latin-names.json for the page, and apply data/sea-fixes.json to data/culture-names.json.
 
 - a name the site already knows from another list keeps its culture: its row loses the ease slot (which would claim the culture)
   and only adds its line, script and culture alongside (Em stays English; Khmer Em joins it)
@@ -27,7 +27,7 @@ save("culture-names.json", culture)
 
 known = {fold(r[0]) for r in culture}
 for f in os.listdir(os.path.join(ROOT, "data")):
-    if f.endswith("-names.json") and f not in ("sea-names.json", "famous-names.json", "bollywood-names.json"):
+    if f.endswith("-names.json") and f not in ("sea-names.json", "latin-names.json", "famous-names.json", "bollywood-names.json"):
         try: known |= {fold(r[0]) for r in load(f) if isinstance(r, list) and r and isinstance(r[0], str)}
         except Exception: pass
 for line in open(os.path.join(ROOT, "names.js"), encoding="utf-8"):
@@ -50,6 +50,10 @@ sea = ready(sea, True)
 save("sea-names.json", sea)
 heb = ready(load("hebrew-extra.json"))
 save("hebrew-extra.json", heb)
+# Latin: Greek names Latin only borrowed stay out (Cleopater)
+lat = ready([r for r in load("latin-names.json") if r[0] not in ("Cleopater",)])
+save("latin-names.json", lat)
+print("latin", len(lat), sum(len(r) == 11 for r in lat), "claim")
 print("culture", len(culture), "sea", len(sea), sum(len(r) == 11 for r in sea), "claim culture;", "hebrew", len(heb), sum(len(r) == 11 for r in heb), "claim")
 
 # each new name shows its own script: "Written เฉลิม." → native-forms.json, unless the name already has a form in that language
