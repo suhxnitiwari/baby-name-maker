@@ -40,10 +40,9 @@ for (const p of people) {
 const rows = [];
 for (const [f, ps] of byFirst) {
   ps.sort((a, b) => b.s - a.s);
-  const [top, ...rest] = ps;
+  const [top] = ps;
   const what = [roleOf(top.n), top.yr ? `films since ${top.yr}` : ""].filter(Boolean).join(", ");
-  const also = rest.slice(0, 2).map(p => p.n);
-  const line = `In Bollywood: ${top.n}${what ? `, ${what}` : ""}${also.length ? `; also ${also.join(" and ")}` : ""}. (Bollywood Receipts; film credits from Wikidata)`;
+  const line = `In Bollywood: ${top.n}${what ? `, ${what}` : ""}.`;
   rows.push([f, "", "", "", "", "", line, "", "real", []]);
 }
 rows.sort((a, b) => a[0].localeCompare(b[0]));

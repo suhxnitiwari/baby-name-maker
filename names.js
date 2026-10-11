@@ -73,7 +73,7 @@ Saraswati|g|Indian|Sanskrit|Hindu|flowing one|goddess of knowledge and music
 Durga|g|Indian|Sanskrit|Hindu|invincible|warrior goddess
 Radha|g|Indian|Sanskrit|Hindu|prosperity, success|beloved of Krishna
 Draupadi|g|Indian|Sanskrit|Hindu||heroine of the Mahabharata
-Gauri|g|Indian|Sanskrit|Hindu|fair, bright|a name of Parvati
+Gauri|g|Indian|Sanskrit|Hindu|fair, bright, white|Written गौरी, from Sanskrit gaurī: a name of the goddess Parvati. (Monier-Williams; Wiktionary)
 Uma|g|Indian|Sanskrit|Hindu|tranquility|a name of Parvati
 Meera|g|Indian|Sanskrit|Hindu|devoted one|Mirabai, poet-saint devoted to Krishna
 Ananya|g|Indian|Sanskrit||unique, matchless|
@@ -95,6 +95,22 @@ Neil|b|Irish|Irish||cloud or champion (Irish, uncertain); in India, blue (Sanskr
 Raj|b|Indian|Sanskrit||king, ruler; to reign|Written राज, from Sanskrit rāja 'king' (in compounds, from rājan) and rāj 'to reign, rule'; used across Hindi, Marathi, Gujarati, Punjabi and Bengali. (Monier-Williams)
 Shagun|g|Hindi|Sanskrit||good omen, auspicious sign|Written शगुन, the Hindi word for an omen or auspicious sign (and the gift of money given for luck at a wedding), from Sanskrit śakuna 'a bird; an omen', since omens were read from birds. (Wiktionary; Monier-Williams)
 Ritvik|b|Indian|Sanskrit||a priest who offers sacrifice at the right season|Written ऋत्विक, from Sanskrit ṛtvij (ऋत्विज्), from ṛtu 'season' and yaj 'to sacrifice': a priest who sacrifices at the proper time. (Monier-Williams)
+Rishi|b|Indian|Sanskrit|Hindu|seer, sage; an inspired poet of the Vedic hymns|Written ऋषि, from Sanskrit ṛṣi: the seers to whom the Vedic hymns were revealed, a singer of sacred hymns. (Monier-Williams; Wiktionary)
+Priyanka|g|Hindi|Hindi||dear, beloved|Written प्रियंका; its first part is Sanskrit प्रिय (priya), dear, beloved. (Wiktionary; Monier-Williams)
+Alia|g|Arabic|Arabic|Muslim|high, exalted, sublime|Written عالية (ʿāliya), the feminine of Ali, from the Arabic root ع ل ي, to be high. In Hebrew, עלייה (aliyah) means ascent, going up. Also spelled Aaliyah, Aliya, Aliyah, Aleah. (Wiktionary)
+Sabrina|g|Welsh|Celtic||the River Severn|The Latin name of the River Severn (Welsh Hafren). In legend, a princess drowned in the river gave it her name; Geoffrey of Monmouth tells it and Milton sings of her in Comus (1637). (Wiktionary)
+Taylor|e|English|English||tailor|From the English and Scottish surname, an occupational name for a tailor, from Old French tailleor, cutter. (Wiktionary)
+Justin|b|Roman|Latin|Christian|just, fair|From Latin Iūstīnus, the name of early saints, from iūstus, just. (Wiktionary)
+Justine|g|French|Latin|Christian|just, fair|The French feminine of Justin, from Latin Iūstīna, the name of early saints, from iūstus, just. (Wiktionary)
+Rihanna|g|Arabic|Arabic|Muslim|a sprig of sweet basil; sweet-smelling myrtle|Written رَيْحَانَة (rayḥāna), one sprig of رَيْحَان (rayḥān), basil, myrtle, any sweet-smelling plant. Also spelled Raihana, Rayhana. (Wiktionary)
+Kimberly|g|English|English||royal fortress clearing|From the English surname and place name Kimberley, the wood or clearing of Cyneburg, a 7th-century saint: Old English cyne 'royal' + burh 'fortress' + lēah 'clearing'. A girl's name since the Boer War made the South African town famous. (Wiktionary)
+Courtney|e|English|French||from Courtenay, a Norman place|From the Norman surname Courtenay, taken from place names in Normandy, from the Latin personal name Curtenus, from curtus 'short'. (Wiktionary)
+Kourtney|g|English|French||from Courtenay, a Norman place|A spelling of Courtney: from the Norman surname Courtenay, from place names in Normandy. (Wiktionary)
+Kylie|g|Australian|English||perhaps boomerang|Origin uncertain, perhaps from kylie, an Australian word for a boomerang. First popular in Australia, then everywhere thanks to Kylie Minogue; unrelated to Kyle. (Wiktionary)
+Kendall|e|English|Old Norse||spring + valley|From the place names Kendal in Cumbria, 'valley of the river Kent', and Kendale, from Old Norse kelda 'spring' + dalr 'valley'. (Wiktionary)
+Jennifer|g|Cornish|Cornish||fair, white + smooth|The Cornish form of Guinevere: from Cornish Gweniver, from Brythonic *Gwɨnnohuɨβar, like Welsh Gwenhwyfar, 'fair, white' + 'smooth'. (Wiktionary)
+Khloe|g|Greek|Greek||green shoot|A spelling of Chloe, from Greek Χλόη, a young green shoot; made known in the 2000s by Khloé Kardashian. (Wiktionary)
+Kim|e|English|English||short for Kimberly|A short form of Kimberly or Kimball; as a Korean family name, 김 (金), gold. (Wiktionary)
 Kala|g|Indian|Sanskrit||art; a digit of the moon (Sanskrit); the sun (Hawaiian)|Written कला, Sanskrit kalā: an art, a small part, one sixteenth of the moon's disc. Also a Hawaiian name, from ka lā, 'the sun'. (Monier-Williams; Wiktionary)
 Riya|g|Indian|Sanskrit||singer|
 Priya|g|Indian|Sanskrit||beloved|
