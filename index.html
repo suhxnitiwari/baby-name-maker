@@ -29,6 +29,8 @@
   .ledger b { font: 400 clamp(1.45rem, 2vw, 2.05rem)/1 var(--serif); letter-spacing: -.005em; color: var(--ink); font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
   .ledger > div:first-child b { color: var(--rose); }
   .ledger span { font: 500 .56rem/1.4 var(--mono); letter-spacing: .13em; text-transform: uppercase; color: var(--muted); max-width: 14ch; }
+  .more-grid .check { display: flex; flex-direction: row; align-items: center; gap: 10px; align-self: end; font: 400 1.05rem/1.3 var(--serif); color: var(--ink); padding: 6px 0; }
+  .quick .more-grid .check input { all: revert; width: 16px; height: 16px; margin: 0; flex: none; accent-color: var(--rose); }
   .ledger-sub { grid-column: 1 / -1; margin: 6px 0 0; padding-top: 7px; border-top: 1px solid rgba(110,89,75,.18); font: 500 .58rem var(--mono); letter-spacing: .13em; text-transform: uppercase; color: var(--muted); }
   @media (max-width: 760px) { .ledger { grid-template-columns: repeat(2, auto); gap: 8px 18px; } }
   /* what the typed name is: where it's from, what it means, how it charts */
@@ -686,7 +688,13 @@
       <div class="more-grid">
         <label class="q"><span class="ql">Not starting with</span><input id="fNoStart" placeholder="e.g. s, j"></label>
         <label class="q"><span class="ql">Not ending with</span><input id="fNoEnd" placeholder="e.g. son, ly"></label>
+        <label class="q"><span class="ql">Containing</span><input id="fNoHas" placeholder="e.g. x, th"></label>
+        <label class="q"><span class="ql">Sounding like</span><input id="fNoLike" placeholder="e.g. Sophia"></label>
+        <label class="q"><span class="ql">Syllables</span><select id="fSyl"><option value="">any</option><option value="2-9">not one syllable</option><option value="1-2">no more than 2</option><option value="1-3">no more than 3</option></select></label>
         <label class="q"><span class="ql">Popularity</span><select id="fNotTop"><option value="">any</option><option value="50">not in a top 50</option><option value="100">not in a top 100</option></select></label>
+        <label class="q check"><input type="checkbox" id="fNoMade"><span>Made-up names</span></label>
+        <label class="q check"><input type="checkbox" id="fNoInitials" checked><span>Initials that spell a word</span></label>
+        <label class="q check"><input type="checkbox" id="fNoClash"><span>Names that run into the last name</span></label>
       </div>
     </details>
     <details class="q wide more-q"><summary>Faith, sacred texts and language</summary>
@@ -816,6 +824,6 @@
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=204"></script>
+<script src="app.js?v=206"></script>
 </body>
 </html>

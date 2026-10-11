@@ -376,11 +376,27 @@ function matches(x, f, letters = true) {
     if (f.ends && !n.endsWith(f.ends)) return false;
     if (f.noStart && f.noStart.some(p => n.startsWith(p))) return false;   // what the parents have ruled out
     if (f.noEnd && f.noEnd.some(p => n.endsWith(p))) return false;
+    if (f.noHas && f.noHas.some(p => n.includes(p))) return false;
+    if (f.noLike && likeAny(x.n, n, f.noLike)) return false;
   }
   if (!lenOk(x.n, f.len)) return false;
   if (f.vibe && !vibeMatch(x, f.vibe)) return false;
+  if (f.syl) { const [lo, hi] = f.syl.split("-").map(Number), c = sylCount(x.n); if (c < lo || c > hi) return false; }
+  if (f.noMade && (x.type === "invented" || x.type === "root")) return false;
+  if (f.noInitials && f.last && BAD_INITIALS.has((x.n[0] + (f.middle ? f.middle[0] : "") + f.last[0]).toUpperCase())) return false;
+  if (f.noClash && f.last) { const a = fold(x.n).slice(-1), b = fold(f.last)[0]; if (a === b) return false; }   // Clara Anderson, Jack King
   if (f.notTop && popRanks(x.n, x.g).some(r => r[1] <= f.notTop)) return false;   // in any country's latest top 50 or 100
   return true;
+}
+// "sounding like" names the parents rule out (someone they know, an ex): the same sound, or one letter away (Sophia, Sofia, Sophie)
+function likeAny(name, folded, like) {
+  const sk = soundKey(name);
+  return like.some(([t, tk]) => tk === sk || t === folded || (Math.abs(t.length - folded.length) <= 1 && t[0] === folded[0] && t.length > 3 && oneEdit(t, folded)));
+}
+function oneEdit(a, b) {
+  let i = 0, j = 0, d = 0;
+  while (i < a.length && j < b.length) { if (a[i] === b[j]) { i++; j++; continue; } if (++d > 1) return false; if (a.length > b.length) i++; else if (b.length > a.length) j++; else { i++; j++; } }
+  return d + (a.length - i) + (b.length - j) <= 1;
 }
 function buildPools(f) {
   const needsMeaning = f.theme || f.religion || f.culture || f.lang || f.text; // invented names have no meaning or background
@@ -389,7 +405,7 @@ function buildPools(f) {
     root: shuffle(ROOT_NAMES.filter(x => matches(x, f))),
     // official records: weighted toward names more people actually have; they only know culture when it's Israel
     db: !needsMeaning || (f.culture && !f.theme && !f.religion && !f.lang && !f.text) || ((f.religion || f.text) && f.close && !f.culture && !f.theme && !f.lang) ? DB.filter(x => (!x.extra || x.cnt >= 5) && matches(x, f)).map(x => [Math.random() ** (1 / (1 + Math.log10(x.cnt))), x]).sort((a, b) => b[0] - a[0]).map(p => p[1]) : [],
-    invented: !needsMeaning ? shuffle(invented(gender).filter(x => matches(x, f))) : [],
+    invented: !needsMeaning && !f.noMade ? shuffle(invented(gender).filter(x => matches(x, f))) : [],
   };
   pools.ptr = { real: 0, db: 0, root: 0, invented: 0 };
   return pools;
@@ -1017,13 +1033,15 @@ const Spell = (() => {
 // ─────────────────────────────────────────────────────────────
 const FEEL_LABEL = { soft: "soft", bold: "bold", elegant: "romantic", timeless: "timeless", modern: "modern", playful: "playful", rare: "rare" };
 const Find = (() => {
-  const F = { vibe: "", culture: "", theme: "", first2: "", ends: "", len: "", last: "", middle: "", religion: "", close: "", lang: "", text: "", noStart: null, noEnd: null, notTop: 0 };
+  const F = { vibe: "", culture: "", theme: "", first2: "", ends: "", len: "", last: "", middle: "", religion: "", close: "", lang: "", text: "", noStart: null, noEnd: null, notTop: 0, noHas: null, noLike: null, syl: "", noMade: false, noInitials: true };
   const list = v => { const a = v.split(/[\s,]+/).map(t => fold(t.replace(/^-|-$/g, ""))).filter(Boolean); return a.length ? a : null; };   // "s, j" or "-son, -ly"
   let pools = null, seen = new Set();
   const read = () => {
     F.culture = $("#fRoots").value; F.theme = $("#fTheme").value;
     F.first2 = fold($("#fStart").value); F.ends = fold($("#fEnd").value); F.len = $("#fLen").value; F.last = $("#fLast").value.trim(); F.middle = $("#fMiddle").value.trim();
     F.noStart = list($("#fNoStart").value); F.noEnd = list($("#fNoEnd").value); F.notTop = +$("#fNotTop").value || 0;
+    F.noHas = list($("#fNoHas").value); F.syl = $("#fSyl").value; F.noMade = $("#fNoMade").checked; F.noInitials = $("#fNoInitials").checked; F.noClash = $("#fNoClash").checked;
+    F.noLike = ($("#fNoLike").value.split(/[\s,]+/).filter(Boolean).map(t => [fold(t), soundKey(t)])); if (!F.noLike.length) F.noLike = null;
     F.religion = $("#fFaith").value; F.close = $("#fClose").value; F.text = $("#fText").value; F.lang = $("#fLang").value;
   };
   const pressVibe = () => $$('#quick [data-key="vibe"] button').forEach(b => b.setAttribute("aria-pressed", b.dataset.v === F.vibe));
