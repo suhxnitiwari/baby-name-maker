@@ -797,10 +797,12 @@ const Hero = (() => {
     return body + (cite ? ` · ${cite}` : "");
   }
   // the name's card: where it's from (and how it's written there), what it means, how it charts
-  function cardFor(v) {
-    const first = (v || "").split(" ")[0], box = $("#heroCard"), k = first && fold(first);
+  function cardFor(v) { $("#heroCard").innerHTML = cardHTML(v); }
+  // the same card anywhere a name is shown (the hero, the time machine): "" when the site doesn't know the name
+  function cardHTML(v) {
+    const first = (v || "").split(" ")[0], k = first && fold(first);
     const x = k && ((BY_NAME.get(k) || [])[0] || dbEntry(first));
-    if (!x) { box.innerHTML = ""; return; }
+    if (!x) return "";
     const nat = nativeFor(x);
     const pop = popRanks(x.n, x.g).slice(0, 2).map(([c, r, , yr]) => `#${r} in ${c}, ${yr}`).join(" · ");
     const m = x.m || (MEAN[k] || {}).m || "";
@@ -810,7 +812,7 @@ const Hero = (() => {
     const where = whereOf(x);
     const maybe = didYouMean(x, k);
     // the script's language is only named when it isn't already the line below (सुहानी, then Hindi once)
-    box.innerHTML = (nat.length ? `<span class="hc-nat">${nat.map(([f, l]) => `<span class="nat" lang="${esc(l)}">${esc(f)}${l.toLowerCase() === where.toLowerCase() ? "" : `<small>${esc(l)}</small>`}</span>`).join("")}</span>` : "") +
+    return (nat.length ? `<span class="hc-nat">${nat.map(([f, l]) => `<span class="nat" lang="${esc(l)}">${esc(f)}${l.toLowerCase() === where.toLowerCase() ? "" : `<small>${esc(l)}</small>`}</span>`).join("")}</span>` : "") +
       `<span class="hc-where">${esc(where)}</span>` +
       (maybe ? `<span class="hc-maybe">Did you mean <button class="inline" data-hero-name="${esc(maybe.n)}">${esc(maybe.n)}</button>?</span>` : "") +
       (m ? `<span class="hc-mean">“${esc(m)}”</span>` : "") + (cite ? `<span class="hc-src">${esc(cite)}</span>` : "") +
@@ -925,7 +927,7 @@ const Hero = (() => {
   $("#heroSpell").onclick = () => Spell.open(typed.textContent.trim());
   $("#heroFind").onclick = $("#toFind").onclick = () => $("#find").scrollIntoView({ behavior: "smooth" });
   show("");
-  return { demo, get name() { return typed.textContent.trim(); } };
+  return { demo, cardHTML, get name() { return typed.textContent.trim(); } };
 })();
 
 // ─────────────────────────────────────────────────────────────
@@ -1153,7 +1155,7 @@ const Charts = (() => {
   }
   function draw(quiet) {
     if (!YEARS || !place) return;
-    const y = years[at], full = place.years[y][sex()] || [], list = full.slice(0, 7);
+    const y = years[at], full = (place.years[y][sex()] || []).slice(0, 10), list = full.slice(0, 5);   // the five that play hang; ten list in two even columns
     const snapshot = (place.snapshots || []).includes(y);
     // a period is shown as the span it really covers (Latvia's "1920" is births 1918–1922), never as one year
     const span = place.periods && place.periods[y] ? place.periods[y] : place.period && !(place.single_years || []).includes(y) ? [y, y + place.period - 1] : null;
@@ -1166,7 +1168,7 @@ const Charts = (() => {
     Hang.render($("#chMobile"), list.map(([n, ct], k) => ({ key: y + n, len: 40 + k * 22 + (k % 2) * 14,
       html: `<button class="charm" data-play-name="${esc(n)}"><small>${k + 1}</small><span>${esc(n)}</span><em>${ct != null ? ct.toLocaleString() : ""}</em></button>` })), { stagger: 60 });
     // with no counts (ranked snapshots) the bar shows rank instead
-    $("#chList").innerHTML = full.map(([n, ct], k) => `<li><span>${k + 1}</span><b>${esc(n)}</b><i style="--w:${(counted ? ct / max * 100 : 100 - k * 100 / full.length).toFixed(1)}%"></i><em>${counted ? ct.toLocaleString() + (place.rounded ? "*" : "") : ""}</em></li>`).join("");
+    $("#chList").innerHTML = full.map(([n, ct], k) => `<li><span>${k + 1}</span><b><button data-play-name="${esc(n)}">${esc(n)}</button>${/\s/.test(n.trim()) ? `<small class="two" title="Registered as one two-part name, counted apart from its single name">two-part name</small>` : ""}</b><i style="--w:${(counted ? ct / max * 100 : 100 - k * 100 / full.length).toFixed(1)}%"></i><em>${counted ? ct.toLocaleString() + (place.rounded ? "*" : "") : ""}</em></li>`).join("");
     clearTimeout(timer);
     if (!quiet && MB.on) timer = setTimeout(() => playName(list[0][0]), 650);
   }
@@ -1175,16 +1177,17 @@ const Charts = (() => {
   const knob = $("#chKnob");
   let drag = null;
   knob.addEventListener("pointerdown", e => { const r = knob.getBoundingClientRect(), cx = r.left + r.width * 171 / 230, cy = r.top + r.height * 86 / 150; // turn around the crank's hub
-    drag = { cx, cy, a: Math.atan2(e.clientY - cy, e.clientX - cx), acc: 0 }; knob.setPointerCapture(e.pointerId); MB.ensure(); });
+    drag = { cx, cy, a: Math.atan2(e.clientY - cy, e.clientX - cx), acc: 0, turned: false }; knob.setPointerCapture(e.pointerId); MB.ensure(); });
   knob.addEventListener("pointermove", e => {
     if (!drag) return;
     const a = Math.atan2(e.clientY - drag.cy, e.clientX - drag.cx);
     let d = a - drag.a; if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI;
     drag.a = a; drag.acc += d;
-    while (drag.acc > STEP) { drag.acc -= STEP; go(at + 1); }
-    while (drag.acc < -STEP) { drag.acc += STEP; go(at - 1); }
+    while (drag.acc > STEP) { drag.acc -= STEP; go(at + 1); drag.turned = true; }
+    while (drag.acc < -STEP) { drag.acc += STEP; go(at - 1); drag.turned = true; }
   });
-  const up = () => { drag = null; };
+  // a plain click (no turning) turns it one notch back, one year earlier; at the first year it winds forward to the newest
+  const up = e => { const click = drag && !drag.turned && e.type === "pointerup"; drag = null; if (click) go(at > 0 ? at - 1 : years.length - 1); };
   knob.addEventListener("pointerup", up); knob.addEventListener("pointercancel", up);
   knob.addEventListener("keydown", e => {
     const d = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1, PageDown: -10, PageUp: 10 }[e.key];
@@ -1232,6 +1235,14 @@ const Charts = (() => {
   playBtn.onclick = playYear;
   return { ready, draw: () => draw(true) };
 })();
+// a name picked in the time machine: its card (origin, script, meaning, who bore it) under the list
+function nameNote(n) {
+  const note = $("#chName"), card = Hero.cardHTML(n);
+  note.innerHTML = `<h3>${esc(n)} <button data-note-close aria-label="Close">close ×</button></h3>` +
+    (card ? `<div class="hero-card">${card}</div>` : `<p class="none">The site doesn't know more about ${esc(n)} yet.</p>`);
+  note.hidden = false;
+  note.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
 function playName(n) {
   MB.ensure();
   const tag = $$(".hc:not(.rise)").find(el => el.querySelector(`[data-play-name="${CSS.escape(n)}"]`));
@@ -1239,7 +1250,9 @@ function playName(n) {
   MB.play(MB.melody(n));
 }
 document.addEventListener("click", e => {
-  const p = e.target.closest("[data-play-name]"); if (p) return playName(p.dataset.playName);
+  const p = e.target.closest("[data-play-name]");
+  if (p) { playName(p.dataset.playName); if (p.closest("#charts")) nameNote(p.dataset.playName); return; }
+  if (e.target.closest("[data-note-close]")) { $("#chName").hidden = true; return; }
   const u = e.target.closest("[data-untie]");
   if (u) { Cradle.toggle(u.dataset.untie); }
 });

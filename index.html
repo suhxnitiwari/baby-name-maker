@@ -47,6 +47,14 @@
   .hero-card .hc-src::before { content: "source · "; }
   .hero-card .hc-hist { font: italic 400 .98rem/1.35 var(--serif); color: var(--muted); max-width: 46ch; margin-top: 2px; }
   .hero-card .hc-bw { color: var(--rose); }
+  /* a name picked in the time machine opens its card under the list */
+  .tm-note { margin-top: 22px; padding: 18px 22px 16px; border-radius: 16px; background: rgba(255,251,244,.75); box-shadow: inset 0 0 0 1px rgba(110,89,75,.18); animation: settle .5s var(--drop) both; }
+  .tm-note h3 { font: 400 2.1rem/1 var(--serif); margin: 0 0 8px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .tm-note h3 button { all: unset; cursor: pointer; font: 500 .7rem var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--rose); }
+  .tm-note .none { font: italic 400 1rem var(--serif); color: var(--muted); margin: 0; }
+  .tm-list b button { all: unset; cursor: pointer; } .tm-list b button:hover { color: var(--rose); }
+  .tm-list b .two { font: 500 .58rem var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-left: 10px; vertical-align: .35em; }
+  #chKnob:focus:not(:focus-visible) { outline: none; }
   .hero-card .hc-chart { font: .72rem var(--mono); letter-spacing: .06em; color: var(--muted); }
   .link { all: unset; cursor: pointer; font: 500 .68rem var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--rule); padding-bottom: 1px; transition: color .25s, border-color .25s; }
   .link:hover, .link:focus-visible { color: var(--rose); border-color: var(--rose); }
@@ -755,6 +763,7 @@
     <div>
       <div class="hang" id="chMobile"></div>
       <ol class="tm-list" id="chList"></ol>
+      <div class="tm-note" id="chName" hidden aria-live="polite"></div>
     </div>
   </div>
 </section>
@@ -793,6 +802,6 @@
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=109"></script>
+<script src="app.js?v=111"></script>
 </body>
 </html>
