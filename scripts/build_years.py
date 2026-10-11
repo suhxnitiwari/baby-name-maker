@@ -599,11 +599,12 @@ ISRAEL_NATIVE = {k: {} for k in ("jewish", "muslim", "christian-arab", "druze")}
 
 def israel(sector, community):
     # CBS counts names in Hebrew letters (Arab-sector names too). The Latin spelling comes from raw/il-latin.csv (hebrew_names.py),
-    # matched on letters, community and sex, and only where it is a known pairing (Wikidata / the Bible) or the usual spelling:
-    # its "verified reading" guesses at unwritten vowels (סלוא = Clo for Salwa), so those names stay in Hebrew letters.
+    # matched on letters, community and sex, and only where it is a known pairing (Wikidata / the Bible), the usual spelling or,
+    # for Arab families, an Arabic pairing (the same name in Arabic script on Wikidata: סלוא = سلوى = Salwa): a "verified reading"
+    # still guesses at unwritten vowels, so those names stay in Hebrew letters.
     # If two spellings would share one Latin form in the same year, the second keeps its Hebrew letters (never merged)
     latin = {(r["hebrew"], r["community"], r["sex"]): r["name"] for r in csv.DictReader(open(f"{RAW}/il-latin.csv", encoding="utf-8"))
-             if r["how"] in ("known pairing", "usual spelling")}
+             if r["how"] in ("known pairing", "usual spelling", "arabic pairing")}
     c = new()
     for a, b, s, rk, _, heb, v in (l.rstrip("\n").split("\t") for l in open(f"{RAW}/il/il-top-{sector}.tsv", encoding="utf-8") if not l.startswith("#")):
         sex = "girl" if s == "F" else "boy"

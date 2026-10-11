@@ -66,12 +66,14 @@ How they were cleaned:
 
 Israel's records are in Hebrew letters, usually without vowels, so `scripts/hebrew_names.py` turns each name into the Latin spelling people use, **without guessing**:
 1. a known pairing: a Wikidata given name whose Hebrew label is that exact spelling (Noa, Yael, Hamutal), or the Bible's Hebrew form (STEPBible);
-2. otherwise every way the letters can be read under modern Hebrew spelling rules (ו is "v" only at the start, א and ע carry vowels, the unwritten vowel is usually "a"; Arab families' names use Arabic sounds), **kept only if that spelling is already a real registered name** held by 20+ people, of the right sex, the most natural reading winning (Shira, Lior, Yuval, Matan, Khaled);
-3. a short hand-checked list of the usual Israeli spelling for common names whose romanization doesn't follow the letters (Guy, Eyal, Meir, Shlomo, Hillel).
+2. otherwise every way the letters can be read under modern Hebrew spelling rules (ו is "v" only at the start, א and ע carry vowels, the unwritten vowel is usually "a", mid-word ב and פ are v and f), **kept only if that spelling is already a real registered name** held by 20+ people, of the right sex, the most natural reading winning (Shira, Lior, Yuval, Matan);
+3. a short hand-checked list of the usual Israeli spelling for common names whose romanization doesn't follow the letters, or where a commoner foreign name reads the same (Guy, Eyal, Meir, Shai, Ilan not Alan, Ronen not Ronan, Levi, Koren, Neta).
 
-Names that can't be verified are left out. Spot-checks of the 300 most common names read the way Israelis spell them; some rare Arabic names are still off (סלטאן came out "Colten", not Sultan).
+**Arab families' names** (Muslim, Christian Arab, Druze) are written letter for letter from Arabic, so they are read with each Arabic letter's standard transliteration: alef and a final alef are "a", ب is b and ف is f (Arabic has no v or p), ي is y or i, ش is sh, س is s. A reading is preferred when Wikidata gives it as a Latin spelling of the same name in Arabic script (the Hebrew letters mapped back: סלוא = سلوى = Salwa, רנא = رنا = Rana, ביאן = بيان = Bayan, אסמא = أسماء = Asma). A Hebrew Wikidata pairing (Sara, George) or a hand-checked Israeli spelling (Erez) is used only when its consonants are these letters. A few are hand-checked where the letters say more than the commonest spelling (פאטמה, with no י, is Fatma; פאטימה stays Fatima) or no Arabic reading reaches a European name (ג'ורג'ית = Georgette). When the method used to take the first registered name that fit the letters, it produced Clo, Rene, Bean and Esme. For these names a reading has to be registered outside Israel: Israel's own counts in `names-db.tsv` come from this script's earlier guesses and can't confirm themselves.
 
-`data/hebrew-names.json` then adds **942 names with cards** (Hebrew spelling and how many Israeli babies got the name): **496 with Hebrew roots** (Hebrew by origin: Bible, a native-Hebrew Wikidata label, or the usual-spelling list) and **446 Israeli** (mostly given in Israel, whatever their origin, e.g. Russian and Ethiopian names). Search them with "with ⟨Hebrew / Israeli⟩ roots".
+Names that can't be verified are left out (about 140 rare Arabic names, such as Khitam and Mervat, now stay in Hebrew letters).
+
+`data/hebrew-names.json` then adds **943 names with cards** (Hebrew spelling and how many Israeli babies got the name): **530 with Hebrew roots** (Hebrew by origin: Bible, a native-Hebrew Wikidata label, or the usual-spelling list) and **413 Israeli** (mostly given in Israel, whatever their origin, e.g. Russian and Ethiopian names). Search them with "with ⟨Hebrew / Israeli⟩ roots".
 
 ## 🇯🇵 🇰🇷 🇨🇳 Japanese, Korean and Chinese names
 

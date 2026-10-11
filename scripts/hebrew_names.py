@@ -3,7 +3,10 @@
 #   1. a known pairing: Wikidata given names with a Hebrew label (CC0), or the Bible's Hebrew forms (STEPBible TIPNR)
 #   2. otherwise, every way the Hebrew letters can be read aloud (ב = b or v, ו = v, o or u, …), kept only if that
 #      spelling is already a real registered name in data/names-db.tsv, and the most common one wins.
-# Names neither method can verify are left out. Writes raw/il-latin.csv (name, sex, count, hebrew, community, how).
+#   3. Arab families' names (Muslim, Christian Arab, Druze) are read with each Arabic letter's standard sound and checked
+#      against the same name in Arabic script on Wikidata (raw/wd-arabic): סלוא = سلوى = Salwa, not Clo ("arabic pairing").
+# Names no method can verify are left out. Writes raw/il-latin.csv (name, sex, count, hebrew, community, how).
+# After it, refresh names-db.tsv (which counts these spellings for Israel) and run it again: the output is then stable.
 #
 #   python3 scripts/hebrew_names.py
 import collections, csv, json, os, re, sys
@@ -14,7 +17,7 @@ strip = lambda s: re.sub(r"[֑-ׇ]", "", s).replace("״", '"').replace("׳", "'"
 # how each letter can sound (Modern Hebrew; Arabic names written in Hebrew use ג' ח ע ק ט צ for their own sounds)
 SOUNDS = {
     "א": ["", "a", "e", "i", "o"], "ב": ["b", "v"], "ג": ["g"], "ג'": ["j", "g"], "ד": ["d"], "ד'": ["dh", "th", "d"], "ה": ["h", ""],
-    "ו": ["v", "o", "u", "w"], "וו": ["v", "w"], "ז": ["z"], "ז'": ["zh", "j"], "ח": ["h", "ch", "kh"], "ט": ["t"], "ט'": ["th", "d", "z"],
+    "ו": ["v", "o", "u", "w"], "וו": ["v", "w"], "ז": ["z"], "ז'": ["zh", "j"], "ח": ["h", "ch", "kh"], "ח'": ["kh", "h"], "ט": ["t"], "ט'": ["th", "d", "z"],
     "י": ["y", "i", "e", "ei", "ai"], "יי": ["y", "yi", "i", "ei", "ai"], "כ": ["k", "kh", "ch", "c"], "ך": ["kh", "ch", "k"], "ל": ["l"], "מ": ["m"], "ם": ["m"],
     "נ": ["n"], "ן": ["n"], "ס": ["s", "c"], "ע": ["", "a", "e", "o", "i"], "ע'": ["gh", "g"], "פ": ["p", "f", "ph"], "ף": ["f", "ph"],
     "צ": ["tz", "ts", "z", "s"], "ץ": ["tz", "ts", "z", "s"], "צ'": ["ch", "tch"], "ק": ["k", "q", "c"], "ר": ["r"], "ש": ["sh", "s"],
@@ -30,20 +33,29 @@ def tokens(h):
         else: out.append(h[i]); i += 1
     return [t for t in out if t in SOUNDS]
 
-def load_lexicon():
+def load_lexicon(arab=False):
+    # names-db.tsv already holds Israel's babies under this script's last spellings (build_world.py reads raw/il-latin.csv).
+    # For Arab-sector names the guessed ones (verified readings) are taken back out, so a reading is never confirmed by its own
+    # earlier guess (Clo, God). Hebrew names keep them: Ofer, Dor and Doron are registered almost nowhere but Israel.
+    israel = collections.Counter()
+    p = os.path.join(RAW, "il-latin.csv")
+    if arab and os.path.exists(p):
+        for r in csv.DictReader(open(p, encoding="utf-8")):
+            if r["how"] == "verified reading": israel[r["name"].lower()] += int(r["count"])
     count, sex, prefixes = {}, {}, set()
     for line in open(os.path.join(ROOT, "data", "names-db.tsv"), encoding="utf-8"):
         n, g, cc, c = line.rstrip("\n").split("\t")
         k = n.lower()
         if not re.fullmatch(r"[a-z'-]+", k): continue
-        count[k] = (int(c), n); sex[k] = g
+        c = int(c) - israel[k]
+        if c < MIN_PEOPLE: continue
+        count[k] = (c, n); sex[k] = g
         for j in range(1, len(k) + 1): prefixes.add(k[:j])
     return count, sex, prefixes
 
 POP, POP_ARAB = .28, .28   # how much a spelling's popularity worldwide counts against how naturally it reads the letters
-B_MID, P_MID = .9, .7      # ב and פ after the first letter are usually v and f (Avner, Shoval), sometimes b and p (Abir)
-MIN_PEOPLE = 20
-HEBREW_LATIN, HEBREW_BOOST = set(), 1   # Latin spellings Wikidata, the Bible or USUAL pair with some Hebrew spelling (Eyal, Levi, Neta)   # a reading must be a name at least this many people have
+B_MID, P_MID = .4, .4      # ב and פ after the first letter are usually v and f (Avner, Shoval), sometimes b and p (Abir)
+MIN_PEOPLE = 20   # a reading must be a name at least this many people have
 ADDED = {"a": .75, "e": .6, "i": .3, "o": .3}   # unwritten vowels: in Hebrew the unwritten one is most often "a"
 ADDED_ARAB = {"a": 1, "e": .6, "i": .5, "u": .5, "o": .3}   # Arabic short vowels a, i, u; Palestinian spellings often write i as e (Khaled, Maher)
 ARAB = {"Muslim", "Christian-Arab", "Druze"}
@@ -57,15 +69,18 @@ def options(toks, ti, community):
     nxt = toks[ti + 1] if ti + 1 < len(toks) else ""
     arab = community in ARAB
     if arab: return arab_options(toks, ti)
+    if t == "ו" and ti == 1 and prev == "א": return [("o", 1), ("u", .9)]                    # after a first א, ו is its vowel (Orin, not Wren)
     if t == "ו": return [("v", 1)] if ti == 0 else [("o", 1), ("u", .9), ("v", .08), ("w", .05 if not arab else .5)]
     if t == "וו": return [("v", 1), ("w", .6 if arab else .1)]
     if t == "י":
         if ti == 0: return [("y", 1), ("i", .15)]
         if last: return [("i", 1), ("y", .6), ("ie", .3), ("ey", .3), ("ai", .4), ("ei", .3)]
+        if ti == 1 and prev in ("א", "ע"): return [("i", 1), ("e", .5), ("ei", .35), ("ai", .35)]   # the vowel after a first א/ע (Einav, not Yaniv)
         return [("i", 1), ("y", .5), ("e", .5), ("ei", .35), ("ai", .35)]
     if t == "יי": return [("y", 1), ("i", .6), ("ei", .5), ("ai", .5), ("yi", .3)]
     if t in ("א", "ע"):
         if last and prev in ("ו", "י"): return [("", 1)]                                   # silent at the end (Lavi, Guy)
+        if ti == 0 and nxt == "ו": return [("", 1)]                                          # a first א carries the ו's vowel (Ori, Oren, not Auri)
         if nxt in ("ו", "י", "יי"): return [("", 1), ("e", .7), ("a", .7)]                 # carrying the next vowel, or its own (Meir, Maor)
         if t == "ע" and arab: return [("a", 1), ("e", .5), ("i", .5), ("o", .4), ("", .3)]
         return [("e", 1), ("a", .85), ("i", .5), ("o", .4), ("", .05)] if ti == 0 else [("a", 1), ("e", .8), ("i", .5), ("o", .4), ("", .15)]
@@ -85,8 +100,8 @@ def options(toks, ti, community):
 # Arab-sector names: CBS writes the Arabic letters one for one (ا→א, ج→ג', ش→ש, ص→צ), so a reading has to keep each letter's
 # standard transliteration: alef and the final alef/ta marbuta are "a" (Rana, Salwa, Asma, not Rene, Clo, Esme), ب is b and ف is f
 # (Arabic has no v or p), ي is y or i (Bayan, not Bean), ش is sh (Rasha, not Rosa), س is s (Salwa, not Clo).
-ARAB_SOUNDS = {"ב": [("b", 1)], "ג": [("gh", 1), ("g", .7), ("j", .4)], "ג'": [("j", 1), ("g", .5)], "ד": [("d", 1)], "ד'": [("dh", 1), ("th", .6), ("z", .5), ("d", .3)],
-               "ז": [("z", 1)], "ז'": [("j", 1), ("zh", .5)], "ח": [("h", 1), ("kh", .4)], "ט": [("t", 1)], "ט'": [("z", 1), ("dh", .6), ("th", .3)],
+ARAB_SOUNDS = {"ב": [("b", 1)], "ג": [("gh", 1), ("g", .7), ("j", .2)], "ג'": [("j", 1), ("g", .5)], "ד": [("d", 1)], "ד'": [("dh", 1), ("th", .6), ("z", .5), ("d", .3)],
+               "ז": [("z", 1)], "ז'": [("j", 1), ("zh", .5)], "ח": [("h", 1), ("kh", .4)], "ח'": [("kh", 1), ("h", .3)], "ט": [("t", 1)], "ט'": [("z", 1), ("dh", .6), ("th", .3)],
                "כ": [("k", 1), ("kh", .4)], "ך": [("k", 1), ("kh", .4)], "ס": [("s", 1)], "ע'": [("gh", 1), ("g", .4)], "פ": [("f", 1)], "ף": [("f", 1)],
                "צ": [("s", 1), ("ss", .3)], "ץ": [("s", 1)], "צ'": [("d", 1), ("dh", .6)], "ק": [("q", 1), ("k", .8)], "ש": [("sh", 1), ("ch", .3)],
                "ת": [("t", 1), ("th", .3)], "ת'": [("th", 1), ("t", .4)]}
@@ -99,13 +114,17 @@ def arab_options(toks, ti):
             if nxt in ("ו", "י"): return [("", 1), ("a", .5)]                                 # carrying the next letter's vowel (Ismail, Osama)
             return [("a", 1), ("i", .6), ("u", .3), ("e", .25), ("o", .2)]
         if prev == "א": return [("", 1), ("a", .5)]                                         # a written hamza after a long a (Alaa, Shaimaa)
-        return [("a", 1), ("aa", .3)]
-    if t == "ע": return [("a", 1), ("i", .4), ("o", .3), ("u", .3), ("e", .15), ("", .5)]
+        if prev == "ע" and ti == 1: return [("", 1), ("a", .3)]                             # a first ع + ا is one long a (Adel, not Aadil)
+        return [("a", 1), ("aa", .3)] + ([("e", .2)] if not last else [])                   # Daniel, Israel; a final alef is always a (Rana)
+    if t == "ע":
+        if ti == 0: return [("", 1), ("a", .5)] if nxt in ("ו", "י") else [("a", 1), ("i", .4), ("o", .3), ("u", .3), ("e", .15)]   # Omar, Imad
+        return [("a", 1), ("aa", .4), ("i", .3), ("u", .3), ("", .5)]                          # Saad, Waad
     if t == "ה": return [("a", 1), ("ah", .6), ("e", .4)] if last else [("h", 1)]
     if t == "ו":
         if ti == 0: return [("w", 1)]
         w = 1 if nxt in ("א", "ע", "ה", "י", "יי") else .2                                      # a consonant w carries a written vowel (Salwa); else ו is u/o (Jud)
-        return [("u", 1), ("w", w), ("o", .6), ("ou", .3), ("oo", .2)]
+        o = 1 if ti == 1 and prev in ("א", "ע") else .4                                          # a first ع/ا with ו: Omar and Osama as often as Umar
+        return [("u", 1), ("w", w), ("o", o), ("ou", .3), ("oo", .2)]
     if t == "וו": return [("w", 1), ("ww", .3)]
     if t == "י":
         if ti == 0: return [("y", 1)]
@@ -146,9 +165,10 @@ def arabic_spellings(h):
         two = h[i:i + 2]
         if len(two) == 2 and two in TO_ARABIC and (two[1] == "'" or two in ("וו", "יי")): toks.append(two); i += 2
         else: toks.append(h[i]); i += 1
-    for t in toks:
+    for i, t in enumerate(toks):
         if t not in TO_ARABIC: continue
-        out = [o + a for o in out for a in TO_ARABIC[t]]
+        alts = list(TO_ARABIC[t]) + ([""] if i and t in ("ו", "י") else [])   # Hebrew writes some short vowels with ו or י (עומר = عمر)
+        out = [o + a for o in out for a in alts]
         if len(out) > 64: break
     return {fold_arabic(o) for o in out}
 
@@ -164,7 +184,7 @@ def skeleton(latin):
     k = re.sub(r"[aeiouhwy'-]", "", latin.lower().replace("ph", "f").replace("x", "ks").translate(SKELETON))
     return re.sub(r"(.)\1+", r"\1", k)
 
-HEB_SKELETON = {"ב": "b", "ג": "g", "ג'": "g", "ד": "d", "ד'": "d", "ז": "z", "ז'": "g", "ט": "t", "ט'": "z", "ת": "t", "ת'": "t", "כ": "k", "ך": "k",
+HEB_SKELETON = {"ב": "b", "ח'": "k", "ג": "g", "ג'": "g", "ד": "d", "ד'": "d", "ז": "z", "ז'": "g", "ט": "t", "ט'": "z", "ת": "t", "ת'": "t", "כ": "k", "ך": "k",
                 "ק": "k", "ל": "l", "מ": "m", "ם": "m", "נ": "n", "ן": "n", "ס": "s", "צ": "s", "ץ": "s", "ש": "s", "פ": "f", "ף": "f", "ר": "r", "ע'": "g", "צ'": "d"}
 def heb_skeleton(h):
     return re.sub(r"(.)\1+", r"\1", "".join(HEB_SKELETON.get(t, "") for t in tokens(h)))
@@ -180,7 +200,7 @@ def readings(h, want, community, count, sex, prefixes, beam=800):
             for o, w in options(toks, ti, community):
                 vowel_end = st[-1:] in tuple("aeiou") or (st[-1:] == "y" and len(st) > 1 and not arab)   # a word-initial y is a consonant (Yigal); in Arabic so is ay (Maryam)
                 gaps = [("", 1)] if ti == 0 or not o or not st or vowel_end or o[0] in ("aeiou" if arab else "aeiouy") else [("", 1)] + list(added.items())
-                if arab and len(gaps) > 1 and not re.search("[aeiou]", st): gaps = gaps[1:]          # Arabic never opens on two consonants (Zayd, not Zyad)
+                if arab and len(gaps) > 1 and not re.search("[aeiou]", st): gaps = [("", .1)] + gaps[1:]   # Arabic rarely opens on two consonants (Zayd, not Zyad; Kristian can)
                 if not arab and gaps[0][0] == "" and st and o and st[-1] == o[0] and o[0] not in "aeiou": gaps = gaps[1:] or gaps   # never a bare doubled letter (Oded, not Odd)
                 for v, vw in gaps:
                     cand = st + v + o
@@ -191,8 +211,7 @@ def readings(h, want, community, count, sex, prefixes, beam=800):
     out = []
     for st, sc in states.items():
         if st in count and count[st][0] >= MIN_PEOPLE:
-            boost = HEBREW_BOOST if not arab and st in HEBREW_LATIN else 1
-            out.append((sc * boost * sex_fit(sex[st], want) * (1 + count[st][0]) ** (POP_ARAB if arab else POP), count[st][1]))
+            out.append((sc * sex_fit(sex[st], want) * (1 + count[st][0]) ** (POP_ARAB if arab else POP), count[st][1]))
     return sorted(out, reverse=True)
 
 # The standard Israeli spelling of common names whose romanization doesn't follow the letters
@@ -205,8 +224,15 @@ USUAL = dict(x.split(":") for x in """גיא:Guy אייל:Eyal מיכאל:Michae
 יפה:Yafa ראובן:Reuven ערן:Eran ארז:Erez עילאי:Ilai ירון:Yaron אפרים:Efraim דליה:Dalia הלל:Hillel שירן:Shiran יגאל:Yigal דביר:Dvir
 אביתר:Evyatar שרון:Sharon יחזקאל:Yechezkel אדיר:Adir ינון:Yinon שאול:Shaul ינאי:Yanai עודד:Oded ברק:Barak שמחה:Simcha אביה:Aviya
 גיל:Gil עידו:Ido יוסי:Yossi צבי:Tzvi זאב:Zeev אליעזר:Eliezer מנשה:Menashe ישעיהו:Yeshayahu ירמיהו:Yirmiyahu
-שי:Shai אילן:Ilan רונן:Ronen""".split())
+שי:Shai אילן:Ilan רונן:Ronen מיכל:Michal אלון:Alon דב:Dov לוי:Levi נריה:Neriya אושר:Osher בניה:Benaya רמי:Rami מעיין:Maayan
+סהר:Sahar שלו:Shalev שליו:Shalev שובל:Shoval אבנר:Avner שמשון:Shimshon צחי:Tzachi סער:Saar אוראל:Orel הרצל:Herzl קורן:Koren
+הדר:Hadar נטע:Neta חי:Chai יעלה:Yaela לבנה:Levana אדר:Adar דקלה:Dikla דיקלה:Dikla מיתר:Meitar צור:Tzur נח:Noach עמי:Ami
+עברי:Ivri גאיה:Gaia יגל:Yagel חגי:Chagai עילי:Ili איליי:Ilai בארי:Beeri ליאב:Liav ארבל:Arbel ריף:Rif פיגא:Feiga מישל:Michelle
+ליאור:Lior אמרי:Imri גדי:Gadi מיכה:Micha גבע:Geva טוהר:Tohar לירן:Liran תרצה:Tirza ים:Yam מירית:Mirit הילל:Hillel ליבי:Libi לובה:Luba פבלו:Pablo הוד:Hod ג'ורג'ט:Georgette""".split())
 JEWISH_ONLY = {"Jewish", "Other"}
+# the same for Arab families' names, where the letters say more than Wikidata's commonest spelling (פאטמה has no י: Fatma)
+# or the name is a European one no Arabic reading reaches (ג'ורג'ית = Georgette)
+ARAB_USUAL = {"פאטמה": "Fatma", "ג'ורג'ית": "Georgette", "גורגית": "Georgette"}
 
 def known_pairs():
     best = {}
@@ -234,8 +260,9 @@ def known_pairs():
 
 if __name__ == "__main__":
     count, sex, prefixes = load_lexicon()
+    acount, asex, aprefixes = load_lexicon(arab=True)
     pairs = known_pairs()
-    lex = arabic_lexicon(count)
+    lex = arabic_lexicon(acount)
     tot = collections.Counter()
     for f in ("il.csv", "il-other.csv"):
         for r in csv.DictReader(open(os.path.join(RAW, f), encoding="utf-8")):
@@ -248,17 +275,20 @@ if __name__ == "__main__":
         # Arab-sector names: a reading that keeps each Arabic letter's standard sound, preferring one that is also a Latin
         # spelling Wikidata gives the same name in Arabic script (Rana, Salwa, Bayan); failing a reading, an Arabic-script
         # pairing with the same consonants (ج ور ج ي ت = Georgette)
+        if sec in ARAB and h in ARAB_USUAL: latin[(h, want, sec)] = (ARAB_USUAL[h], "usual spelling"); continue
         if sec in ARAB:
-            rs, forms = readings(h, want, sec, count, sex, prefixes), arabic_forms(h, lex)
+            rs, forms = readings(h, want, sec, acount, asex, aprefixes), arabic_forms(h, lex)
             if rs:   # a reading Wikidata also gives the Arabic name counts for more (عُلا Alaa, not Ola)
                 sc, n = max((sc * (1 + forms[n]) ** .5, n) for sc, n in rs)
                 if forms[n]: latin[(h, want, sec)] = (n, "arabic pairing"); continue
+            # a Hebrew name given in an Arab family keeps its usual Israeli spelling (Erez, Ronen)
+            if h in USUAL and skeleton(USUAL[h]) == heb_skeleton(h): latin[(h, want, sec)] = (USUAL[h], "usual spelling"); continue
             # a Hebrew Wikidata pairing only when its consonants are these letters (Sara, George; not Varda for وردة Warda)
             if pair and pair[1] in ("native", "wikidata") and ok(pair[0]) and skeleton(pair[0]) == heb_skeleton(h):
                 latin[(h, want, sec)] = (pair[0], "known pairing"); continue
             if rs and rs[0][0] > .4: latin[(h, want, sec)] = (rs[0][1], "verified reading"); continue
-            same = [(count[n.lower()][0] * v, n) for n, v in forms.items()
-                    if skeleton(n) == heb_skeleton(h) and count[n.lower()][0] >= MIN_PEOPLE and sex_fit(sex[n.lower()], want) > .5]
+            same = [(acount[n.lower()][0] * v, n) for n, v in forms.items()
+                    if skeleton(n) == heb_skeleton(h) and sex_fit(asex[n.lower()], want) > .5]
             if same: latin[(h, want, sec)] = (max(same)[1], "arabic pairing"); continue
             if pair and ok(pair[0]) and skeleton(pair[0]) == heb_skeleton(h): latin[(h, want, sec)] = (pair[0], "known pairing")
             continue
