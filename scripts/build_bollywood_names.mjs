@@ -46,7 +46,8 @@ const NOTE = { "Amitabh Bachchan": "actor, the 'Angry Young Man' of Hindi cinema
   "Salman Khan": "actor, son of the screenwriter Salim Khan, a star since Maine Pyar Kiya (1989), films since 1988",
   "Dev Anand": "actor and director (1923–2011), the 'Evergreen' star of more than 110 films, Padma Bhushan 2001, films since 1946",
   "Hrithik Roshan": "actor and dancer, a star since Kaho Naa... Pyaar Hai (2000)",
-  "Govinda": "actor, comedy hero and dancer of more than 120 films, films since 1986" };
+  "Govinda": "actor, comedy hero and dancer of more than 120 films, films since 1986",
+  "Shashi Kapoor": "actor (1938–2017), in about 160 films, including 12 in English" };
 const rows = [];
 for (const [f, ps] of byFirst) {
   ps.sort((a, b) => b.s - a.s);
