@@ -4,6 +4,10 @@
 // ─────────────────────────────────────────────────────────────
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
+// the ledger's numbers (data/stats.json, a few hundred bytes) are asked for first, ahead of the megabytes of names, so the
+// headline never sits on its placeholders; the live data then corrects them as it arrives (liveStat, by the ledger below)
+const STATS = fetch("data/stats.json?v=7", { priority: "high" }).then(r => r.json());
+const LIVE = {};
 if ("scrollRestoration" in history) history.scrollRestoration = "manual"; // always open on the box
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fold = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[æǣǽ]/g, "ae").replace(/[øǿ]/g, "o").replace(/œ/g, "oe").replace(/[ðđ]/g, "d").replace(/þ/g, "th").replace(/ß/g, "ss").replace(/ł/g, "l").replace(/ı/g, "i").replace(/ŋ/g, "ng").replace(/[\s-]/g, "");
@@ -132,6 +136,7 @@ let SACRED_FIG = {};
 const FIG_FORMS = new Map(); // figure → every name form it carries, across traditions (Abraham, Avraham, Ibrahim)
 const sacredReady = Promise.all([getJSON("data/sacred.json?v=9").catch(() => null), storied]).then(async ([d]) => {
   if (!d) return;
+  liveStat("texts", d.c.length);                 // every scripture and epic a name is cited from
   SACRED_FIG = d.f;
   const have = new Map(ALL_NAMED.map(x => [fold(x.n), x]));
   // appended in place and in slices: a figure cited in thousands of hadith would otherwise be copied over and over, freezing the page
@@ -742,7 +747,9 @@ const Hero = (() => {
   // the name in its own scripts (data/native-forms.json): only the languages of the name's own cultures, so Sofia gets Σοφία and
   // Софья but not a Japanese spelling of a borrowed name; same-sounding spellings share theirs (Fatima ← Fatimah's فاطمة)
   let NATIVE = {};
-  getJSON("data/native-forms.json?v=25").then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
+  getJSON("data/native-forms.json?v=25").then(d => { NATIVE = NATIVE_ALL = d;
+    liveStat("languages", new Set(Object.values(d).flatMap(forms => forms.map(f => f[1]))).size);   // every language a name is written in
+    const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
   const LANG_OF = { Arab: "Arabic", Arabic: "Arabic", "Pre-Islamic Arabian": "Arabic", Indian: "Hindi Sanskrit Marathi", "South Asian": "Hindi Sanskrit Urdu Bengali", Hindi: "Hindi Sanskrit",
     Israeli: "Hebrew", Hebrew: "Hebrew", Jewish: "Hebrew", Persian: "Persian", Iranian: "Persian", Chinese: "Chinese", Japanese: "Japanese", Korean: "Korean",
     Greek: "Greek", Russian: "Russian", Slavic: "Russian Ukrainian Bulgarian Serbian", Ukrainian: "Ukrainian", Armenian: "Armenian", Georgian: "Georgian",
@@ -1371,17 +1378,25 @@ const Count = (() => {
     setTimeout(() => { if (shown < goal) { shown = goal; el.textContent = goal.toLocaleString(); } }, dur + 600);
   };
 })();
-// the rest of the ledger, from data/stats.json: each number climbs the same way once the page wakes
-fetch("data/stats.json?v=6").then(r => r.json()).then(st => {
+// the rest of the ledger, from data/stats.json: each number climbs the same way once the page wakes, to the live count when the
+// data has already told it one (liveStat), so adding texts or scripts moves the number without rebuilding stats.json
+const LEDGER_DONE = {};
+function liveStat(k, n) {
+  if (!n || LIVE[k] === n) return;
+  LIVE[k] = n;
+  const el = $(`#ledger [data-stat="${k}"]`);
+  if (el && LEDGER_DONE[k]) el.textContent = n.toLocaleString();
+}
+STATS.then(st => {
   $("#ledgerSub").textContent = `${st.passages.toLocaleString()} cited passages · ${st.traditions} faiths & mythologies · records from ${st.from} to ${st.to}`;
   const els = $$("#ledger [data-stat]"), still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  els.forEach(el => el.textContent = still ? st[el.dataset.stat].toLocaleString() : "1");
-  if (still) return;
+  const goalOf = k => LIVE[k] || st[k];
+  if (still) { els.forEach(el => { LEDGER_DONE[el.dataset.stat] = true; el.textContent = goalOf(el.dataset.stat).toLocaleString(); }); return; }
   const start = () => (Count(st.names), els).forEach((el, k) => {
-    const goal = st[el.dataset.stat], t0 = performance.now() + 500 + k * 140, dur = 1800 + Math.log10(goal) * 260;
+    const stat = el.dataset.stat, goal = goalOf(stat), t0 = performance.now() + 500 + k * 140, dur = 1800 + Math.log10(goal) * 260;
     const step = now => { const t = Math.max(0, Math.min(1, (now - t0) / dur)); el.textContent = Math.round(Math.pow(goal, 1 - Math.pow(1 - t, 3))).toLocaleString(); if (t < 1) requestAnimationFrame(step); };
     requestAnimationFrame(step);
-    setTimeout(() => el.textContent = goal.toLocaleString(), 500 + k * 140 + dur + 800);   // a background tab still lands on the number
+    setTimeout(() => { LEDGER_DONE[stat] = true; el.textContent = goalOf(stat).toLocaleString(); }, 500 + k * 140 + dur + 800);   // a background tab still lands on the number
   });
   document.body.classList.contains("awake") ? start() : new MutationObserver((_, o) => { if (document.body.classList.contains("awake")) { o.disconnect(); start(); } }).observe(document.body, { attributes: true, attributeFilter: ["class"] });
 }).catch(() => {});
