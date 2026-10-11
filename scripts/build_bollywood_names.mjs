@@ -38,12 +38,15 @@ for (const p of people) {
   (byFirst.get(f) || byFirst.set(f, []).get(f)).push(p);
 }
 // a few stars are known by a phrase their films earned them
-const NOTE = { "Amitabh Bachchan": "the 'Angry Young Man' of Hindi cinema" };
+// (the whole description after the name, replacing the one built from credits)
+const NOTE = { "Amitabh Bachchan": "actor, the 'Angry Young Man' of Hindi cinema, films since 1969",
+  "Ranbir Kapoor": "actor, Sanju and Animal, films since 2007",
+  "Dharmendra": "actor, romantic hero of the 1960s and action hero of the 1970s to 90s, in more than 300 films since 1960" };
 const rows = [];
 for (const [f, ps] of byFirst) {
   ps.sort((a, b) => b.s - a.s);
   const [top] = ps;
-  const what = [roleOf(top.n), NOTE[top.n] || "", top.yr ? `films since ${top.yr}` : ""].filter(Boolean).join(", ");
+  const what = NOTE[top.n] || [roleOf(top.n), top.yr ? `films since ${top.yr}` : ""].filter(Boolean).join(", ");
   const line = `In Bollywood: ${top.n}${what ? `, ${what}` : ""}.`;
   rows.push([f, "", "", "", "", "", line, "", "real", []]);
 }
