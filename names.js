@@ -96,6 +96,8 @@ Raj|b|Indian|Sanskrit||king, ruler; to reign|Written राज, from Sanskrit r�
 Shagun|g|Hindi|Sanskrit||good omen, auspicious sign|Written शगुन, the Hindi word for an omen or auspicious sign (and the gift of money given for luck at a wedding), from Sanskrit śakuna 'a bird; an omen', since omens were read from birds. (Wiktionary; Monier-Williams)
 Ritvik|b|Indian|Sanskrit||a priest who offers sacrifice at the right season|Written ऋत्विक, from Sanskrit ṛtvij (ऋत्विज्), from ṛtu 'season' and yaj 'to sacrifice': a priest who sacrifices at the proper time. (Monier-Williams)
 Amitabh|b|Indian|Sanskrit||of boundless splendour|Written अमिताभ, from Sanskrit amitābha: amita 'unmeasured, boundless' + ābhā 'splendour'; also the name of the Buddha Amitābha. (Monier-Williams)
+Aria|g|English|English||a melody, an aria|A 21st-century English name, explained as a musical aria; similar-sounding names come from Hebrew (Ariah), Sanskrit (Arya) and Dutch (Aria, short for Adriana). (Wiktionary)
+Sunil|b|Indian|Sanskrit|Hindu|very dark blue|Written सुनील, from Sanskrit sunīla 'very dark blue': su 'very' + nīla 'dark blue'. (Monier-Williams)
 Barack|b|Arabic|Arabic||blessed|A Luo spelling of the name Barak, sharing the Semitic root of Arabic بركة (baraka) 'blessing' and Hebrew Baruch 'blessed'; Barack Obama's father was Kenyan, and he has said the name means 'blessed'. (Wiktionary)
 Sundar|b|Indian|Sanskrit||beautiful, handsome|Written सुन्दर, from Sanskrit sundara 'beautiful, handsome, lovely'. (Monier-Williams)
 Satya|e|Indian|Sanskrit|Hindu|truth; true, real, sincere|Written सत्य, from Sanskrit satya 'true, real, sincere; truth', from sat 'being, real'. (Monier-Williams)

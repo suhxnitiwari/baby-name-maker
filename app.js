@@ -6,7 +6,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 // the ledger's numbers (data/stats.json, a few hundred bytes) are asked for first, ahead of the megabytes of names, so the
 // headline never sits on its placeholders; the live data then corrects them as it arrives (liveStat, by the ledger below)
-const STATS = fetch("data/stats.json?v=7", { priority: "high" }).then(r => r.json());
+const STATS = fetch("data/stats.json?v=8", { priority: "high" }).then(r => r.json());
 const LIVE = {};
 if ("scrollRestoration" in history) history.scrollRestoration = "manual"; // always open on the box
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -73,9 +73,9 @@ const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1",
   "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=13", "data/famous-names.json?v=74", "data/city-names.json?v=2",
   "data/english-names.json?v=1", "data/spanish-names.json?v=2",
-  "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2", "data/persian-names.json?v=2", "data/egyptian-names.json?v=1", "data/sea-names.json?v=1", "data/hebrew-extra.json?v=1", "data/latin-names.json?v=1", "data/strongs-meanings.json?v=1", "data/bible-places.json?v=1"]
+  "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2", "data/persian-names.json?v=2", "data/egyptian-names.json?v=1", "data/sea-names.json?v=2", "data/hebrew-extra.json?v=1", "data/latin-names.json?v=1", "data/strongs-meanings.json?v=1", "data/bible-places.json?v=1", "data/hindu-names.json?v=4"]
   .map(u => getJSON(u).catch(() => [])))
-  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, fm, ct, en, es, pt, de, fi, fa, eg, sea, he2, la, sm, bp]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...fm, ...ct, ...en, ...es, ...pt, ...de, ...fi, ...fa, ...eg, ...sea, ...he2, ...la, ...sm, ...bp])).catch(e => console.error(e));
+  .then(([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, fm, ct, en, es, pt, de, fi, fa, eg, sea, he2, la, sm, bp, hi]) => addStoried([...a, ...bx, ...d, ...e, ...eastAsian(c), ...med, ...az, ...b, ...ru, ...cb, ...ar, ...mx, ...ro, ...gr, ...hy, ...bw, ...fm, ...ct, ...en, ...es, ...pt, ...de, ...fi, ...fa, ...eg, ...sea, ...he2, ...la, ...sm, ...bp, ...hi])).catch(e => console.error(e));
 const BOLLYWOOD = new Map();   // folded first name → ["In Bollywood: Varun Dhawan, actor…", "Known today: Taylor Swift, …"] (any name, from the records or the lists)
 async function addStoried(rows) {
   const have = new Map(REAL.map(x => [fold(x.n), x]));
@@ -111,7 +111,9 @@ async function addStoried(rows) {
       if (!cur.o && o) { cur.o = o; cur.l = cur.l || l; }
       cur.x = [...new Set([...(cur.x || []), ...x])]; cur.r = [...new Set([...cur.r, ...(r ? r.split(",") : [])])];
       // a Japanese, Korean or Chinese reading's meaning belongs to that reading, not to a Georgian Nino or an Italian Gino
-      if (!(["Japanese", "Korean", "Chinese"].includes(o) && cur.o && cur.o !== o)) cur.m ||= m; cur.src = cur.src ? (src && !cur.src.includes(src) && src.startsWith("Given to") ? `${cur.src} ${src}` : cur.src) : src; return; }
+      if (!(["Japanese", "Korean", "Chinese"].includes(o) && cur.o && cur.o !== o)) cur.m ||= m;
+      // a meaning checked in Monier-Williams and Apte replaces a looser one from a broad list (Aparna was "leafless", Shilpa "barber's shop")
+      if (ease !== undefined && m && !cur.hand && /Monier-Williams/.test(src || "")) cur.m = m; cur.src = cur.src ? (src && !cur.src.includes(src) && src.startsWith("Given to") ? `${cur.src} ${src}` : cur.src) : src; return; }
     const e = { n, g: { g: "girl", b: "boy", e: "either" }[g], o, l, r: r ? r.split(",") : [], m, src, type: kind === "root" ? "root" : "real", x, oo: also || [], ...(hist ? { hist: [hist] } : {}), ...(ety ? { ety } : {}), ...(ease !== undefined ? { spec: true } : {}) };
     (kind === "root" ? ROOT_NAMES : REAL).push(e); ALL_NAMED.push(e); have.set(k, e); TAKEN.add(k); indexName(e);
   });
@@ -134,7 +136,7 @@ const PERSONLIKE = new Set(["human", "prophet", "sage", "saint", "disciple", "ro
 const SACRED = new Map(), SACRED_SEX = new Map(); // folded name → cited references; the sex of the people the text gives that name
 let SACRED_FIG = {};
 const FIG_FORMS = new Map(); // figure → every name form it carries, across traditions (Abraham, Avraham, Ibrahim)
-const sacredReady = Promise.all([getJSON("data/sacred.json?v=9").catch(() => null), storied]).then(async ([d]) => {
+const sacredReady = Promise.all([getJSON("data/sacred.json?v=10").catch(() => null), storied]).then(async ([d]) => {
   if (!d) return;
   liveStat("texts", d.c.length);                 // every scripture and epic a name is cited from
   SACRED_FIG = d.f;
@@ -793,7 +795,7 @@ const Hero = (() => {
   // the name in its own scripts (data/native-forms.json): only the languages of the name's own cultures, so Sofia gets Σοφία and
   // Софья but not a Japanese spelling of a borrowed name; same-sounding spellings share theirs (Fatima ← Fatimah's فاطمة)
   let NATIVE = {};
-  getJSON("data/native-forms.json?v=25").then(d => { NATIVE = NATIVE_ALL = d;
+  getJSON("data/native-forms.json?v=28").then(d => { NATIVE = NATIVE_ALL = d;
     liveStat("languages", new Set(Object.values(d).flatMap(forms => forms.map(f => f[1]))).size);   // every language a name is written in
     const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
   const LANG_OF = { Arab: "Arabic", Arabic: "Arabic", "Pre-Islamic Arabian": "Arabic", Indian: "Hindi Sanskrit Marathi", "South Asian": "Hindi Sanskrit Urdu Bengali", Hindi: "Hindi Sanskrit",
@@ -808,7 +810,11 @@ const Hero = (() => {
     // same-sounding spellings share their script only when they're nearly the same word (Fatima ← Fatimah, never Hussain ← Hassan)
     const k0 = fold(x.n), near = soundAlikes(x.n).map(fold).filter(k => k !== k0 && k[0] === k0[0] && lev(k0, k) <= 2);
     // a look-alike spelling lends its script only in the name's own language (Fatimah → Fatima in Arabic; never Atikaya's Sanskrit to Atika, Maulik's Hindi to Malik)
-    const own = NATIVE[k0] || [], nearForms = near.flatMap(k => NATIVE[k] || []), seen = new Set(), out = [];
+    // a look-alike lends its script only where the name has none of its own, and only when the vowels agree:
+    // Fatimah's فاطمة serves Fatima, but Sonal's सोनल never serves Sunil, nor Rani's राणी Rana
+    const vowels = k => k.replace(/[^aeiouy]/g, "").replace(/(.)\1+/g, "$1");
+    const own = NATIVE[k0] || [], ownLangs = new Set(own.map(f => f[1])), seen = new Set(), out = [];
+    const nearForms = near.filter(k => vowels(k) === vowels(k0)).flatMap(k => NATIVE[k] || []).filter(f => !ownLangs.has(f[1]));
     // Chinese, Japanese and Korean characters only for a name from there (Japan writes the borrowed Sofia 麻日亜; that's not Sofia's own script)
     const CJK = { Japanese: "Japanese", Chinese: "Chinese", Korean: "Korean" }, origin = x.o;
     const from = originOf(x).split(" · ")[0];
