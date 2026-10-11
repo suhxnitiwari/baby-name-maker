@@ -37,11 +37,13 @@ for (const p of people) {
   if (/^Shah Rukh\b/.test(p.n)) continue;                    // Shah Rukh is one first name in two words, not "Shah"
   (byFirst.get(f) || byFirst.set(f, []).get(f)).push(p);
 }
+// a few stars are known by a phrase their films earned them
+const NOTE = { "Amitabh Bachchan": "the 'Angry Young Man' of Hindi cinema" };
 const rows = [];
 for (const [f, ps] of byFirst) {
   ps.sort((a, b) => b.s - a.s);
   const [top] = ps;
-  const what = [roleOf(top.n), top.yr ? `films since ${top.yr}` : ""].filter(Boolean).join(", ");
+  const what = [roleOf(top.n), NOTE[top.n] || "", top.yr ? `films since ${top.yr}` : ""].filter(Boolean).join(", ");
   const line = `In Bollywood: ${top.n}${what ? `, ${what}` : ""}.`;
   rows.push([f, "", "", "", "", "", line, "", "real", []]);
 }
