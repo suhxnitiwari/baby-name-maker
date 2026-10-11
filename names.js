@@ -91,6 +91,8 @@ Nakul|b|Indian|Sanskrit|Hindu||one of the five Pandava brothers
 Karan|b|Indian|Sanskrit|Hindu||after Karna, warrior of the Mahabharata
 Yash|b|Indian|Sanskrit||fame, glory|
 Neel|b|Indian|Sanskrit||blue|
+Neil|b|Irish|Irish||cloud or champion (Irish, uncertain); in India, blue (Sanskrit नील)|From Irish Niall (Old Irish Níall), whose origin is uncertain, perhaps 'cloud' or 'champion'. In India it is also the English spelling of Neel, written नील, Sanskrit nīla 'dark blue'. (Wiktionary; Monier-Williams)
+Kala|g|Indian|Sanskrit||art; a digit of the moon (Sanskrit); the sun (Hawaiian)|Written कला, Sanskrit kalā: an art, a small part, one sixteenth of the moon's disc. Also a Hawaiian name, from ka lā, 'the sun'. (Monier-Williams; Wiktionary)
 Riya|g|Indian|Sanskrit||singer|
 Priya|g|Indian|Sanskrit||beloved|
 Diya|g|Indian|Sanskrit|Hindu|lamp|lit at Diwali

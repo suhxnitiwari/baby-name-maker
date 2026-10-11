@@ -584,7 +584,7 @@ const ETY_LANG = /\b(?:from|of)\s+(?:the\s+)?(?:Ancient |Classical |Biblical |Ko
 let ORIGINS = {}, NATIVE_ALL = {}, ARABIC = {};
 getJSON("data/name-origins.json?v=5").then(d => ORIGINS = d).catch(() => {});
 // Latin spellings of Arabic names (Wikidata): Yousif, Hussain, Fatema → their Arabic, used only for a name with no other origin on record
-getJSON("data/arabic-forms.json?v=2").then(d => ARABIC = d).catch(() => {});
+getJSON("data/arabic-forms.json?v=3").then(d => ARABIC = d).catch(() => {});
 function originOf(x) {
   const k = fold(x.n);
   // 1. the name's own etymology on Wiktionary (Omar, Ali, Aisha: borrowed from Arabic)
@@ -742,7 +742,7 @@ const Hero = (() => {
   // the name in its own scripts (data/native-forms.json): only the languages of the name's own cultures, so Sofia gets Σοφία and
   // Софья but not a Japanese spelling of a borrowed name; same-sounding spellings share theirs (Fatima ← Fatimah's فاطمة)
   let NATIVE = {};
-  getJSON("data/native-forms.json?v=14").then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
+  getJSON("data/native-forms.json?v=16").then(d => { NATIVE = NATIVE_ALL = d; const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
   const LANG_OF = { Arab: "Arabic", Arabic: "Arabic", "Pre-Islamic Arabian": "Arabic", Indian: "Hindi Sanskrit Marathi", "South Asian": "Hindi Sanskrit Urdu Bengali", Hindi: "Hindi Sanskrit",
     Israeli: "Hebrew", Hebrew: "Hebrew", Jewish: "Hebrew", Persian: "Persian", Iranian: "Persian", Chinese: "Chinese", Japanese: "Japanese", Korean: "Korean",
     Greek: "Greek", Russian: "Russian", Slavic: "Russian Ukrainian Bulgarian Serbian", Ukrainian: "Ukrainian", Armenian: "Armenian", Georgian: "Georgian",
