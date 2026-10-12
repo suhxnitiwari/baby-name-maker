@@ -1445,6 +1445,7 @@ def finish(final, report):
     apply_review(final, report)
     report["hand meanings not found in MW (left as built)"] = apply_hand(final)
     deva_check(final)
+    report["compound meanings"] = compound_pass(final)
     write_review(final)
     write_review_log()
     C0 = collections.Counter(a for *_, a in REVIEW_LOG if not a.startswith("Devanagari"))
@@ -1620,6 +1621,108 @@ def write_review_log():
     with open(os.path.join(RAW, "review-all.tsv"), "w", encoding="utf-8") as f:
         f.write("name\told_meaning\tnew_meaning\taction\n")
         for row in REVIEW_LOG: f.write("\t".join(str(c).replace("\t", " ") for c in row) + "\n")
+
+# ───────────────────────────────────────────────────────────── meanings for blank names from how Monier-Williams divides them
+PREFIX = {"a": "not", "an": "not", "su": "good, well", "sa": "with", "saM": "together", "aBi": "towards", "anu": "after", "pra": "forth",
+          "vi": "apart", "ni": "down", "ati": "beyond", "aDi": "over, above", "upa": "near", "pari": "around", "prati": "towards, back",
+          "A": "near to", "ud": "up", "ut": "up", "sam": "together", "nis": "out", "nir": "without", "mahA": "great"}
+
+
+def part_entry(p, E, last):
+    """MW key for a compound member: as written, or its stem (a member may stand in its compound form: rAja- for rAjan)"""
+    for c in ([p] if p in E else []) + [p + "a", p + "an", p + "in", p[:-1] + "a" if p.endswith("A") else "", p[:-1] if p.endswith("A") else "",
+                                         p + "s", p[:-1] + "s" if p.endswith(("o", "r")) else "", p[:-1] + "t" if p.endswith("d") else ""]:
+        if c and c in E: return c
+    return ""
+
+
+def compound_parts(key1, E):
+    """[(member iast, MW key, positive sense, text for checking)] from MW's own division (key2 hyphens), or None"""
+    e = E.get(key1)
+    if not e: return None
+    k2 = re.sub(r"[/^\\\\]", "", e.get("key2", ""))
+    parts = [p for p in re.split(r"[-—]", k2) if p]
+    if len(parts) < 2: return None
+    out = []
+    for i, p in enumerate(parts):
+        k = part_entry(p, E, i == len(parts) - 1)
+        if p in PREFIX and i < len(parts) - 1:
+            out.append((S.slp2iast(p), p, PREFIX[p], mw_text(p) + " " + PREFIX[p])); continue
+        if not k: return None
+        g, cite, st = checked_meaning(k, E)
+        alts = {k, p, p + "a", p + "A", p[:-1] + "A" if p.endswith("a") else "", p[:-1] + "a" if p.endswith("A") else "", p + "an", p + "in",
+                p + "I", p[:-1] + "I", p[:-1] + "t" if p.endswith("d") else "", p[:-1] + "t" if p.endswith("n") else "",
+                p + "n", p[:-1] + "as" if p.endswith("o") else "", p[:-1] + "s" if p.endswith(("r", "o")) else ""}
+        out.append((S.slp2iast(p), k, g, " ".join(mw_text(x) + " " + apte().get(x, "") for x in alts if x)))
+    return out
+
+
+def stems_ok(meaning, texts):
+    """every content word of a hand-written meaning occurs (by its first five letters) in the members' MW/Apte entries"""
+    blob = " ".join(texts).lower()
+    miss = []
+    for w in re.findall(r"[a-z]{3,}", meaning.lower()):
+        if w in STOPW or w in ("whose", "who", "has", "his", "her", "one", "gods", "god", "like", "lord", "the", "son", "name", "full",
+                                "having", "every", "all", "its", "their", "him", "them", "own", "whom", "whose", "where"): continue
+        w2 = w[:-1] if w.endswith("s") and len(w) > 3 else w
+        if w2[:5] not in blob: miss.append(w)
+    return miss
+
+
+def describe(n):
+    d = re.sub(r"\s+", " ", n["desc"])
+    return d if len(d) <= 80 else d[:78].rsplit(" ", 1)[0] + "…"
+
+
+def compound_pass(final):
+    """drafts for every blank name (raw/hindu/compound-draft.tsv); hand-written meanings (raw/hindu/hand/c*.txt) are checked
+    against the members' entries and applied; everything is logged in raw/hindu/compound-meanings.tsv"""
+    E = load_mw()
+    H = {}
+    for f in sorted(glob.glob(os.path.join(RAW, "hand", "c*.txt"))):
+        for line in open(f, encoding="utf-8"):
+            if "=" in line and not line.startswith("#"):
+                n, v = line.rstrip("\n").split("=", 1); H[n.strip()] = v.strip()
+    draft, log, stats = [], [], collections.Counter()
+    for k, r in final.items():
+        if r[5]: continue
+        sk = re.search(r"Sanskrit ([a-zāīūṛṝḷṃḥṅñṭḍṇśṣ]+)", r[6])
+        key = iast2slp(sk.group(1)) if sk else ""
+        parts = compound_parts(key, E) if key else None
+        names = [n for n in E.get(key, {}).get("names", []) if not n["nonhindu"]]
+        fact = describe(names[0]) if names else ""
+        if not parts:
+            why = "no Sanskrit headword in the row" if not key else "no MW entry" if key not in E else "MW does not divide it, or a member has no MW entry"
+            log.append((r[0], "", "", "blank: " + why)); stats["blank: " + why] += 1; continue
+        chain = " + ".join(f"{a} ‘{g.split(',')[0].strip()}’" if g else a for a, kk, g, t in parts)
+        draft.append((r[0], S.slp2iast(key), chain, fact))
+        v = H.get(r[0])
+        if not v or v == "-":
+            # every draft was read (raw/hindu/compound-draft.tsv); a name without a hand line had no natural, positive reading
+            log.append((r[0], "", chain, "blank: read, no natural positive reading from its parts"))
+            stats["blank: read, no natural positive reading from its parts"] += 1; continue
+        mean, _, rest = v.partition("|")
+        who, _, gl = rest.partition("|")
+        miss = stems_ok(mean, [t for *_, t in parts] + [mw_text(key)]) + stems_ok(who, [mw_text(key)] + [t for *_, t in parts])
+        gls = [g.strip() for g in gl.split("/")] if gl.strip() else []
+        if gls and len(gls) == len(parts):
+            for (a, kk, g, t), g2 in zip(parts, gls):
+                if g2 and g2 != "*": miss += stems_ok(g2, [t])
+            chain = " + ".join(f"{a} ‘{g2}’" if g2 and g2 != "*" else a for (a, kk, g, t), g2 in zip(parts, gls))
+        elif gls: miss.append("part count")
+        else: chain = " + ".join(a for a, *_ in parts)
+        if miss:
+            log.append((r[0], mean, chain, f"blank: words not in the members' MW entries {miss}")); stats["blank: hand meaning failed the MW check"] += 1; continue
+        full = mean.strip() + (f"; {who.strip()}" if who.strip() not in ("", "-") else "")
+        r[5] = full
+        r[6] = re.sub(r"(Sanskrit [^\s‘(,]+)( ‘[^’]*’)?", lambda m: f"{m.group(1)}, from {chain} (as Monier-Williams divides it)", r[6], count=1)
+        log.append((r[0], full, chain, "kept")); stats["kept"] += 1
+    with open(os.path.join(RAW, "compound-draft.tsv"), "w", encoding="utf-8") as f:
+        for row in sorted(draft): f.write("\t".join(row) + "\n")
+    with open(os.path.join(RAW, "compound-meanings.tsv"), "w", encoding="utf-8") as f:
+        f.write("name\tmeaning\tchain\tstatus\n")
+        for row in sorted(log): f.write("\t".join(str(c) for c in row) + "\n")
+    return dict(stats)
 
 def given_attested(st):
     """folded Latin spellings Wiktionary or Wikidata give as given names of the languages of India"""

@@ -95,7 +95,7 @@ const storied = Promise.all(["data/scripture-names.json?v=1", "data/bible-extra.
   "data/medieval-names.json?v=1", "data/az-names.json?v=1", "data/hebrew-names.json?v=1", "data/russia-cultures.json?v=1", "data/caucasus-balkan-names.json?v=1",
   "data/arabia-names.json?v=1", "data/mexico-names.json?v=1", "data/roman-names.json?v=1", "data/greek-names.json?v=1", "data/armenia-names.json?v=1", "data/bollywood-names.json?v=15", "data/famous-names.json?v=78", "data/city-names.json?v=2",
   "data/english-names.json?v=1", "data/spanish-names.json?v=2",
-  "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2", "data/persian-names.json?v=2", "data/egyptian-names.json?v=1", "data/sea-names.json?v=2", "data/hebrew-extra.json?v=1", "data/latin-names.json?v=1", "data/strongs-meanings.json?v=1", "data/bible-places.json?v=1", "data/hindu-names.json?v=5"]
+  "data/portuguese-names.json?v=1", "data/german-names.json?v=2", "data/finnish-names.json?v=2", "data/persian-names.json?v=2", "data/egyptian-names.json?v=1", "data/sea-names.json?v=2", "data/hebrew-extra.json?v=1", "data/latin-names.json?v=1", "data/strongs-meanings.json?v=1", "data/bible-places.json?v=1", "data/hindu-names.json?v=7"]
   .map(u => getJSON(u).catch(() => [])))
   .then(async ([a, bx, d, e, c, med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, fm, ct, en, es, pt, de, fi, fa, eg, sea, he2, la, sm, bp, hi]) => addStoried([a, bx, d, e, await eastAsian(c), med, az, b, ru, cb, ar, mx, ro, gr, hy, bw, fm, ct, en, es, pt, de, fi, fa, eg, sea, he2, la, sm, bp, hi])).catch(e => console.error(e));
 const BOLLYWOOD = new Map();   // folded first name → ["In Bollywood: Varun Dhawan, actor…", "Known today: Taylor Swift, …"] (any name, from the records or the lists)
@@ -829,7 +829,7 @@ const Hero = (() => {
   // the name in its own scripts (data/native-forms.json): only the languages of the name's own cultures, so Sofia gets Σοφία and
   // Софья but not a Japanese spelling of a borrowed name; same-sounding spellings share theirs (Fatima ← Fatimah's فاطمة)
   let NATIVE = {};
-  getJSON("data/native-forms.json?v=30").then(d => { NATIVE = NATIVE_ALL = d;
+  getJSON("data/native-forms.json?v=31").then(d => { NATIVE = NATIVE_ALL = d;
     liveStat("languages", new Set(Object.values(d).flatMap(forms => forms.map(f => f[1]))).size);   // every language a name is written in
     const v = typed.textContent.trim(); if (v) cardFor(v); }).catch(() => {});
   const LANG_OF = { Arab: "Arabic", Arabic: "Arabic", "Pre-Islamic Arabian": "Arabic", Indian: "Hindi Sanskrit Marathi", "South Asian": "Hindi Sanskrit Urdu Bengali", Hindi: "Hindi Sanskrit",

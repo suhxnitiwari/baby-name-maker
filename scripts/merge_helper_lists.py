@@ -77,6 +77,13 @@ def whole(r):
     m = re.search(r"Written ([^.(,;]+?)[.(,;]", r[6])
     return not m or matches(r[0], m.group(1).split(" or ")[0].split("/")[0].strip())
 hin = [r if whole(r) else r[:5] + [""] + [re.sub(r"Written [^.]*\.\s*", "", r[6])] + r[7:] for r in hin]
+# the helper's raw "meaning|fact|parts" lines become "meaning; fact"; a bare part-by-part chain is no meaning at all
+def tidy(m):
+    if "|" in m:
+        parts = m.split("|"); fact = parts[1].strip() if len(parts) > 1 else ""
+        return parts[0].strip() + (f"; {fact}" if fact and fact != "-" else "")
+    return "" if re.search(r"‘[^’]+’ \+ ", m) else m
+hin = [r[:5] + [tidy(r[5])] + r[6:] for r in hin]
 UNSURE = {"Rana"}   # MW's "a king" is not backed by Wiktionary, which knows Rana only as a Rajput surname: no meaning rather than a guess
 hin = [r[:5] + [""] + r[6:] if r[0] in UNSURE else r for r in hin]
 save("hindu-names.json", hin)
