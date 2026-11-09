@@ -1,0 +1,10 @@
+{
+  "name": "lullabyte-ai",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node dev.mjs",
+    "test": "node test.mjs",
+    "deploy": "npx wrangler@4 deploy"
+  }
+}

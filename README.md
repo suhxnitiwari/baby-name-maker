@@ -64,6 +64,8 @@ Overlapping names are merged, so the total on the page counts each name once.
 - **Find their lullaby:** one quick form, all optional: feel, roots, meaning, first and last letters, length, last name, and (tucked away) faith, sacred text and language. Once there are results, every change updates them. Results are quiet rows; open one and the toy piano plays it, with its meaning, story, chart rank and spellings.
 - **Not for me:** a turned-down name lets go and a new one takes its place. Lullabyte remembers it, sinks names that sound like it in every later search, and asks why (too popular, too long, too short, wrong roots, the sound) to learn more.
 - **Two names. Two melodies.** Mom's and Dad's names on one piano, played together, then the names the compiler makes from both, with which letters came from whom. Honoring someone, language, faith, sacred text, length and last name are optional extras.
+- **In your own words:** describe the name you're dreaming of ("we love Layla and Maya, something short, Arabic or Hindi roots, easy to spell, means light or moon"). The assistant reads it into filters you can see and edit, Lullabyte's search finds real names, and each one gets a line saying why it fits, built only from its meaning on file.
+- **Meet in the middle:** each partner lists names they love; Lullabyte finds real names close to both lists (ranked by whichever partner would like it less) and says which name on each list it is closest to.
 - **The names we once sang:** a time machine through official records in 23 places across five continents (US 1880–2025, France 1900–2024, Chile, New Zealand, Norway, Canada, England & Wales, Scotland, Northern Ireland, Ireland, Austria, Switzerland, Sweden, Poland, Denmark, Finland, Catalonia, Berlin, Moldova, New South Wales, Queensland, Brazil, South Africa). Turn the knob back and the years go with it; each year's #1 plays as it arrives. Every place wears a badge for what it really counts (full birth records, a ranked top list, or a population snapshot), and decades or multi-year periods show as spans, never as single years.
 - **Sacred thread:** search by the tradition a name is rooted in and how close it must be (any connection, a sacred connection, or named in the text). An open name shows each tie with its mark (● in the text, ◐ a related form, ◇ a sacred connection, ○ cultural usage), the passage with a link to read it, the original script, and the same figure's names in other traditions (Mary ↔ Maryam). References follow the format in [docs/sacred-format.md](docs/sacred-format.md) and are merged by `scripts/build_sacred.py`.
 - **The cradle:** every name you heart hangs here on a ribbon; play them all as one little playlist. Saved on your device.
@@ -106,11 +108,32 @@ Every source, its license, and the countries we checked that don't publish (or t
 ## Generated names
 About 257,000 more names are generated in the browser: 12,105 built from Sanskrit, Greek, Germanic, Norse and Arabic roots (with meanings), and 245,015 invented from syllables (no meanings). Generated names never repeat a real name from the database.
 
+## The assistant
+The AI reads the request; the data answers it. It never adds a name or a meaning.
+
+| | What it does | File |
+|---|---|---|
+| **Reading** | turns a parent's words into filters (syllables, roots, meaning words, names they love, spelling, popularity); unknown keys, values and names are dropped | `worker/lullabyte-ai.js` `/interpret` |
+| **Finding** | Find's own search over real names only (no invented or built names), ranked by closeness to the names they love, a meaning on file, how many families use it, and plain spelling | `ai.js` |
+| **Explaining** | one line per name from facts the page sends (name, origin, meaning on file or none, wishes met); a line that names anyone else, gives a meaning that isn't on file, or sounds machine-written is thrown out and written plainly from the same facts | `/explain`, `ai.js` |
+| **Without it** | if the assistant is down, slow or out of calls, `reader.js` reads the words on the device and every line is written from the records | `reader.js` |
+
+The assistant is a Cloudflare Worker on Workers AI (no API key anywhere), open only to this site and localhost, with 40 calls per visitor per 10 minutes and caps on every request's size. Decisions and rejected options: **[docs/ai-design-log.md](docs/ai-design-log.md)**.
+
+```
+cd worker
+node test.mjs                 # the worker's rules: 11 checks
+node dev.mjs                  # the worker on http://localhost:8787 with a stand-in model; the page on localhost uses it
+STANDIN=liar node dev.mjs     # a stand-in that invents names and meanings, to watch every line get thrown out
+npx wrangler@4 login          # once, in the browser
+npx wrangler@4 deploy         # publishes https://lullabyte-ai.suhxnitiwari.workers.dev, the address the live page calls
+```
+
 ## Tech stack
-Vanilla JavaScript · Web Audio API · Canvas 2D · Python data scripts · government open data, Wiktionary, Wikidata, JMnedict · GitHub Pages
+Vanilla JavaScript · Web Audio API · Canvas 2D · Cloudflare Workers AI · Python data scripts · government open data, Wiktionary, Wikidata, JMnedict · GitHub Pages
 
 ## Run it
-No build step. Serve the folder with any static server (`python3 -m http.server`) so the data files can load.
+No build step. Serve the folder with any static server (`python3 -m http.server`) so the data files can load. For the assistant, also run `node worker/dev.mjs`; without it, the page reads descriptions on the device.
 
 ## Add names
 Add a line to `REAL_RAW` in `names.js`:

@@ -712,6 +712,7 @@ function rowHTML(x, o = {}) {
       <span class="row-name">${x.prov && o.big ? coloredName(x.n, ownersOf(x)) : esc(x.n)}</span>
       <span class="row-where">${esc(whereOf(x))} · ${syl} syllable${syl === 1 ? "" : "s"}</span>
       <span class="row-notes"><i>♪</i> ${notesOf(m)}</span>
+      ${x.why !== undefined ? `<span class="row-why"${x.why ? "" : " data-wait"}>${esc(x.why)}</span>` : ""}
       <span class="row-play">Play <i>→</i></span>
     </button>
     <button class="heart${Cradle.has(x.n) ? " tied" : ""}" data-heart="${esc(x.n)}" aria-label="Keep ${esc(x.n)} in the cradle">${HEART}</button>
@@ -1133,6 +1134,7 @@ const Find = (() => {
   pressVibe();
   const f = () => ({ ...F, first2: F.first2 });
   function search() {
+    if (typeof Dream !== "undefined" && Dream.on()) return Dream.search(f());   // described in words: the assistant's reading leads (ai.js)
     seen = new Set(); pools = buildPools(f());
     const out = $("#findRows"), head = $("#findHead");
     $("#findOut").hidden = false;
@@ -1152,7 +1154,7 @@ const Find = (() => {
   }
   $("#findMore").onclick = () => { $("#findRows").insertAdjacentHTML("beforeend", drawFrom(pools, 8, seen).map(x => rowHTML(x)).join("")); $("#findMore").classList.toggle("hidden", !poolsLeft(pools)); };
   addEventListener("namesdb", () => { if (!$("#findOut").hidden) search(); });
-  return { refresh: () => { if (!$("#findOut").hidden) search(); }, surname: () => capName(F.last || Duet.surname() || ""), middle: () => capName(F.middle || ""), wordsToo: () => !!F.noWordInitials };
+  return { refresh: () => { if (!$("#findOut").hidden) search(); }, run: () => { read(); search(); }, setVibe: v => { F.vibe = v; pressVibe(); }, surname: () => capName(F.last || Duet.surname() || ""), middle: () => capName(F.middle || ""), wordsToo: () => !!F.noWordInitials };
 })();
 
 // ─────────────────────────────────────────────────────────────

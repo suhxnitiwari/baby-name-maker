@@ -1,0 +1,7 @@
+# Lullabyte's assistant. Deploy from this folder: npx wrangler@4 login, then npx wrangler@4 deploy
+name = "lullabyte-ai"
+main = "lullabyte-ai.js"
+compatibility_date = "2026-10-01"
+
+[ai]
+binding = "AI"

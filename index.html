@@ -616,6 +616,33 @@
     .ex-mobile svg { width: 100%; max-width: 360px; } .ex-charm .lbl { font-size: 22px; opacity: 1; fill: var(--ink); }
   }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } html { scroll-behavior: auto; } .tape, .sp-paper { clip-path: none; } }
+  /* the assistant: in your own words (Find) and meet in the middle (Duet) */
+  .dream { display: grid; gap: 12px; margin: 0 0 8px; }
+  .dream-line { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 28px; align-items: end; }
+  .dream textarea { width: 100%; box-sizing: border-box; resize: none; border: 0; border-radius: 0; background: transparent; color: var(--ink); padding: 4px 0 8px;
+    border-bottom: 1.5px dashed color-mix(in srgb, var(--rose) 60%, transparent); font: 400 clamp(1.35rem, 2.4vw, 1.9rem)/1.45 var(--serif); field-sizing: content; min-height: 2.9em; }
+  .dream textarea::placeholder { color: var(--muted); opacity: .6; font-style: italic; }
+  .dream textarea:focus { outline: none; border-bottom-style: solid; border-color: var(--rose); }
+  .dream.reading textarea { opacity: .6; }
+  .dream .go:disabled { opacity: .6; cursor: progress; transform: none; }
+  .dream-heard { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 14px; margin: 6px 0 0; font: italic 400 1.2rem/1.8 var(--serif); color: var(--ink); }
+  .heard-k { font: 500 .62rem var(--mono); font-style: normal; letter-spacing: .16em; text-transform: uppercase; color: var(--rose); }
+  .heard-c { white-space: nowrap; } .heard-c .clause-x { margin-left: 2px; }
+  .heard-none { color: var(--muted); }
+  .dream-note { margin: 0; font: italic 400 1rem/1.45 var(--serif); color: var(--muted); }
+  .dream-fine { margin: 0; font: .62rem/1.6 var(--mono); letter-spacing: .08em; color: var(--muted); max-width: 70ch; }
+  .or-line { display: flex; align-items: center; gap: 16px; margin: 34px 0 20px; font: 500 .62rem var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  .or-line::before, .or-line::after { content: ""; flex: 1; border-top: 1px solid var(--rule); }
+  .row-why { grid-column: 1 / -1; margin-top: 8px; max-width: 72ch; min-height: 1.4em; font: italic 400 1.05rem/1.4 var(--serif); color: var(--muted); transition: opacity .6s; }
+  .row-why[data-wait] { opacity: 0; }
+  .meet { margin-top: 110px; padding-top: 56px; border-top: 1px solid var(--rule); }
+  .meet-title { font: 400 clamp(2.4rem, 5vw, 3.8rem)/1 var(--serif); letter-spacing: -.015em; margin: 10px 0 22px; }
+  .meet-title i { color: var(--rose); }
+  .meet .go { white-space: nowrap; }
+  .meet .lg-a { color: var(--mom); } .meet .lg-b { color: var(--dad); }
+  .meet-why { margin: 12px auto 0; max-width: 52ch; min-height: 1.4em; font: italic 400 1.25rem/1.4 var(--serif); color: var(--muted); transition: opacity .6s; }
+  .meet-why[data-wait] { opacity: 0; }
+  @media (max-width: 760px) { .dream-line { grid-template-columns: 1fr; gap: 16px; } .dream-line .go { justify-self: start; } .meet { margin-top: 70px; padding-top: 40px; } }
 </style>
 </head>
 <body>
@@ -709,6 +736,17 @@
     <div><p class="kick">02 · find a name</p><h2 id="findTitle">Find their <i>lullaby.</i></h2><p class="lede">Pick as much or as little as you like. Every name you get plays its own song.</p></div>
     <div class="seg-wrap"><small>for a little</small><div class="seg"><button data-gender="girl" aria-pressed="true">girl</button><button data-gender="boy" aria-pressed="false">boy</button><button data-gender="either" aria-pressed="false">either</button></div></div>
   </div>
+  <form class="dream" id="dream" autocomplete="off">
+    <label class="ql" for="dreamText">In your own words</label>
+    <div class="dream-line">
+      <textarea id="dreamText" rows="2" maxlength="400" placeholder="We love Layla and Maya. Something short with Arabic or Hindi roots, easy to spell, that means light or moon."></textarea>
+      <button class="go" id="dreamGo" type="submit">Find names</button>
+    </div>
+    <p class="dream-heard" id="dreamHeard" aria-live="polite" hidden></p>
+    <p class="dream-note" id="dreamNote" hidden></p>
+    <p class="dream-fine">The assistant only reads your words and explains the results. Every name and every meaning comes from Lullabyte’s own records.</p>
+  </form>
+  <p class="or-line"><span>or choose it blank by blank</span></p>
   <form class="quick" id="quick" autocomplete="off">
     <div class="q">
       <span class="ql">It should feel</span>
@@ -785,6 +823,18 @@
   <div class="duet-piano">
     <div id="duetPiano" style="width:100%"></div>
     <div class="legend" id="duetLegend"></div>
+  </div>
+  <div class="meet" id="meet">
+    <p class="kick">or start from the names you each love</p>
+    <h3 class="meet-title">Meet in the <i>middle.</i></h3>
+    <p class="wishes">One of us loves <input class="slot" id="meetA" placeholder="Layla, Maya, Noor" size="14" aria-label="Names one of you loves">.
+      The other loves <input class="slot" id="meetB" placeholder="Mira, Zara, Lina" size="14" aria-label="Names the other loves">.</p>
+    <div class="duet-cta"><button class="go duet-go" id="meetGo">Find the middle</button><span>real names close to both lists</span></div>
+    <div class="duet-result" id="meetOut" hidden>
+      <div class="duet-best" id="meetBest"></div>
+      <div class="rows" id="meetRows"></div>
+      <details class="log"><summary>how it got here</summary><div id="meetLog"></div></details>
+    </div>
   </div>
 </section>
 
@@ -869,7 +919,9 @@
 <script src="hang.js?v=1"></script>
 <script src="taste.js?v=6"></script>
 <script src="compiler.js?v=9"></script>
-<script src="app.js?v=239"></script>
+<script src="reader.js?v=1"></script>
+<script src="app.js?v=240"></script>
+<script src="ai.js?v=1"></script>
 <script src="share.js?v=3"></script>
 <script src="picker.js?v=1"></script>
 </body>
