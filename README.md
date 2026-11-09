@@ -122,7 +122,7 @@ The assistant is a Cloudflare Worker on Workers AI (no API key anywhere), open o
 
 ```
 cd worker
-node test.mjs                 # the worker's rules: 11 checks
+node test.mjs                 # the worker's rules: 13 checks
 node dev.mjs                  # the worker on http://localhost:8787 with a stand-in model; the page on localhost uses it
 STANDIN=liar node dev.mjs     # a stand-in that invents names and meanings, to watch every line get thrown out
 npx wrangler@4 login          # once, in the browser
