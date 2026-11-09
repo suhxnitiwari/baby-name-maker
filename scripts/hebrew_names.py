@@ -35,13 +35,13 @@ def tokens(h):
 
 def load_lexicon(arab=False):
     # names-db.tsv already holds Israel's babies under this script's last spellings (build_world.py reads raw/il-latin.csv).
-    # For Arab-sector names the guessed ones (verified readings) are taken back out, so a reading is never confirmed by its own
-    # earlier guess (Clo, God). Hebrew names keep them: Ofer, Dor and Doron are registered almost nowhere but Israel.
+    # For Arab-sector names all of Israel is taken back out, so a reading is never confirmed by its own earlier guess (Clo, God)
+    # or by a hand spelling. Hebrew names keep them: Ofer, Dor and Doron are registered almost nowhere but Israel.
     israel = collections.Counter()
     p = os.path.join(RAW, "il-latin.csv")
     if arab and os.path.exists(p):
         for r in csv.DictReader(open(p, encoding="utf-8")):
-            if r["how"] == "verified reading": israel[r["name"].lower()] += int(r["count"])
+            israel[r["name"].lower()] += int(r["count"])
     count, sex, prefixes = {}, {}, set()
     for line in open(os.path.join(ROOT, "data", "names-db.tsv"), encoding="utf-8"):
         n, g, cc, c = line.rstrip("\n").split("\t")
@@ -79,10 +79,11 @@ def options(toks, ti, community):
         return [("i", 1), ("y", .5), ("e", .5), ("ei", .35), ("ai", .35)]
     if t == "יי": return [("y", 1), ("i", .6), ("ei", .5), ("ai", .5), ("yi", .3)]
     if t in ("א", "ע"):
-        if last and prev in ("ו", "י"): return [("", 1)]                                   # silent at the end (Lavi, Guy)
+        if last and prev in ("ו", "י"): return [("", 1)] if t == "א" else [("a", 1), ("", .6)]   # א silent at the end (Lavi, Guy); ע sounds (Yehoshua)
         if ti == 0 and nxt == "ו": return [("", 1)]                                          # a first א carries the ו's vowel (Ori, Oren, not Auri)
         if nxt in ("ו", "י", "יי"): return [("", 1), ("e", .7), ("a", .7)]                 # carrying the next vowel, or its own (Meir, Maor)
         if t == "ע" and arab: return [("a", 1), ("e", .5), ("i", .5), ("o", .4), ("", .3)]
+        if last and t == "ע": return [("a", 1), ("e", .8), ("ua", .3), ("", .15)]           # a final ע sounds a, after an unwritten u in Yehoshua
         return [("e", 1), ("a", .85), ("i", .5), ("o", .4), ("", .05)] if ti == 0 else [("a", 1), ("e", .8), ("i", .5), ("o", .4), ("", .15)]
     if t == "ה":
         if last: return [("a", 1), ("ah", .6), ("e", .6), ("eh", .3), ("o", .25)]
@@ -228,11 +229,13 @@ USUAL = dict(x.split(":") for x in """גיא:Guy אייל:Eyal מיכאל:Michae
 סהר:Sahar שלו:Shalev שליו:Shalev שובל:Shoval אבנר:Avner שמשון:Shimshon צחי:Tzachi סער:Saar אוראל:Orel הרצל:Herzl קורן:Koren
 הדר:Hadar נטע:Neta חי:Chai יעלה:Yaela לבנה:Levana אדר:Adar דקלה:Dikla דיקלה:Dikla מיתר:Meitar צור:Tzur נח:Noach עמי:Ami
 עברי:Ivri גאיה:Gaia יגל:Yagel חגי:Chagai עילי:Ili איליי:Ilai בארי:Beeri ליאב:Liav ארבל:Arbel ריף:Rif פיגא:Feiga מישל:Michelle
-ליאור:Lior אמרי:Imri גדי:Gadi מיכה:Micha גבע:Geva טוהר:Tohar לירן:Liran תרצה:Tirza ים:Yam מירית:Mirit הילל:Hillel ליבי:Libi לובה:Luba פבלו:Pablo הוד:Hod ג'ורג'ט:Georgette""".split())
+ליאור:Lior אמרי:Imri גדי:Gadi מיכה:Micha גבע:Geva טוהר:Tohar לירן:Liran תרצה:Tirza ים:Yam מירית:Mirit הילל:Hillel ליבי:Libi לובה:Luba פבלו:Pablo הוד:Hod ג'ורג'ט:Georgette אלישע:Elisha אייר:Iyar
+יאר:Yaar יער:Yaar מנור:Manor קסם:Kessem נגב:Negev שראל:Sarel שלוה:Shalva אלידע:Elyada ריקי:Riki אורי:Ori""".split())
 JEWISH_ONLY = {"Jewish", "Other"}
 # the same for Arab families' names, where the letters say more than Wikidata's commonest spelling (פאטמה has no י: Fatma)
 # or the name is a European one no Arabic reading reaches (ג'ורג'ית = Georgette)
-ARAB_USUAL = {"פאטמה": "Fatma", "ג'ורג'ית": "Georgette", "גורגית": "Georgette"}
+ARAB_USUAL = {"פאטמה": "Fatma", "ג'ורג'ית": "Georgette", "גורגית": "Georgette", "סלאמה": "Salama", "עיד": "Eid", "עיאד": "Iyad",
+              "עאיד": "Ayed", "ג'הד": "Jihad", "נגווה": "Najwa", "נגוה": "Najwa", "פדה": "Fida", "אסל": "Asil", "כארם": "Karam", "קרם": "Karam", "ג'יריס": "Jiryis"}
 
 def known_pairs():
     best = {}
@@ -261,6 +264,10 @@ def known_pairs():
 if __name__ == "__main__":
     count, sex, prefixes = load_lexicon()
     acount, asex, aprefixes = load_lexicon(arab=True)
+    israel_share = collections.Counter()   # each spelling's Israeli babies (last run), as a share of everyone registered with it
+    if os.path.exists(os.path.join(RAW, "il-latin.csv")):
+        for r in csv.DictReader(open(os.path.join(RAW, "il-latin.csv"), encoding="utf-8")): israel_share[r["name"].lower()] += int(r["count"])
+    israel_share = {k: v / count[k][0] for k, v in israel_share.items() if k in count}
     pairs = known_pairs()
     lex = arabic_lexicon(acount)
     tot = collections.Counter()
@@ -292,13 +299,29 @@ if __name__ == "__main__":
             if same: latin[(h, want, sec)] = (max(same)[1], "arabic pairing"); continue
             if pair and ok(pair[0]) and skeleton(pair[0]) == heb_skeleton(h): latin[(h, want, sec)] = (pair[0], "known pairing")
             continue
-        # 1. a Wikidata given name whose Hebrew label is this exact spelling (Noa, Yael, Hamutal)
-        if pair and pair[1] in ("native", "wikidata") and ok(pair[0]): latin[(h, want, sec)] = (pair[0], "known pairing"); continue
-        # 2. the most natural reading that's a real, common name of the right sex (Moshe, Shira, Lior, Muhammad)
         rs = readings(h, want, sec, count, sex, prefixes)
+        # 1. a Wikidata given name whose Hebrew label is this exact spelling (Noa, Yael, Hamutal). A unisex Hebrew name that
+        # names-db.tsv files under one sex (Mor, Liron, Rinat, Tair for girls) still counts when the letters read that way and
+        # the name is mostly given in Israel (not Muriel, Mandy or Carol for boys)
+        unisex = pair and pair[0] in {n for _, n in rs} and israel_share.get(pair[0].lower(), 0) >= .3
+        if pair and pair[1] in ("native", "wikidata") and (ok(pair[0]) or unisex):
+            latin[(h, want, sec)] = (pair[0], "known pairing"); continue
+        # 2. the most natural reading that's a real, common name of the right sex (Moshe, Shira, Lior, Muhammad)
         if rs and rs[0][0] > .4: latin[(h, want, sec)] = (rs[0][1], "verified reading"); continue
         # 3. a Wikidata alias or the Bible's form of the name
         if pair and ok(pair[0]): latin[(h, want, sec)] = (pair[0], "known pairing")
+    # a unisex name the rules spelled for one sex only (Tomer, Dror, Matan for girls) keeps that spelling for the other
+    for sec, want, h in {(sec, "m" if sx == "M" else "f", h) for sec, sx, h in tot}:
+        other = latin.get((h, "f" if want == "m" else "m", sec))
+        if (h, want, sec) not in latin and other: latin[(h, want, sec)] = other
+    # 4. a hand-checked spelling for names nothing above can verify (scripts/hebrew-spellings.tsv: Bat-El, Shilat, Taghrid)
+    hand = {}
+    for l in open(os.path.join(HERE, "hebrew-spellings.tsv"), encoding="utf-8"):
+        if l.startswith("#") or not l.strip(): continue
+        g, h, n = l.rstrip("\n").split("\t"); hand[(g, h)] = n
+    for sec, want, h in {(sec, "m" if sx == "M" else "f", h) for sec, sx, h in tot}:
+        n = hand.get(("A" if sec in ARAB else "J", h))
+        if n and (h, want, sec) not in latin: latin[(h, want, sec)] = (n, "hand spelling")
     for _, m in latin.values(): how[m] += 1
     print(dict(how))
     names = {h for _, _, h in tot}
