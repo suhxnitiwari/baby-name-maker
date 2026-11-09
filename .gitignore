@@ -1,3 +1,4 @@
 .claude/
 raw/
 data/lullabyte.sqlite
+worker/.wrangler/
