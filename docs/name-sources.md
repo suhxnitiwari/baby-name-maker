@@ -462,3 +462,27 @@ The deity rows in `data/sacred/egyptian.tsv` follow `docs/sacred-format.md`: ent
 - sacred-texts.com (Mercer's Pyramid Texts, Budge's Papyrus of Ani) sits behind a Cloudflare challenge.
 - No open, citable English Pyramid Texts or Coffin Texts with utterance or spell numbers was found. Mercer (1952), Faulkner and de Buck are not public domain, and the open TLA sentence sets carry no text references. So `egyptian.tsv` covers the Book of the Dead only.
 - No hieroglyphic or Coptic forms are written, so `build_native_forms.py` is unchanged.
+
+## Ancient Roman names: data/roman-names.json
+
+`python3 scripts/build_roman_names.py` writes **1,337 names**: 154 hand-curated in `data/roman-names.tsv` (each with a person who bore it: an epitaph, a Vindolanda tablet or an ancient author), and **1,183 more from the Epigraphic Database Heidelberg** (EDH, CC BY-SA 4.0, `raw/roman/edh_data_pers.csv` and `edh_data_text.csv`).
+
+| Rule | Detail |
+|---|---|
+| Who counts | every first name (praenomen, with abbreviations read: L. = Lucius), family name (nomen) and personal name (cognomen) that **5 or more people of one sex** bear on inscriptions, leaving out emperors and their family (EDH status 0). Counted exactly as `build_latin_names.py` counts, so a card shows one number |
+| The example | one of those people, named as EDH files them (in the nominative), from the earliest dated inscription with a findspot: "C. Septimius Bellicus (Corfinium, today Corfinio, 1–100 CE; EDH HD000434)" |
+| Left out | names the Romans took from Greek (they are in `data/greek-names.json`), and uncertain readings (EDH's `+` and brackets) |
+| Meaning | only the one `data/latin-names.json` gives the same Latin name (Wiktionary, Lewis & Short); 143 have one |
+| Spelling | the modern form when birth registries use it (Iulia → Julia, Cassianus → Cassian), else the Latin as written |
+
+## Italian names: data/italian-names.json
+
+`python3 scripts/build_italian_names.py` writes **1,655 names**:
+
+| Source | What it gives |
+|---|---|
+| **English Wiktionary** (CC BY-SA 4.0), "Italian male / female / unisex given names", cached in `raw/italian/wiktionary.json` | all 1,496 names, with the Italian etymology when it is not hedged (Gennaro: from Neapolitan Gennaro, from Latin Iānuārius) and the English equivalent (the Italian form of John); 527 have an etymology |
+| **ISTAT** (CC BY 4.0, `raw/it-istat-contanomi/`) | babies given each name since 1999, as its own line ("Given to 196,794 babies in Italy since 1999"), so it reaches names that already have a card; and **159 names Wiktionary lacks** that 100+ babies got, where Italy gives at least a quarter of everyone registered with the name (Azzurra, Ilenia, Costanza, Duccio; double names such as Maria Vittoria and Francesco Pio need 1,000+ babies) |
+| Meaning | only a gloss: Wiktionary's own, else the site's for the source word (`latin-names.json`, `greek-names.json`); 157 have one |
+
+Left out of the ISTAT-only names: names families from elsewhere give in Italy (spellings Italian does not use, such as Klevis or Doaa, or a name the site files under another culture), registration slips of a far commoner name (Frnacesco, Alessnadro), and placeholders (Dato Mancante). The list loads last, so a name that already has a card keeps its origin and only gains what it lacks.
